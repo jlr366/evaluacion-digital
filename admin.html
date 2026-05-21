@@ -211,6 +211,13 @@
       <div id="listaExternosAsignados">Cargando...</div>
     </div>
 
+    <!-- Demo accounts -->
+    <div class="card">
+      <h2>🎯 Cuentas Demo pendientes de activar</h2>
+      <p style="color:#64748b;font-size:0.82rem;margin-bottom:14px;">Profesores que se registraron como demo. Actívalos para darles acceso completo.</p>
+      <div id="listaDemos">Cargando...</div>
+    </div>
+
     <!-- Create admins -->
     <div class="card">
       <h2>Crear administrador</h2>
@@ -244,7 +251,44 @@
   if (!currentUser || currentUser.tipo !== 'admin') { window.location.href = 'index.html'; }
 
   const isSuperAdmin = currentUser.role === 'superadmin';
+  const isDemo = currentUser.role === 'demo';
   const adminFilter = isSuperAdmin ? null : currentUser.id;
+
+  // ── Demo mode setup ──
+  if (isDemo) {
+    // Show demo banner
+    document.body.insertAdjacentHTML('afterbegin', `
+      <div style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#000;text-align:center;padding:10px 20px;font-size:0.85rem;font-weight:700;position:sticky;top:0;z-index:200;">
+        🎯 CUENTA DEMO — Límites: 5 preguntas por examen · 2 estudiantes · Los datos se eliminan a medianoche
+        <a href="precios.html" style="margin-left:12px;background:#000;color:#fbbf24;padding:4px 12px;border-radius:6px;text-decoration:none;font-size:0.8rem;">Ver planes →</a>
+      </div>
+    `);
+
+    // Schedule cleanup at midnight
+    const now = new Date();
+    const midnight = new Date(now);
+    midnight.setHours(24, 0, 0, 0);
+    const msUntilMidnight = midnight - now;
+    setTimeout(async () => {
+      await limpiarDemo();
+    }, msUntilMidnight);
+  }
+
+  async function limpiarDemo() {
+    if (!isDemo) return;
+    try {
+      // Delete demo exams
+      const exSnap = await db.collection('examenes').where('createdBy', '==', currentUser.id).get();
+      for (const doc of exSnap.docs) await doc.ref.delete();
+      // Delete demo students
+      const usSnap = await db.collection('usuarios').where('createdBy', '==', currentUser.id).get();
+      for (const doc of usSnap.docs) await doc.ref.delete();
+      // Delete demo grades
+      const noSnap = await db.collection('notas').where('createdBy', '==', currentUser.id).get();
+      for (const doc of noSnap.docs) await doc.ref.delete();
+      console.log('Demo data cleaned');
+    } catch(e) { console.error('Demo cleanup error:', e); }
+  }
 
   document.getElementById('userInfo').textContent = '👤 ' + currentUser.nombre + ' (' + currentUser.role + ')';
   if (isSuperAdmin) {
@@ -281,6 +325,10 @@
   }
 
   function addPregunta() {
+    if (isDemo && preguntasTemp.length >= 5) {
+      alert('🎯 Cuenta demo: máximo 5 preguntas por examen.\n\nActualiza tu plan en evaluacion-digital.com/precios.html');
+      return;
+    }
     preguntasTemp.push({ pregunta: '', opciones: ['', '', '', ''], correcta: 0, imagen: '', puntos: 1 });
     renderPreguntas();
   }
@@ -404,6 +452,21 @@
     const titulo = document.getElementById('exTitulo').value.trim();
     if (!titulo) { document.getElementById('exMsg').innerHTML = '<div class="msg msg-err">⚠️ Ingrese un título</div>'; alert('⚠️ Ingrese un título para el examen'); return; }
     if (preguntasTemp.length === 0) { document.getElementById('exMsg').innerHTML = '<div class="msg msg-err">⚠️ Agregue al menos una pregunta</div>'; alert('⚠️ Agregue al menos una pregunta'); return; }
+
+    // Demo restrictions
+    if (isDemo && preguntasTemp.length > 5) {
+      document.getElementById('exMsg').innerHTML = '<div class="msg msg-err">🎯 Cuenta demo: máximo 5 preguntas. <a href="precios.html" style="color:#60a5fa;">Actualiza tu plan →</a></div>';
+      alert('🎯 Cuenta demo: solo puedes crear exámenes con máximo 5 preguntas.\n\nActualiza tu plan en evaluacion-digital.com/precios.html');
+      return;
+    }
+    if (isDemo) {
+      const misExamenes = await getExamenes(currentUser.id);
+      if (misExamenes.length >= 1 && !editandoExamenId) {
+        document.getElementById('exMsg').innerHTML = '<div class="msg msg-err">🎯 Cuenta demo: solo puedes tener 1 examen activo. <a href="precios.html" style="color:#60a5fa;">Actualiza tu plan →</a></div>';
+        alert('🎯 Cuenta demo: solo puedes tener 1 examen activo a la vez.\n\nActualiza tu plan para crear más.');
+        return;
+      }
+    }
 
     const notaMaxima = parseFloat(document.getElementById('exNotaMax').value) || 100;
     const notaMinima = parseFloat(document.getElementById('exNota').value) || 70;
@@ -729,6 +792,16 @@
     if (!u||!n||!p) { document.getElementById('usrMsg').innerHTML = '<div class="msg msg-err">⚠️ Complete username, nombre y contraseña</div>'; alert('⚠️ Complete username, nombre y contraseña'); return; }
 
     try {
+      // Demo restrictions
+      if (isDemo) {
+        const misUsers = await getUsers(currentUser.id);
+        if (misUsers.length >= 2) {
+          document.getElementById('usrMsg').innerHTML = '<div class="msg msg-err">🎯 Cuenta demo: máximo 2 estudiantes. <a href="precios.html" style="color:#60a5fa;">Actualiza tu plan →</a></div>';
+          alert('🎯 Cuenta demo: solo puedes crear 2 estudiantes.\n\nActualiza tu plan para agregar más.');
+          return;
+        }
+      }
+
       // Check username uniqueness only within this professor's students
       const existing = await db.collection('usuarios')
         .where('username', '==', u.trim().toLowerCase())
@@ -1089,9 +1162,20 @@
   async function loadAdmins() {
     const admins = await getAllAdmins();
     let html = '<table><thead><tr><th>Username</th><th>Nombre</th><th>Institución</th><th>Rol</th><th>Acciones</th></tr></thead><tbody>';
-    admins.forEach(a => { html += `<tr><td><strong>${a.username}</strong></td><td>${a.nombre}</td><td>${a.institucion||'-'}</td><td><span class="badge ${a.role==='superadmin'?'badge-purple':'badge-blue'}">${a.role}</span></td><td>${a.role!=='superadmin'?'<button class="btn btn-sm btn-red" onclick="eliminarAdm(\''+a.id+'\')">🗑️</button>':''}</td></tr>`; });
+    admins.filter(a => a.role !== 'demo').forEach(a => { html += `<tr><td><strong>${a.username}</strong></td><td>${a.nombre}</td><td>${a.institucion||'-'}</td><td><span class="badge ${a.role==='superadmin'?'badge-purple':'badge-blue'}">${a.role}</span></td><td>${a.role!=='superadmin'?'<button class="btn btn-sm btn-red" onclick="eliminarAdm(\''+a.id+'\')">🗑️</button>':''}</td></tr>`; });
     html += '</tbody></table>';
     document.getElementById('listaAdmins').innerHTML = html;
+
+    // Load demo accounts
+    const demos = admins.filter(a => a.role === 'demo');
+    if (demos.length === 0) {
+      document.getElementById('listaDemos').innerHTML = '<p style="color:#64748b;font-style:italic;">No hay cuentas demo pendientes</p>';
+    } else {
+      let dHtml = '<table><thead><tr><th>Nombre</th><th>Email</th><th>Username</th><th>Acción</th></tr></thead><tbody>';
+      demos.forEach(d => { dHtml += `<tr><td><strong>${d.nombre}</strong></td><td>${d.email||'-'}</td><td>${d.username}</td><td><button class="btn btn-sm btn-green" onclick="activarDemo('${d.id}','${d.nombre.replace(/'/g,'')}')">✅ Activar</button> <button class="btn btn-sm btn-red" onclick="eliminarAdm('${d.id}')">🗑️</button></td></tr>`; });
+      dHtml += '</tbody></table>';
+      document.getElementById('listaDemos').innerHTML = dHtml;
+    }
 
     // Load professors into the assign dropdown
     const profSelect = document.getElementById('assignProfesor');
@@ -1102,8 +1186,16 @@
       });
     }
 
-    // Load external exams
     loadExternosAsignados();
+  }
+
+  async function activarDemo(id, nombre) {
+    if (!confirm('¿Activar la cuenta de "' + nombre + '" como profesor regular?')) return;
+    try {
+      await db.collection('admins').doc(id).update({ role: 'admin' });
+      alert('✅ Cuenta de "' + nombre + '" activada como profesor.');
+      loadAdmins();
+    } catch(e) { alert('Error: ' + e.message); }
   }
 
   async function asignarExamenExterno() {
