@@ -110,11 +110,90 @@
 <script>emailjs.init('orZQk0WGfKhLwMQUX');</script>
 <script src="firebase-config.js"></script>
 <script>
-  // Anti-copy
+  // ── Anti-copy & Anti-AI protections ──
+
+  // Block right-click and context menu (mobile long-press too)
   document.addEventListener('contextmenu', e => e.preventDefault());
+
+  // Block copy/cut/paste
   document.addEventListener('copy', e => e.preventDefault());
-  document.addEventListener('keydown', e => { if (e.ctrlKey && 'cusCUSaA'.includes(e.key)) { e.preventDefault(); } if (e.key==='F12') e.preventDefault(); if (e.ctrlKey&&e.shiftKey) e.preventDefault(); });
-  document.addEventListener('click', function(e) { var op = e.target.closest('.opcion'); if (op && e.target.tagName !== 'INPUT') { var inp = op.querySelector('input'); if (inp) { if (inp.type==='radio') { inp.checked=true; } else { inp.checked=!inp.checked; } inp.dispatchEvent(new Event('change',{bubbles:true})); } } });
+  document.addEventListener('cut', e => e.preventDefault());
+
+  // Block keyboard shortcuts
+  document.addEventListener('keydown', e => {
+    if (e.ctrlKey && 'cusCUSaA'.includes(e.key)) { e.preventDefault(); }
+    if (e.key === 'F12') e.preventDefault();
+    if (e.ctrlKey && e.shiftKey) e.preventDefault();
+  });
+
+  // Block drag (prevents drag-to-select on mobile)
+  document.addEventListener('dragstart', e => e.preventDefault());
+  document.addEventListener('selectstart', e => {
+    // Allow selection only in input fields
+    if (!e.target.matches('input, textarea')) e.preventDefault();
+  });
+
+  // Block long-press on mobile (prevents "Copy" menu)
+  document.addEventListener('touchstart', function(e) {
+    if (e.target.matches('input, textarea, select, button, label')) return;
+    e.target.style.webkitUserSelect = 'none';
+    e.target.style.userSelect = 'none';
+  }, { passive: true });
+
+  // Block iOS share sheet text selection
+  document.addEventListener('touchend', function(e) {
+    if (!e.target.matches('input, textarea, select, button, label')) {
+      window.getSelection && window.getSelection().removeAllRanges();
+    }
+  });
+
+  // Detect screenshot attempt on Android (visibility change)
+  document.addEventListener('visibilitychange', function() {
+    if (document.hidden) {
+      // Page went to background - possible screenshot
+      document.querySelectorAll('.pregunta h3').forEach(el => {
+        el.setAttribute('data-original', el.textContent);
+        el.textContent = '[ Contenido oculto — regresa al examen ]';
+      });
+    } else {
+      // Page came back - restore content
+      document.querySelectorAll('.pregunta h3').forEach(el => {
+        const orig = el.getAttribute('data-original');
+        if (orig) { el.textContent = orig; el.removeAttribute('data-original'); }
+      });
+    }
+  });
+
+  // Inject zero-width characters into question text to corrupt AI paste
+  function injectZeroWidth(text) {
+    const zwc = ['\u200B', '\u200C', '\u200D', '\uFEFF'];
+    return text.split('').map((c, i) =>
+      i % 4 === 0 ? c + zwc[i % zwc.length] : c
+    ).join('');
+  }
+
+  // Apply after questions load
+  function applyAntiAI() {
+    document.querySelectorAll('.pregunta h3, .opcion span').forEach(el => {
+      if (!el.getAttribute('data-protected')) {
+        el.textContent = injectZeroWidth(el.textContent);
+        el.setAttribute('data-protected', '1');
+      }
+    });
+  }
+
+  // Click handler for options
+  document.addEventListener('click', function(e) {
+    var op = e.target.closest('.opcion');
+    if (op && e.target.tagName !== 'INPUT') {
+      var inp = op.querySelector('input');
+      if (inp) {
+        if (inp.type==='radio') { inp.checked=true; }
+        else { inp.checked=!inp.checked; }
+        inp.dispatchEvent(new Event('change',{bubbles:true}));
+      }
+    }
+  });
 
   // Get exam ID from URL
   const params = new URLSearchParams(window.location.search);
@@ -210,6 +289,8 @@
       const imgHtml = item.imagen ? `<img src="${item.imagen}" alt="Imagen">` : '';
       container.innerHTML += `<div class="pregunta"><div class="pregunta-num">${idx+1}</div><h3>${item.pregunta}</h3>${imgHtml}${optsHtml}</div>`;
     });
+    // Apply anti-AI zero-width characters after rendering
+    setTimeout(applyAntiAI, 100);
   }
 
   function updateProgress() {
