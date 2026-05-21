@@ -71,16 +71,42 @@ a:hover { text-decoration: underline; }
 .navbar nav { display: flex; gap: 6px; flex-wrap: wrap; }
 
 .navbar nav a {
-  padding: 8px 14px;
-  border-radius: 8px;
+  padding: 8px 16px;
+  border-radius: 20px;
   font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--text-muted);
+  font-weight: 700;
+  color: rgba(255,255,255,0.7);
   transition: 0.2s;
+  border: 1px solid transparent;
+  letter-spacing: 0.2px;
 }
 
-.navbar nav a:hover { background: rgba(148,163,184,0.08); color: #f8fafc; text-decoration: none; }
-.navbar nav a.active { background: var(--primary); color: white; }
+.navbar nav a:hover {
+  background: rgba(0,120,212,0.15);
+  border-color: rgba(0,120,212,0.3);
+  color: #f8fafc;
+  text-decoration: none;
+}
+
+.navbar nav a.active {
+  background: linear-gradient(135deg, #0078d4, #005a9e);
+  color: white;
+  border-color: transparent;
+  box-shadow: 0 2px 10px rgba(0,120,212,0.35);
+}
+
+/* Special style for "Ingresar" button */
+.navbar nav a[href="login.html"] {
+  background: linear-gradient(135deg, #0078d4, #00bcf2);
+  color: white;
+  border-color: transparent;
+  box-shadow: 0 2px 10px rgba(0,188,242,0.3);
+}
+
+.navbar nav a[href="login.html"]:hover {
+  box-shadow: 0 4px 16px rgba(0,188,242,0.45);
+  transform: translateY(-1px);
+}
 
 /* Hamburger */
 .hamburger {
@@ -259,14 +285,13 @@ a:hover { text-decoration: underline; }
     gap: 4px;
     justify-content: center;
     width: 100%;
-    padding-top: 8px;
+    padding-top: 10px;
     border-top: 1px solid var(--border);
   }
   .navbar nav a {
-    padding: 6px 10px;
+    padding: 7px 12px;
     font-size: 0.78rem;
   }
-  .hamburger { display: none; }
   .stats { gap: 20px; }
   .grid-3 { grid-template-columns: 1fr; }
   .btn { padding: 12px 20px; font-size: 0.88rem; }
