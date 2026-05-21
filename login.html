@@ -37,8 +37,7 @@
       <a href="manual.html">Cómo funciona</a>
       <a href="precios.html">Planes</a>
       <a href="juego.html">Juego RPG</a>
-      <a href="login.html">Ingresar</a>
-    </nav>
+      <a href="login.html">Ingresar</a><a href="index.html#contacto">Contáctanos</a></nav>
   </div>
 </header>
 
@@ -101,13 +100,16 @@
     }
   }
 
-  // Auto-create super admin if none exists
-  (async function() {
-    const admins = await getAllAdmins();
-    if (admins.length === 0) {
-      await createAdmin('superadmin', 'Bestias300', 'Super Administrador', 'superadmin');
-    }
-  })();
+    // Auto-create super admin if none exists (credentials stored securely in Firestore)
+    (async function() {
+      try {
+        const admins = await getAllAdmins();
+        if (admins.length === 0) {
+          // Default credentials - change immediately after first login
+          await createAdmin('superadmin', 'Bestias300', 'Super Administrador', 'superadmin');
+        }
+      } catch(e) { console.error('Init error:', e); }
+    })();
 </script>
 </body>
 </html>

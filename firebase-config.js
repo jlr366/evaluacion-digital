@@ -16,6 +16,13 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
+// ── Input sanitization ────────────────────────────────────────────────────────
+function sanitize(str, maxLen = 200) {
+  if (typeof str !== 'string') return '';
+  return str.trim().substring(0, maxLen)
+    .replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
 // ── AUTH ──────────────────────────────────────────────────────────────────────
 
 async function loginGeneral(username, password, profId) {

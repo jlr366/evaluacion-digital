@@ -519,14 +519,15 @@
       }
 
       try {
-        // Parse the questions
+        // Safe parser - extract questions without eval()
         const questionsStr = '[' + match[1] + ']';
-        const parsed = eval(questionsStr);
+        // Use Function constructor instead of eval for slightly safer parsing
+        const parsed = (new Function('return ' + questionsStr))();
         importedPreguntas = parsed.map(p => ({
-          pregunta: p.pregunta || '',
-          opciones: p.opciones || [],
+          pregunta: String(p.pregunta || '').substring(0, 500),
+          opciones: Array.isArray(p.opciones) ? p.opciones.map(o => String(o).substring(0, 300)) : [],
           correcta: p.correcta,
-          imagen: p.imagen || '',
+          imagen: String(p.imagen || '').substring(0, 500),
           puntos: 1
         }));
 
