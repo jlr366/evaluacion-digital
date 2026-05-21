@@ -58,6 +58,7 @@ a:hover { text-decoration: underline; }
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-shrink: 0;
 }
 
 .navbar .brand img {
@@ -80,6 +81,47 @@ a:hover { text-decoration: underline; }
 
 .navbar nav a:hover { background: rgba(148,163,184,0.08); color: #f8fafc; text-decoration: none; }
 .navbar nav a.active { background: var(--primary); color: white; }
+
+/* Hamburger */
+.hamburger {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  background: rgba(148,163,184,0.08);
+  border: 1px solid var(--border);
+}
+
+.hamburger span {
+  display: block;
+  width: 22px;
+  height: 2px;
+  background: #f8fafc;
+  border-radius: 2px;
+  transition: 0.3s;
+}
+
+.nav-mobile {
+  display: none;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 0 8px;
+  border-top: 1px solid var(--border);
+  margin-top: 10px;
+}
+
+.nav-mobile a {
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  transition: 0.2s;
+}
+
+.nav-mobile a:hover, .nav-mobile a.active { background: var(--primary); color: white; text-decoration: none; }
 
 /* ── Hero ── */
 .hero {
@@ -211,6 +253,10 @@ a:hover { text-decoration: underline; }
 @media (max-width: 768px) {
   .hero h1 { font-size: 2rem; }
   .navbar nav { display: none; }
+  .hamburger { display: flex; }
   .stats { gap: 20px; }
   .grid-3 { grid-template-columns: 1fr; }
+  .btn { padding: 12px 20px; font-size: 0.88rem; }
+  .hero .btns { flex-direction: column; align-items: center; }
+  .hero .btns .btn { width: 100%; max-width: 300px; }
 }
