@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Guía del Profesor — Evaluación Digital</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <style>
+    .step { display: flex; gap: 24px; align-items: flex-start; margin-bottom: 32px; }
+    .step-num { flex-shrink: 0; width: 48px; height: 48px; border-radius: 12px; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: 900; }
+    .step-content h3 { font-size: 1.1rem; color: #f8fafc; margin-bottom: 6px; }
+    .step-content p { color: var(--text-muted); font-size: 0.92rem; line-height: 1.6; }
+    .tip { background: rgba(0,188,242,0.06); border: 1px solid rgba(0,188,242,0.2); border-radius: 10px; padding: 16px; margin-top: 12px; font-size: 0.85rem; color: var(--accent); }
+    .tip::before { content: '💡 '; }
+    @media (max-width: 768px) { .step { flex-direction: column; gap: 12px; } }
+  </style>
+</head>
+<body>
+
+<header class="navbar">
+  <div class="inner">
+    <div class="brand"><img src="logo_evaluacion_digital_transparente.png" alt="Logo" style="height:56px; filter:drop-shadow(0 2px 12px rgba(0,188,242,0.6)) brightness(1.3);"> <span>Evaluación</span>Digital</div>
+    <nav>
+      <a href="index.html">Inicio</a>
+      <a href="manual.html">Cómo funciona</a>
+      <a href="precios.html">Planes</a>
+      <a href="login.html">Ingresar</a>
+    </nav>
+  </div>
+</header>
+
+<section class="hero" style="padding:50px 24px 30px;">
+  <h1>👨‍🏫 Guía del <span>Profesor</span></h1>
+  <p>De cero a tu primer examen publicado en minutos</p>
+</section>
+
+<section class="section">
+  <div style="max-width:750px; margin:0 auto;">
+
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-content">
+        <h3>Ingresa a tu cuenta</h3>
+        <p>Ve a <strong>Ingresar</strong> y escribe tu usuario y contraseña de profesor. Si no tienes cuenta, pídela al administrador de tu institución.</p>
+        <div class="tip">Tu administrador te dará las credenciales de acceso.</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-content">
+        <h3>Crea tus cursos</h3>
+        <p>En la pestaña <strong>📚 Cursos</strong>, crea los cursos o secciones que manejas. Ejemplo: "Cloud Computing - Sección A".</p>
+        <div class="tip">Los cursos te permiten organizar y ver el rendimiento de cada grupo por separado.</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-content">
+        <h3>Crea tus estudiantes</h3>
+        <p>En la pestaña <strong>👥 Usuarios</strong>, crea una cuenta para cada estudiante con username, nombre, email y contraseña. Asígnales el curso correspondiente.</p>
+        <div class="tip">El email es opcional pero recomendado — el estudiante recibirá su resultado automáticamente.</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-content">
+        <h3>Crea un examen</h3>
+        <p>En la pestaña <strong>📝 Exámenes</strong>, pulsa "Agregar pregunta" y completa:</p>
+        <ul style="color:var(--text-muted); font-size:0.9rem; margin:8px 0; padding-left:20px; line-height:2;">
+          <li>Título y subtítulo del examen</li>
+          <li>Tiempo disponible (minutos)</li>
+          <li>Nota máxima y nota mínima para aprobar</li>
+          <li>Preguntas con sus opciones — marca la(s) correcta(s) en amarillo</li>
+          <li>Imágenes opcionales por pregunta</li>
+        </ul>
+        <div class="tip">Puedes asignar puntos diferentes a cada pregunta activando "Asignar puntos por pregunta".</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">5</div>
+      <div class="step-content">
+        <h3>Comparte la URL con tus estudiantes</h3>
+        <p>Al guardar el examen se genera una URL única. Cópiala y envíala por WhatsApp, email o en clase. El estudiante abre el link, se loguea y hace el examen.</p>
+        <div class="tip">Las opciones se barajan automáticamente en cada intento. El anti-copia está activo por defecto.</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">6</div>
+      <div class="step-content">
+        <h3>Revisa los resultados</h3>
+        <p>En la pestaña <strong>📊 Notas</strong> verás todas las notas organizadas por estudiante. En <strong>📚 Cursos</strong> verás aprobados y reprobados por grupo. Puedes exportar un PDF con todas las notas.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">7</div>
+      <div class="step-content">
+        <h3>Importar exámenes existentes</h3>
+        <p>Si tienes exámenes en formato HTML, puedes importarlos directamente desde el panel. El sistema extrae las preguntas automáticamente.</p>
+        <div class="tip">Esta función está disponible para administradores. Contacta a tu administrador para importar exámenes.</div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<section class="section" style="text-align:center; padding-bottom:60px; border-top:1px solid var(--border);">
+  <a href="manual-estudiante.html" class="btn btn-outline">Ver guía del estudiante →</a>
+  &nbsp;
+  <a href="login.html" class="btn btn-primary">🚀 Ir al panel</a>
+</section>
+
+<footer class="footer">
+  <p style="margin-bottom:8px;"><a href="index.html">Inicio</a> · <a href="manual.html">Cómo funciona</a> · <a href="precios.html">Planes</a> · <a href="login.html">Ingresar</a></p>
+  <p>© 2025 Evaluación Digital — evaluacion-digital.com</p>
+</footer>
+
+</body>
+</html>

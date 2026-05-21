@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Guía del Estudiante — Evaluación Digital</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <style>
+    .step { display: flex; gap: 24px; align-items: flex-start; margin-bottom: 32px; }
+    .step-num { flex-shrink: 0; width: 48px; height: 48px; border-radius: 12px; background: var(--success); color: white; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: 900; }
+    .step-content h3 { font-size: 1.1rem; color: #f8fafc; margin-bottom: 6px; }
+    .step-content p { color: var(--text-muted); font-size: 0.92rem; line-height: 1.6; }
+    .tip { background: rgba(16,185,129,0.06); border: 1px solid rgba(16,185,129,0.2); border-radius: 10px; padding: 16px; margin-top: 12px; font-size: 0.85rem; color: #34d399; }
+    .tip::before { content: '💡 '; }
+    .faq-item { border-bottom: 1px solid var(--border); padding: 16px 0; }
+    .faq-item h3 { font-size: 0.95rem; color: #f8fafc; margin-bottom: 6px; }
+    .faq-item p { color: var(--text-muted); font-size: 0.88rem; }
+    @media (max-width: 768px) { .step { flex-direction: column; gap: 12px; } }
+  </style>
+</head>
+<body>
+
+<header class="navbar">
+  <div class="inner">
+    <div class="brand"><img src="logo_evaluacion_digital_transparente.png" alt="Logo" style="height:56px; filter:drop-shadow(0 2px 12px rgba(0,188,242,0.6)) brightness(1.3);"> <span>Evaluación</span>Digital</div>
+    <nav>
+      <a href="index.html">Inicio</a>
+      <a href="manual.html">Cómo funciona</a>
+      <a href="precios.html">Planes</a>
+      <a href="login.html">Ingresar</a>
+    </nav>
+  </div>
+</header>
+
+<section class="hero" style="padding:50px 24px 30px;">
+  <h1>🎓 Guía del <span>Estudiante</span></h1>
+  <p>Cómo acceder y completar tu examen en línea</p>
+</section>
+
+<section class="section">
+  <div style="max-width:750px; margin:0 auto;">
+
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-content">
+        <h3>Recibe el link del examen</h3>
+        <p>Tu profesor te enviará una URL por WhatsApp, email o en clase. Ábrela en tu navegador (Chrome, Safari, Firefox). No necesitas instalar nada.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-content">
+        <h3>Inicia sesión</h3>
+        <p>Escribe el usuario y contraseña que te dio tu profesor. Opcionalmente ingresa tu correo electrónico para recibir el resultado automáticamente.</p>
+        <div class="tip">Si no tienes usuario y contraseña, pídelos a tu profesor antes de intentar entrar.</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-content">
+        <h3>Lee las instrucciones</h3>
+        <p>Antes de empezar verás el título del examen y el tiempo disponible. Cuando estés listo, pulsa <strong>"Iniciar examen"</strong>.</p>
+        <div class="tip">El temporizador empieza cuando pulsas "Iniciar". Asegúrate de tener tiempo suficiente antes de comenzar.</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-content">
+        <h3>Responde las preguntas</h3>
+        <p>Lee cada pregunta y selecciona la respuesta correcta. Si la pregunta dice <strong>"Seleccione X respuestas"</strong>, debes marcar exactamente ese número de opciones.</p>
+        <div class="tip">No puedes copiar las preguntas ni abrir otras pestañas. Concéntrate en responder dentro del tiempo.</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">5</div>
+      <div class="step-content">
+        <h3>Finaliza el examen</h3>
+        <p>Cuando termines, pulsa <strong>"Finalizar examen"</strong>. Si se acaba el tiempo, se envía automáticamente. Verás tu nota inmediatamente.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">6</div>
+      <div class="step-content">
+        <h3>Descarga tu comprobante</h3>
+        <p>Al ver tu resultado, puedes pulsar <strong>"📄 Descargar PDF"</strong> para obtener un comprobante con el detalle de todas tus respuestas. Si pusiste tu correo, también recibirás un resumen por email.</p>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="section" style="border-top:1px solid var(--border);">
+  <div class="section-title">
+    <h2>Preguntas frecuentes</h2>
+  </div>
+  <div style="max-width:700px; margin:0 auto;">
+    <div class="faq-item">
+      <h3>¿Necesito instalar algo?</h3>
+      <p>No. Todo funciona desde el navegador web. No hay apps que descargar.</p>
+    </div>
+    <div class="faq-item">
+      <h3>¿Funciona en celular?</h3>
+      <p>Sí. Puedes hacer el examen desde tu teléfono, tablet o computadora.</p>
+    </div>
+    <div class="faq-item">
+      <h3>¿Puedo copiar las preguntas?</h3>
+      <p>No. El sistema bloquea copiar/pegar, clic derecho y herramientas de desarrollador.</p>
+    </div>
+    <div class="faq-item">
+      <h3>¿Las respuestas siempre están en el mismo orden?</h3>
+      <p>No. Las opciones se barajan aleatoriamente cada vez que abres el examen.</p>
+    </div>
+    <div class="faq-item">
+      <h3>¿Qué pasa si pierdo la conexión?</h3>
+      <p>El temporizador sigue corriendo. Si te reconectas antes de que termine el tiempo, puedes continuar.</p>
+    </div>
+    <div class="faq-item">
+      <h3>No tengo usuario/contraseña, ¿qué hago?</h3>
+      <p>Pídelos a tu profesor. Él es quien crea las cuentas de los estudiantes.</p>
+    </div>
+  </div>
+</section>
+
+<section class="section" style="text-align:center; padding-bottom:60px;">
+  <a href="manual-profesor.html" class="btn btn-outline">Ver guía del profesor →</a>
+</section>
+
+<footer class="footer">
+  <p style="margin-bottom:8px;"><a href="index.html">Inicio</a> · <a href="manual.html">Cómo funciona</a> · <a href="precios.html">Planes</a> · <a href="login.html">Ingresar</a></p>
+  <p>© 2025 Evaluación Digital — evaluacion-digital.com</p>
+</footer>
+
+</body>
+</html>
