@@ -163,13 +163,77 @@
   </div>
 </section>
 
+<!-- Contact -->
+<section class="section" style="border-top:1px solid var(--border); padding-bottom:80px;" id="contacto">
+  <div class="section-title">
+    <h2>📬 Contáctanos</h2>
+    <p>¿Tienes preguntas? Escríbenos y te respondemos pronto</p>
+  </div>
+
+  <div style="max-width:500px; margin:0 auto;">
+    <div id="contactMsg"></div>
+    <div style="margin-bottom:16px;">
+      <label style="display:block; font-size:0.75rem; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; color:#94a3b8; margin-bottom:6px;">Nombre</label>
+      <input type="text" id="contactNombre" placeholder="Tu nombre completo" style="width:100%; padding:12px 16px; background:#1e293b; border:1px solid #334155; border-radius:10px; color:#f1f5f9; font-size:0.95rem;" />
+    </div>
+    <div style="margin-bottom:16px;">
+      <label style="display:block; font-size:0.75rem; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; color:#94a3b8; margin-bottom:6px;">Correo electrónico</label>
+      <input type="email" id="contactEmail" placeholder="tucorreo@email.com" style="width:100%; padding:12px 16px; background:#1e293b; border:1px solid #334155; border-radius:10px; color:#f1f5f9; font-size:0.95rem;" />
+    </div>
+    <div style="margin-bottom:20px;">
+      <label style="display:block; font-size:0.75rem; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; color:#94a3b8; margin-bottom:6px;">Mensaje</label>
+      <textarea id="contactMensaje" placeholder="¿En qué podemos ayudarte?" rows="4" style="width:100%; padding:12px 16px; background:#1e293b; border:1px solid #334155; border-radius:10px; color:#f1f5f9; font-size:0.95rem; resize:vertical;"></textarea>
+    </div>
+    <button onclick="enviarContacto()" class="btn btn-primary" style="width:100%;">📨 Enviar mensaje</button>
+  </div>
+</section>
+
 <!-- Footer -->
 <footer class="footer">
   <p style="margin-bottom:8px;">
-    <a href="index.html">Inicio</a> · <a href="manual.html">Cómo funciona</a> · <a href="precios.html">Planes</a> · <a href="cursos.html">Cursos</a> · <a href="login.html">Ingresar</a>
+    <a href="index.html">Inicio</a> · <a href="manual.html">Cómo funciona</a> · <a href="precios.html">Planes</a> · <a href="login.html">Ingresar</a> · <a href="#contacto">Contacto</a>
   </p>
   <p>© 2025 Evaluación Digital — evaluacion-digital.com</p>
 </footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script>
+  emailjs.init('orZQk0WGfKhLwMQUX');
+
+  async function enviarContacto() {
+    const nombre = document.getElementById('contactNombre').value.trim();
+    const email = document.getElementById('contactEmail').value.trim();
+    const mensaje = document.getElementById('contactMensaje').value.trim();
+    const msgEl = document.getElementById('contactMsg');
+
+    if (!nombre || !email) {
+      msgEl.innerHTML = '<div style="padding:10px;border-radius:8px;margin-bottom:14px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#f87171;font-size:0.85rem;">⚠️ Ingresa tu nombre y correo</div>';
+      return;
+    }
+
+    msgEl.innerHTML = '<div style="padding:10px;border-radius:8px;margin-bottom:14px;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3);color:#60a5fa;font-size:0.85rem;">⏳ Enviando...</div>';
+
+    try {
+      await emailjs.send('service_i7gv5pq', 'template_gi85ryj', {
+        to_email: 'noreply.evaluaciondigital@gmail.com',
+        email: 'noreply.evaluaciondigital@gmail.com',
+        student_name: nombre,
+        exam_name: 'Contacto desde evaluacion-digital.com',
+        date: new Date().toLocaleString('es-ES'),
+        score: email,
+        status: mensaje || 'Sin mensaje',
+        correct: nombre,
+        total: email
+      });
+      msgEl.innerHTML = '<div style="padding:10px;border-radius:8px;margin-bottom:14px;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);color:#34d399;font-size:0.85rem;">✅ Mensaje enviado. Te responderemos pronto.</div>';
+      document.getElementById('contactNombre').value = '';
+      document.getElementById('contactEmail').value = '';
+      document.getElementById('contactMensaje').value = '';
+    } catch(e) {
+      msgEl.innerHTML = '<div style="padding:10px;border-radius:8px;margin-bottom:14px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#f87171;font-size:0.85rem;">❌ Error al enviar. Intenta de nuevo.</div>';
+    }
+  }
+</script>
 
 </body>
 </html>
