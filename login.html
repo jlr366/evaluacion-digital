@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ingresar — Evaluación Digital</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <style>
+    .login-wrap { display: flex; align-items: center; justify-content: center; min-height: calc(100vh - 60px); padding: 24px; }
+    .login-card { width: 100%; max-width: 420px; }
+    .form-group input[type="text"],
+    .form-group input[type="password"] {
+      width: 100%;
+      padding: 12px 16px;
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      color: #f1f5f9;
+      font-size: 0.95rem;
+    }
+    .form-group input[type="text"]:focus,
+    .form-group input[type="password"]:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+    }
+    .form-group input::placeholder { color: #475569; }
+  </style>
+</head>
+<body>
+
+<header class="navbar">
+  <div class="inner">
+    <div class="brand"><img src="logo_evaluacion_digital_transparente.png" alt="Logo" style="height:56px; filter:drop-shadow(0 2px 12px rgba(0,188,242,0.6)) brightness(1.3);"> <span>Evaluación</span>Digital</div>
+    <nav>
+      <a href="index.html">Inicio</a>
+      <a href="cursos.html">Cursos</a>
+      <a href="precios.html">Planes</a>
+      <a href="juego.html">Juego RPG</a>
+      <a href="login.html" class="active">Ingresar</a>
+    </nav>
+  </div>
+</header>
+
+<div class="login-wrap">
+  <div class="card login-card">
+    <div style="text-align:center; margin-bottom:24px;">
+      <div style="font-size:3rem;">🔐</div>
+      <h2 style="font-size:1.4rem; font-weight:800; color:#f8fafc; margin-top:8px;">Iniciar Sesión</h2>
+      <p style="color:#64748b; font-size:0.9rem; margin-top:4px;">Ingrese sus credenciales</p>
+    </div>
+
+    <div id="msg"></div>
+
+    <div class="form-group">
+      <label style="display:block; font-size:0.75rem; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; color:#94a3b8; margin-bottom:6px;">Usuario</label>
+      <input type="text" id="username" placeholder="Su nombre de usuario" style="width:100%; padding:12px 16px; background:#0f172a; border:1px solid #334155; border-radius:10px; color:#f1f5f9; font-size:0.95rem;" />
+    </div>
+    <div class="form-group">
+      <label style="display:block; font-size:0.75rem; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; color:#94a3b8; margin-bottom:6px;">Contraseña</label>
+      <input type="password" id="password" placeholder="Su contraseña" style="width:100%; padding:12px 16px; background:#0f172a; border:1px solid #334155; border-radius:10px; color:#f1f5f9; font-size:0.95rem;" />
+    </div>
+
+    <button class="btn btn-primary" style="width:100%; margin-top:8px;" onclick="handleLogin()">Ingresar</button>
+
+    <div style="text-align:center; margin-top:20px; font-size:0.8rem; color:#475569;">
+      <p>¿No tienes cuenta? Contacta a tu profesor o administrador.</p>
+    </div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script>
+  document.getElementById('password').addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
+  document.getElementById('username').addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
+
+  async function handleLogin() {
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value;
+
+    if (!username || !password) {
+      document.getElementById('msg').innerHTML = '<div class="msg msg-err" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#f87171;padding:10px;border-radius:8px;margin-bottom:14px;font-size:0.85rem;">⚠️ Ingrese usuario y contraseña</div>';
+      return;
+    }
+
+    document.getElementById('msg').innerHTML = '<div style="padding:10px;border-radius:8px;margin-bottom:14px;font-size:0.85rem;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3);color:#60a5fa;">⏳ Verificando...</div>';
+
+    const result = await loginGeneral(username, password);
+
+    if (result.success) {
+      sessionStorage.setItem('currentUser', JSON.stringify(result.user));
+      if (result.user.tipo === 'admin') {
+        window.location.href = 'admin.html';
+      } else {
+        window.location.href = 'estudiante.html';
+      }
+    } else {
+      document.getElementById('msg').innerHTML = '<div style="padding:10px;border-radius:8px;margin-bottom:14px;font-size:0.85rem;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#f87171;">❌ ' + result.error + '</div>';
+    }
+  }
+
+  // Auto-create super admin if none exists
+  (async function() {
+    const admins = await getAllAdmins();
+    if (admins.length === 0) {
+      await createAdmin('superadmin', 'Bestias300', 'Super Administrador', 'superadmin');
+    }
+  })();
+</script>
+</body>
+</html>

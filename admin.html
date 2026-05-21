@@ -1,0 +1,1170 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin — Plataforma de Exámenes</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
+    input, textarea, select { -webkit-user-select: text !important; user-select: text !important; }
+    .container { max-width: 1100px; margin: 0 auto; padding: 24px; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
+    .header h1 { font-size: 1.5rem; font-weight: 800; color: #f8fafc; }
+    .header .user-info { color: #94a3b8; font-size: 0.85rem; }
+    .card { background: #1e293b; border: 1px solid rgba(148,163,184,0.1); border-radius: 14px; padding: 24px; margin-bottom: 20px; }
+    .card h2 { font-size: 1.1rem; font-weight: 700; color: #60a5fa; margin-bottom: 16px; }
+    .tabs { display: flex; gap: 6px; margin-bottom: 24px; flex-wrap: wrap; }
+    .tab { padding: 10px 18px; border-radius: 8px; background: #1e293b; color: #94a3b8; border: 1px solid #334155; cursor: pointer; font-weight: 600; font-size: 0.85rem; transition: 0.2s; }
+    .tab.active { background: #0078d4; color: white; border-color: #0078d4; }
+    .tab:hover:not(.active) { border-color: #60a5fa; color: #60a5fa; }
+    .form-group { margin-bottom: 14px; }
+    .form-group label { display: block; font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #94a3b8; margin-bottom: 5px; }
+    .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 10px 14px; background: #0f172a; border: 1px solid #334155; border-radius: 8px; color: #f1f5f9; font-size: 0.9rem; }
+    .form-group input:focus, .form-group textarea:focus { outline: none; border-color: #3b82f6; }
+    .form-group textarea { min-height: 80px; resize: vertical; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .btn { padding: 10px 18px; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 0.85rem; transition: 0.2s; }
+    .btn:hover { transform: translateY(-1px); }
+    .btn-blue { background: #0078d4; color: white; }
+    .btn-green { background: #059669; color: white; }
+    .btn-red { background: #dc2626; color: white; }
+    .btn-gray { background: #334155; color: #94a3b8; }
+    .btn-sm { padding: 5px 10px; font-size: 0.75rem; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+    th { text-align: left; padding: 8px 10px; background: #0f172a; color: #60a5fa; font-weight: 700; text-transform: uppercase; font-size: 0.68rem; letter-spacing: 0.5px; border-bottom: 1px solid #334155; }
+    td { padding: 8px 10px; border-bottom: 1px solid #1e293b; color: #cbd5e1; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.68rem; font-weight: 700; }
+    .badge-green { background: rgba(16,185,129,0.15); color: #34d399; }
+    .badge-red { background: rgba(239,68,68,0.15); color: #f87171; }
+    .badge-blue { background: rgba(59,130,246,0.15); color: #60a5fa; }
+    .badge-purple { background: rgba(168,85,247,0.15); color: #c084fc; }
+    .msg { padding: 10px 14px; border-radius: 8px; margin-bottom: 14px; font-size: 0.85rem; }
+    .msg-ok { background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); color: #34d399; }
+    .msg-err { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); color: #f87171; }
+    .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 20px; }
+    .stat-card { background: #0f172a; border: 1px solid #334155; border-radius: 10px; padding: 14px; text-align: center; }
+    .stat-card .num { font-size: 1.8rem; font-weight: 800; color: #f8fafc; }
+    .stat-card .lbl { font-size: 0.68rem; text-transform: uppercase; color: #64748b; margin-top: 4px; }
+    .url-box { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 10px 14px; font-family: monospace; font-size: 0.8rem; color: #60a5fa; word-break: break-all; margin: 10px 0; }
+    .pregunta-editor { background: #0f172a; border: 1px solid #334155; border-radius: 10px; padding: 16px; margin-bottom: 12px; position: relative; }
+    .pregunta-editor .num { position: absolute; top: 8px; left: 12px; background: #0078d4; color: white; width: 24px; height: 24px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 800; }
+    .pregunta-editor .del { position: absolute; top: 8px; right: 12px; background: #dc2626; color: white; border: none; width: 22px; height: 22px; border-radius: 6px; cursor: pointer; font-size: 0.75rem; }
+    .hidden { display: none !important; }
+    @media (max-width: 768px) { .form-row { grid-template-columns: 1fr; } .container { padding: 12px; } }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div>
+      <h1>📋 Panel de Administración</h1>
+      <span class="user-info" id="userInfo"></span>
+    </div>
+    <button class="btn btn-gray" onclick="logout()">🚪 Salir</button>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="showTab('examenes')">📝 Exámenes</div>
+    <div class="tab" onclick="showTab('usuarios')">👥 Usuarios</div>
+    <div class="tab" onclick="showTab('cursos')">📚 Cursos</div>
+    <div class="tab" onclick="showTab('notas')">📊 Notas</div>
+    <div class="tab hidden" id="tabAdmins" onclick="showTab('admins')">🔑 Admins</div>
+  </div>
+
+  <!-- TAB: Exámenes -->
+  <div id="secExamenes">
+    <div class="card">
+      <h2>Crear nuevo examen</h2>
+      <div id="exMsg"></div>
+      <div class="form-row">
+        <div class="form-group"><label>Título del examen</label><input type="text" id="exTitulo" placeholder="Ej: Examen AWS Cloud Practitioner" /></div>
+        <div class="form-group"><label>Subtítulo</label><input type="text" id="exSubtitulo" placeholder="Ej: Módulo 1 - Fundamentos" /></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Tiempo (minutos)</label><input type="number" id="exTiempo" value="40" /></div>
+        <div class="form-group"><label>Nota máxima (escala)</label><input type="number" id="exNotaMax" value="100" placeholder="7, 10, 20, 100..." /></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Nota mínima para aprobar (en la misma escala)</label><input type="number" id="exNota" value="70" step="0.1" /><span style="font-size:0.72rem;color:#64748b;">Ej: si escala es 7, pon 4.9 | si es 100, pon 70</span></div>
+        <div class="form-group">
+          <label>Sistema de puntuación</label>
+          <select id="exPuntuacion" onchange="togglePuntuacion()">
+            <option value="igual">Todas las preguntas valen igual</option>
+            <option value="personalizado">Asignar puntos por pregunta</option>
+          </select>
+        </div>
+      </div>
+      <div id="puntosMaxContainer" style="display:none; margin-bottom:12px;">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Total de puntos a repartir</label>
+            <input type="number" id="exPuntosMax" value="100" min="1" onchange="renderPreguntas()" />
+          </div>
+          <div class="form-group">
+            <label>Puntos asignados / disponibles</label>
+            <div id="puntosResumen" style="padding:10px;background:#0f172a;border:1px solid #334155;border-radius:8px;font-size:0.9rem;color:#60a5fa;font-weight:700;"></div>
+          </div>
+        </div>
+      </div>
+      <p id="puntuacionInfo" style="font-size:0.78rem;color:#64748b;margin-bottom:12px;">📌 Nota final = (puntos obtenidos / puntos totales) × nota máxima.</p>
+
+      <h3 style="color:#94a3b8; font-size:0.85rem; margin:16px 0 10px;">Preguntas</h3>
+      <div id="preguntasEditor"></div>
+      <button class="btn btn-blue" style="margin-top:10px;" onclick="addPregunta()">+ Agregar pregunta</button>
+
+      <div style="margin-top:20px;">
+        <button class="btn btn-green" onclick="guardarExamen()">💾 Guardar examen</button>
+      </div>
+    </div>
+
+    <div class="card" id="secImportar" style="display:none;">
+      <h2>📥 Importar examen desde HTML</h2>
+      <p style="color:#64748b;font-size:0.82rem;margin-bottom:14px;">Selecciona un archivo HTML de examen existente. El sistema extraerá las preguntas automáticamente.</p>
+      <div id="importMsg"></div>
+      <div class="form-group">
+        <label>Archivo HTML del examen</label>
+        <input type="file" id="importFile" accept=".html,.htm" onchange="previewImport()" style="padding:8px;background:#0f172a;border:1px solid #334155;border-radius:8px;color:#f1f5f9;width:100%;" />
+      </div>
+      <div id="importPreview" style="display:none;">
+        <div class="form-row">
+          <div class="form-group"><label>Título del examen</label><input type="text" id="importTitulo" /></div>
+          <div class="form-group"><label>Subtítulo</label><input type="text" id="importSubtitulo" /></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Tiempo (minutos)</label><input type="number" id="importTiempo" value="40" /></div>
+          <div class="form-group"><label>Nota máxima</label><input type="number" id="importNotaMax" value="100" /></div>
+        </div>
+        <div class="form-group"><label>Nota mínima para aprobar</label><input type="number" id="importNotaMin" value="70" step="0.1" /></div>
+        <p id="importCount" style="color:#60a5fa;font-weight:700;margin:12px 0;"></p>
+        <button class="btn btn-green" onclick="ejecutarImport()">🚀 Importar examen a la plataforma</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Mis exámenes</h2>
+      <div id="listaExamenes">Cargando...</div>
+    </div>
+  </div>
+
+  <!-- TAB: Usuarios -->
+  <div id="secUsuarios" class="hidden">
+    <div class="card">
+      <h2>Crear estudiante</h2>
+      <div id="usrMsg"></div>
+      <div class="form-group"><label>Username</label><input type="text" id="usrUsername" placeholder="jperez" /></div>
+      <div class="form-group"><label>Nombre completo</label><input type="text" id="usrNombre" placeholder="Juan Pérez" /></div>
+      <div class="form-group"><label>Email (para enviar resultados)</label><input type="email" id="usrEmail" placeholder="juan@email.com" /></div>
+      <div class="form-group"><label>Curso / Sección</label>
+        <select id="usrCursoSelect" style="width:100%;padding:10px 14px;background:#0f172a;border:1px solid #334155;border-radius:8px;color:#f1f5f9;font-size:0.9rem;">
+          <option value="">-- Seleccionar curso --</option>
+        </select>
+        <span style="font-size:0.72rem;color:#64748b;">Los cursos se crean en la pestaña "📚 Cursos"</span>
+      </div>
+      <div class="form-group"><label>Contraseña</label><input type="text" id="usrPassword" placeholder="123456" /></div>
+      <button class="btn btn-blue" onclick="crearEstudiante()">+ Crear</button>
+    </div>
+    <div class="card">
+      <h2>Estudiantes</h2>
+      <div id="listaUsuarios">Cargando...</div>
+    </div>
+  </div>
+
+  <!-- TAB: Cursos -->
+  <div id="secCursos" class="hidden">
+    <div class="card">
+      <h2>Crear nuevo curso</h2>
+      <div id="cursoMsg"></div>
+      <div style="display:flex;gap:8px;">
+        <div class="form-group" style="flex:1;margin-bottom:0;"><label>Nombre del curso / sección</label><input type="text" id="nuevoCursoNombre" placeholder="Ej: Cloud Computing - Sección A" /></div>
+        <button class="btn btn-blue" style="align-self:flex-end;" onclick="crearCurso()">+ Crear curso</button>
+      </div>
+    </div>
+    <div id="listaCursos">Cargando...</div>
+  </div>
+
+  <!-- TAB: Notas -->
+  <div id="secNotas" class="hidden">
+    <div id="notasStats" class="stats-row"></div>
+    <div class="card">
+      <h2>Historial de notas</h2>
+      <div id="listaNotas">Cargando...</div>
+    </div>
+  </div>
+
+  <!-- TAB: Admins (solo superadmin) -->
+  <div id="secAdmins" class="hidden">
+    <!-- Assign external exams -->
+    <div class="card">
+      <h2>📎 Asignar examen externo a un profesor</h2>
+      <p style="color:#64748b; font-size:0.82rem; margin-bottom:16px;">Pega la URL de un examen que ya está en GitHub Pages y asígnalo a un profesor. El examen no se modifica — solo se vincula.</p>
+      <div id="assignMsg"></div>
+      <div class="form-group"><label>URL del examen</label><input type="text" id="assignUrl" placeholder="https://jlr366.github.io/az900-hard2/" /></div>
+      <div class="form-group"><label>Nombre del examen</label><input type="text" id="assignNombre" placeholder="Examen AWS Cloud Practitioner" /></div>
+      <div class="form-group"><label>Asignar a profesor</label><select id="assignProfesor"><option value="">Cargando profesores...</option></select></div>
+      <button class="btn btn-blue" onclick="asignarExamenExterno()">📎 Asignar examen</button>
+    </div>
+
+    <!-- List of assigned external exams -->
+    <div class="card">
+      <h2>Exámenes externos asignados</h2>
+      <div id="listaExternosAsignados">Cargando...</div>
+    </div>
+
+    <!-- Create admins -->
+    <div class="card">
+      <h2>Crear administrador</h2>
+      <div id="admMsg"></div>
+      <div class="form-group"><label>Username</label><input type="text" id="admUsername" placeholder="profesor1" /></div>
+      <div class="form-group"><label>Nombre</label><input type="text" id="admNombre" placeholder="Prof. García" /></div>
+      <div class="form-group"><label>Institución</label><input type="text" id="admInstitucion" placeholder="Universidad Nacional, Academia XYZ..." /></div>
+      <div class="form-group"><label>Contraseña</label><input type="text" id="admPassword" placeholder="clave123" /></div>
+      <div class="form-group"><label>Rol</label>
+        <select id="admRole"><option value="admin">Admin (solo ve lo suyo)</option><option value="superadmin">Super Admin (ve todo)</option></select>
+      </div>
+      <button class="btn btn-blue" onclick="crearAdmin()">+ Crear admin</button>
+    </div>
+    <div class="card">
+      <h2>Administradores</h2>
+      <div id="listaAdmins">Cargando...</div>
+    </div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="firebase-config.js"></script>
+
+<script>
+  // ── Session ──
+  const currentUser = JSON.parse(sessionStorage.getItem('currentUser') || 'null');
+  if (!currentUser || currentUser.tipo !== 'admin') { window.location.href = 'index.html'; }
+
+  const isSuperAdmin = currentUser.role === 'superadmin';
+  const adminFilter = isSuperAdmin ? null : currentUser.id;
+
+  document.getElementById('userInfo').textContent = '👤 ' + currentUser.nombre + ' (' + currentUser.role + ')';
+  if (isSuperAdmin) {
+    document.getElementById('tabAdmins').classList.remove('hidden');
+    document.getElementById('secImportar').style.display = 'block';
+  }
+
+  function logout() { sessionStorage.removeItem('currentUser'); window.location.href = 'index.html'; }
+
+  // ── Tabs ──
+  function showTab(tab) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    event.target.classList.add('active');
+    document.getElementById('secExamenes').classList.toggle('hidden', tab !== 'examenes');
+    document.getElementById('secUsuarios').classList.toggle('hidden', tab !== 'usuarios');
+    document.getElementById('secCursos').classList.toggle('hidden', tab !== 'cursos');
+    document.getElementById('secNotas').classList.toggle('hidden', tab !== 'notas');
+    document.getElementById('secAdmins').classList.toggle('hidden', tab !== 'admins');
+    if (tab === 'examenes') loadExamenes();
+    if (tab === 'usuarios') loadEstudiantes();
+    if (tab === 'cursos') loadCursos();
+    if (tab === 'notas') loadNotas();
+    if (tab === 'admins') loadAdmins();
+  }
+
+  // ── Preguntas Editor ──
+  let preguntasTemp = [];
+  let puntuacionPersonalizada = false;
+
+  function togglePuntuacion() {
+    puntuacionPersonalizada = document.getElementById('exPuntuacion').value === 'personalizado';
+    document.getElementById('puntosMaxContainer').style.display = puntuacionPersonalizada ? 'block' : 'none';
+    renderPreguntas();
+  }
+
+  function addPregunta() {
+    preguntasTemp.push({ pregunta: '', opciones: ['', '', '', ''], correcta: 0, imagen: '', puntos: 1 });
+    renderPreguntas();
+  }
+
+  function removePregunta(idx) {
+    preguntasTemp.splice(idx, 1);
+    renderPreguntas();
+  }
+
+  function renderPreguntas() {
+    const container = document.getElementById('preguntasEditor');
+    container.innerHTML = '';
+    preguntasTemp.forEach((p, idx) => {
+      const isMulti = Array.isArray(p.correcta);
+      let optsHtml = '';
+      p.opciones.forEach((op, oi) => {
+        const checked = isMulti ? (p.correcta.includes(oi) ? 'checked' : '') : (p.correcta === oi ? 'checked' : '');
+        const isCorrect = isMulti ? p.correcta.includes(oi) : p.correcta === oi;
+        const inputType = isMulti ? 'checkbox' : 'radio';
+        const bgColor = isCorrect ? 'background:rgba(250,204,0,0.12);border:1px solid rgba(250,204,0,0.4);' : 'background:transparent;border:1px solid transparent;';
+        const inputBg = isCorrect ? 'background:#1a1a00;border:1px solid #fbbf24;' : 'background:#1e293b;border:1px solid #334155;';
+        optsHtml += `<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;padding:8px 10px;border-radius:10px;${bgColor}transition:0.2s;">
+          <input type="${inputType}" name="correcta${idx}" value="${oi}" ${checked} onclick="setCorrecta(${idx},${oi},this);renderPreguntas();" style="width:20px;height:20px;accent-color:#fbbf24;cursor:pointer;flex-shrink:0;">
+          <input type="text" value="${op.replace(/"/g, '&quot;')}" onchange="setOpcion(${idx},${oi},this.value)" placeholder="Opción ${oi+1}" style="flex:1;padding:10px 12px;${inputBg}border-radius:8px;color:#f1f5f9;font-size:0.88rem;">
+          ${p.opciones.length > 2 ? '<button style="background:#dc2626;color:white;border:none;width:24px;height:24px;border-radius:6px;cursor:pointer;font-size:0.8rem;" onclick="removeOpcion('+idx+','+oi+')">✕</button>' : ''}
+        </div>`;
+      });
+
+      const html = `
+        <div class="pregunta-editor">
+          <div class="num">${idx+1}</div>
+          <button class="del" onclick="removePregunta(${idx})">✕</button>
+          <div style="margin-left:36px;">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.8rem;color:${isMulti?'#10b981':'#94a3b8'};background:${isMulti?'rgba(16,185,129,0.1)':'rgba(148,163,184,0.05)'};border:1px solid ${isMulti?'rgba(16,185,129,0.3)':'#334155'};padding:6px 12px;border-radius:8px;">
+                <input type="checkbox" ${isMulti?'checked':''} onchange="toggleMulti(${idx},this.checked)" style="width:14px;height:14px;accent-color:#10b981;">
+                Múltiples respuestas
+              </label>
+              <span style="font-size:0.75rem;color:#64748b;">${isMulti ? '☑️ Marque todas las correctas' : '⚪ Marque la correcta'}</span>
+              ${puntuacionPersonalizada ? `<label style="display:flex;align-items:center;gap:4px;font-size:0.8rem;color:#f59e0b;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);padding:5px 10px;border-radius:8px;">⭐ Puntos: <input type="number" value="${p.puntos||1}" min="1" max="100" onchange="setPreguntaPuntos(${idx},this.value)" style="width:50px;padding:3px 6px;background:#1e293b;border:1px solid #334155;border-radius:4px;color:#f1f5f9;font-size:0.85rem;"></label>` : ''}
+            </div>
+            <div class="form-group"><label>Pregunta</label><textarea onchange="setPreguntaTexto(${idx},this.value)" style="min-height:60px;">${p.pregunta}</textarea></div>
+            <div class="form-group">
+              <label>Imagen</label>
+              <div style="display:flex;gap:8px;align-items:center;">
+                <input type="text" value="${(p.imagen||'').replace(/"/g, '&quot;')}" onchange="setPreguntaImg(${idx},this.value)" placeholder="URL de imagen o sube desde tu PC" style="flex:1;">
+                <label style="cursor:pointer;background:#0078d4;color:white;padding:8px 14px;border-radius:8px;font-size:0.8rem;font-weight:700;white-space:nowrap;">
+                  📁 Buscar
+                  <input type="file" accept="image/*" onchange="subirImagenPregunta(${idx},this.files[0])" style="display:none;">
+                </label>
+              </div>
+              <span id="imgStatus${idx}" style="font-size:0.75rem;color:#64748b;margin-top:4px;display:block;">${p.imagen ? '✅ Imagen cargada' : ''}</span>
+              ${p.imagen ? '<img src="'+p.imagen+'" style="max-width:200px;max-height:100px;border-radius:8px;margin-top:8px;border:1px solid #334155;">' : ''}
+            </div>
+            <div class="form-group">
+              <label style="margin-bottom:10px;">Opciones — ${isMulti ? 'marque las correctas ✓' : 'marque la correcta ●'}</label>
+              ${optsHtml}
+              <button class="btn btn-sm" style="margin-top:8px;background:#334155;color:#94a3b8;" onclick="addOpcion(${idx})">+ Agregar opción</button>
+            </div>
+          </div>
+        </div>`;
+      container.insertAdjacentHTML('beforeend', html);
+    });
+
+    // Update points summary
+    if (puntuacionPersonalizada) {
+      const puntosMax = parseInt(document.getElementById('exPuntosMax').value) || 100;
+      const puntosAsignados = preguntasTemp.reduce((sum, p) => sum + (p.puntos || 1), 0);
+      const disponibles = puntosMax - puntosAsignados;
+      const color = disponibles < 0 ? '#f87171' : disponibles === 0 ? '#34d399' : '#60a5fa';
+      const resumenEl = document.getElementById('puntosResumen');
+      if (resumenEl) resumenEl.innerHTML = `<span style="color:${color}">${puntosAsignados} / ${puntosMax}</span> ${disponibles > 0 ? '(faltan '+disponibles+' por asignar)' : disponibles === 0 ? '✅ Completo' : '⚠️ Excede por '+Math.abs(disponibles)}`;
+    }
+  }
+
+  function setPreguntaTexto(idx, val) { preguntasTemp[idx].pregunta = val; }
+  function setPreguntaImg(idx, val) { preguntasTemp[idx].imagen = val; }
+  function setPreguntaPuntos(idx, val) { preguntasTemp[idx].puntos = Math.max(1, parseInt(val) || 1); renderPreguntas(); }
+
+  async function subirImagenPregunta(idx, file) {
+    if (!file) return;
+    const storageRef = firebase.storage().ref();
+    const nombre = 'examenes/' + Date.now() + '_' + file.name.replace(/[^a-zA-Z0-9._-]/g, '');
+    const ref = storageRef.child(nombre);
+    try {
+      const statusEl = document.getElementById('imgStatus' + idx);
+      if (statusEl) statusEl.textContent = '⏳ Subiendo...';
+      const snapshot = await ref.put(file);
+      const url = await snapshot.ref.getDownloadURL();
+      preguntasTemp[idx].imagen = url;
+      if (statusEl) statusEl.textContent = '✅ Imagen subida';
+      renderPreguntas();
+    } catch(e) {
+      alert('Error subiendo imagen: ' + e.message);
+    }
+  }
+  function setOpcion(idx, oi, val) { preguntasTemp[idx].opciones[oi] = val; }
+  function addOpcion(idx) { preguntasTemp[idx].opciones.push(''); renderPreguntas(); }
+  function removeOpcion(idx, oi) { preguntasTemp[idx].opciones.splice(oi, 1); if (Array.isArray(preguntasTemp[idx].correcta)) { preguntasTemp[idx].correcta = preguntasTemp[idx].correcta.filter(c => c !== oi).map(c => c > oi ? c-1 : c); } else if (preguntasTemp[idx].correcta >= oi) { preguntasTemp[idx].correcta = Math.max(0, preguntasTemp[idx].correcta - 1); } renderPreguntas(); }
+
+  function setCorrecta(idx, oi, el) {
+    if (Array.isArray(preguntasTemp[idx].correcta)) {
+      if (el.checked) {
+        if (!preguntasTemp[idx].correcta.includes(oi)) preguntasTemp[idx].correcta.push(oi);
+      } else {
+        preguntasTemp[idx].correcta = preguntasTemp[idx].correcta.filter(c => c !== oi);
+      }
+    } else {
+      preguntasTemp[idx].correcta = oi;
+    }
+  }
+
+  function toggleMulti(idx, checked) {
+    if (checked) { preguntasTemp[idx].correcta = typeof preguntasTemp[idx].correcta === 'number' ? [preguntasTemp[idx].correcta] : preguntasTemp[idx].correcta; }
+    else { preguntasTemp[idx].correcta = Array.isArray(preguntasTemp[idx].correcta) ? (preguntasTemp[idx].correcta[0] || 0) : preguntasTemp[idx].correcta; }
+    renderPreguntas();
+  }
+
+  // ── Guardar examen ──
+  async function guardarExamen() {
+    const titulo = document.getElementById('exTitulo').value.trim();
+    if (!titulo) { document.getElementById('exMsg').innerHTML = '<div class="msg msg-err">⚠️ Ingrese un título</div>'; alert('⚠️ Ingrese un título para el examen'); return; }
+    if (preguntasTemp.length === 0) { document.getElementById('exMsg').innerHTML = '<div class="msg msg-err">⚠️ Agregue al menos una pregunta</div>'; alert('⚠️ Agregue al menos una pregunta'); return; }
+
+    const notaMaxima = parseFloat(document.getElementById('exNotaMax').value) || 100;
+    const notaMinima = parseFloat(document.getElementById('exNota').value) || 70;
+
+    // Validation: nota minima cannot be greater than nota maxima
+    if (notaMinima > notaMaxima) {
+      const msg = 'La nota mínima para aprobar (' + notaMinima + ') no puede ser mayor que la nota máxima (' + notaMaxima + ')';
+      document.getElementById('exMsg').innerHTML = '<div class="msg msg-err">⚠️ ' + msg + '</div>';
+      alert('⚠️ ' + msg);
+      return;
+    }
+
+    // Validation: if custom points, check they match
+    if (puntuacionPersonalizada) {
+      const puntosMax = parseInt(document.getElementById('exPuntosMax').value) || 100;
+      const puntosAsignados = preguntasTemp.reduce((sum, p) => sum + (p.puntos || 1), 0);
+      if (puntosAsignados > puntosMax) {
+        const msg = 'Los puntos asignados (' + puntosAsignados + ') superan el máximo definido (' + puntosMax + '). Reduzca los puntos de algunas preguntas.';
+        document.getElementById('exMsg').innerHTML = '<div class="msg msg-err">⚠️ ' + msg + '</div>';
+        alert('⚠️ ' + msg);
+        return;
+      }
+      if (puntosAsignados < puntosMax) {
+        const msg = 'Faltan puntos por asignar. Ha asignado ' + puntosAsignados + ' de ' + puntosMax + '. Distribuya todos los puntos entre las preguntas.';
+        document.getElementById('exMsg').innerHTML = '<div class="msg msg-err">⚠️ ' + msg + '</div>';
+        alert('⚠️ ' + msg);
+        return;
+      }
+    }
+
+    // Validation: check all questions have text
+    const preguntaVacia = preguntasTemp.findIndex(p => !p.pregunta.trim());
+    if (preguntaVacia >= 0) {
+      const msg = 'La pregunta ' + (preguntaVacia+1) + ' no tiene texto. Complete todas las preguntas.';
+      document.getElementById('exMsg').innerHTML = '<div class="msg msg-err">⚠️ ' + msg + '</div>';
+      alert('⚠️ ' + msg);
+      return;
+    }
+
+    // Validation: check all questions have at least 2 options with text
+    const opcionVacia = preguntasTemp.findIndex(p => p.opciones.filter(o => o.trim()).length < 2);
+    if (opcionVacia >= 0) {
+      const msg = 'La pregunta ' + (opcionVacia+1) + ' necesita al menos 2 opciones con texto.';
+      document.getElementById('exMsg').innerHTML = '<div class="msg msg-err">⚠️ ' + msg + '</div>';
+      alert('⚠️ ' + msg);
+      return;
+    }
+
+    const data = {
+      titulo,
+      subtitulo: document.getElementById('exSubtitulo').value.trim(),
+      tiempoMinutos: parseInt(document.getElementById('exTiempo').value) || 40,
+      notaMinima: notaMinima,
+      notaMaxima: notaMaxima,
+      puntuacion: document.getElementById('exPuntuacion').value || 'igual',
+      preguntas: preguntasTemp,
+      createdBy: currentUser.id,
+      createdByName: currentUser.nombre,
+      institucion: currentUser.institucion || ''
+    };
+
+    // If editing, update instead of create
+    if (editandoExamenId) {
+      try {
+        await updateExamen(editandoExamenId, data);
+        const url = window.location.origin + window.location.pathname.replace('admin.html', 'examen.html') + '?id=' + editandoExamenId;
+        document.getElementById('exMsg').innerHTML = '<div class="msg msg-ok">✅ Examen actualizado correctamente.<div class="url-box">' + url + '</div></div>';
+        editandoExamenId = null;
+        document.getElementById('exTitulo').value = '';
+        document.getElementById('exSubtitulo').value = '';
+        preguntasTemp = [];
+        renderPreguntas();
+        loadExamenes();
+      } catch(e) {
+        document.getElementById('exMsg').innerHTML = '<div class="msg msg-err">❌ Error: ' + e.message + '</div>';
+      }
+      return;
+    }
+
+    // Create new
+    const result = await createExamen(data);
+
+    if (result.success) {
+      const url = window.location.origin + window.location.pathname.replace('admin.html', 'examen.html') + '?id=' + result.id;
+      document.getElementById('exMsg').innerHTML = '<div class="msg msg-ok">✅ Examen creado. URL:<div class="url-box">' + url + '</div><button class="btn btn-sm btn-blue" onclick="navigator.clipboard.writeText(\'' + url + '\');this.textContent=\'✓ Copiado\'">📋 Copiar URL</button></div>';
+      document.getElementById('exTitulo').value = '';
+      document.getElementById('exSubtitulo').value = '';
+      preguntasTemp = [];
+      renderPreguntas();
+      loadExamenes();
+    } else {
+      document.getElementById('exMsg').innerHTML = '<div class="msg msg-err">❌ ' + result.error + '</div>';
+    }
+  }
+
+  // ── Import from HTML ──
+  let importedPreguntas = [];
+
+  function previewImport() {
+    const file = document.getElementById('importFile').files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const html = e.target.result;
+
+      // Extract questions array from HTML
+      const match = html.match(/(?:const|let|var)\s+(?:preguntas|preguntasBase)\s*=\s*\[([\s\S]*?)\];/);
+      if (!match) {
+        document.getElementById('importMsg').innerHTML = '<div class="msg msg-err">❌ No se encontraron preguntas en este archivo. Asegúrese de que tenga un array "const preguntas = [...]"</div>';
+        document.getElementById('importPreview').style.display = 'none';
+        return;
+      }
+
+      try {
+        // Parse the questions
+        const questionsStr = '[' + match[1] + ']';
+        const parsed = eval(questionsStr);
+        importedPreguntas = parsed.map(p => ({
+          pregunta: p.pregunta || '',
+          opciones: p.opciones || [],
+          correcta: p.correcta,
+          imagen: p.imagen || '',
+          puntos: 1
+        }));
+
+        document.getElementById('importMsg').innerHTML = '<div class="msg msg-ok">✅ Archivo leído correctamente</div>';
+        document.getElementById('importCount').textContent = '📋 Se encontraron ' + importedPreguntas.length + ' preguntas';
+        document.getElementById('importTitulo').value = file.name.replace('.html', '').replace('index', 'Examen importado');
+        document.getElementById('importPreview').style.display = 'block';
+      } catch(err) {
+        document.getElementById('importMsg').innerHTML = '<div class="msg msg-err">❌ Error al leer las preguntas: ' + err.message + '</div>';
+        document.getElementById('importPreview').style.display = 'none';
+      }
+    };
+    reader.readAsText(file, 'UTF-8');
+  }
+
+  async function ejecutarImport() {
+    if (importedPreguntas.length === 0) { alert('No hay preguntas para importar'); return; }
+
+    const titulo = document.getElementById('importTitulo').value.trim();
+    if (!titulo) { alert('Ingrese un título'); return; }
+
+    const data = {
+      titulo,
+      subtitulo: document.getElementById('importSubtitulo').value.trim(),
+      tiempoMinutos: parseInt(document.getElementById('importTiempo').value) || 40,
+      notaMinima: parseFloat(document.getElementById('importNotaMin').value) || 70,
+      notaMaxima: parseFloat(document.getElementById('importNotaMax').value) || 100,
+      puntuacion: 'igual',
+      preguntas: importedPreguntas,
+      createdBy: currentUser.id,
+      createdByName: currentUser.nombre,
+      institucion: currentUser.institucion || ''
+    };
+
+    const result = await createExamen(data);
+    if (result.success) {
+      const url = window.location.origin + window.location.pathname.replace('admin.html', 'examen.html') + '?id=' + result.id;
+      document.getElementById('importMsg').innerHTML = '<div class="msg msg-ok">✅ Examen importado con ' + importedPreguntas.length + ' preguntas.<div class="url-box">' + url + '</div><button class="btn btn-sm btn-blue" onclick="navigator.clipboard.writeText(\'' + url + '\');this.textContent=\'✓ Copiado\'">📋 Copiar URL</button></div>';
+      document.getElementById('importPreview').style.display = 'none';
+      document.getElementById('importFile').value = '';
+      importedPreguntas = [];
+      loadExamenes();
+    } else {
+      document.getElementById('importMsg').innerHTML = '<div class="msg msg-err">❌ Error: ' + (result.error || 'No se pudo crear') + '</div>';
+    }
+  }
+
+  // ── Load examenes ──
+  async function loadExamenes() {
+    const examenes = await getExamenes(adminFilter);
+    const baseUrl = window.location.origin + window.location.pathname.replace('admin.html', 'examen.html');
+
+    let html = '';
+
+    // External exams assigned to this professor
+    if (!isSuperAdmin) {
+      try {
+        const snap = await db.collection('examenes_externos').where('profesorId', '==', currentUser.id).get();
+        const externos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        if (externos.length > 0) {
+          html += '<h3 style="color:#f59e0b;font-size:0.9rem;margin-bottom:10px;">📎 Exámenes asignados por el administrador</h3>';
+          html += '<table><thead><tr><th>Examen</th><th>Acciones</th></tr></thead><tbody>';
+          externos.forEach(ex => {
+            html += `<tr><td><strong>${ex.nombre}</strong></td><td style="display:flex;gap:4px;flex-wrap:wrap;"><button class="btn btn-sm btn-blue" onclick="navigator.clipboard.writeText('${ex.url}');this.textContent='✓ Copiado'">📋 URL</button> <button class="btn btn-sm btn-green" onclick="window.open('${ex.url}','_blank')">👁️ Abrir</button> <button class="btn btn-sm btn-red" onclick="eliminarExterno('${ex.id}')">🗑️</button></td></tr>`;
+          });
+          html += '</tbody></table><div style="height:20px;"></div>';
+        }
+      } catch(e) { console.error(e); }
+    }
+
+    // Own exams
+    if (examenes.length === 0 && !html) {
+      document.getElementById('listaExamenes').innerHTML = '<p style="color:#64748b;font-style:italic;">No hay exámenes creados</p>';
+      return;
+    }
+
+    if (examenes.length > 0) {
+      html += '<h3 style="color:#60a5fa;font-size:0.9rem;margin-bottom:10px;">📝 Exámenes</h3>';
+      html += '<table><thead><tr><th>Título</th><th>Preguntas</th><th>Tiempo</th>' + (isSuperAdmin ? '<th>Asignado a</th>' : '') + '<th>Acciones</th></tr></thead><tbody>';
+      examenes.forEach(ex => {
+        const url = baseUrl + '?id=' + ex.id;
+        const asignado = (isSuperAdmin && ex.createdBy !== currentUser.id) ? '<span class="badge badge-purple">' + (ex.createdByName || 'Profesor') + '</span>' : (isSuperAdmin ? '<span class="badge badge-blue">Super Admin</span>' : '');
+        html += `<tr>
+          <td><strong>${ex.titulo}</strong><br><span style="color:#64748b;font-size:0.75rem;">${ex.subtitulo||''}</span></td>
+          <td>${(ex.preguntas||[]).length}</td>
+          <td>${ex.tiempoMinutos} min</td>
+          ${isSuperAdmin ? '<td>' + asignado + '</td>' : ''}
+          <td style="display:flex; gap:4px; flex-wrap:wrap;">
+            <button class="btn btn-sm btn-blue" onclick="navigator.clipboard.writeText('${url}');this.textContent='✓ Copiado'" title="Copiar URL">📋 URL</button>
+            <button class="btn btn-sm btn-green" onclick="window.open('${url}','_blank')" title="Previsualizar">👁️ Ver</button>
+            <button class="btn btn-sm" style="background:#f59e0b;color:#000;" onclick="editarExamen('${ex.id}')" title="Editar">✏️ Editar</button>
+            ${isSuperAdmin ? '<button class="btn btn-sm" style="background:#8b5cf6;color:#fff;" onclick="asignarExamenAProfesor(\''+ex.id+'\',\''+ex.titulo.replace(/'/g,'')+'\')" title="Asignar a profesor">👤 Asignar</button>' : ''}
+            <button class="btn btn-sm btn-red" onclick="eliminarExamen('${ex.id}')" title="Eliminar">🗑️</button>
+          </td>
+        </tr>`;
+      });
+      html += '</tbody></table>';
+    }
+
+    document.getElementById('listaExamenes').innerHTML = html;
+  }
+
+  async function eliminarExamen(id) { if (confirm('¿Eliminar este examen?')) { await deleteExamen(id); loadExamenes(); } }
+
+  async function asignarExamenAProfesor(examenId, titulo) {
+    const admins = await getAllAdmins();
+    const profesores = admins.filter(a => a.role === 'admin');
+    if (profesores.length === 0) { alert('No hay profesores creados. Crea uno primero en la pestaña Admins.'); return; }
+
+    // Show assignment panel inline
+    let html = '<div class="card" id="panelAsignar" style="border:1px solid #8b5cf6; margin-top:12px;">';
+    html += '<h2 style="color:#c084fc; font-size:0.95rem;">👤 Asignar "' + titulo + '" a un profesor</h2>';
+    html += '<div style="margin-top:12px;">';
+    profesores.forEach(p => {
+      html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px;border-bottom:1px solid #1e293b;">
+        <div><strong style="color:#f8fafc;">${p.nombre}</strong><br><span style="font-size:0.75rem;color:#64748b;">${p.username} — ${p.institucion||'Sin institución'}</span></div>
+        <button class="btn btn-sm" style="background:#8b5cf6;color:#fff;" onclick="confirmarAsignacion('${examenId}','${p.id}','${p.nombre.replace(/'/g,'')}','${titulo.replace(/'/g,'')}')">Asignar ✓</button>
+      </div>`;
+    });
+    html += '</div><button class="btn btn-sm btn-gray" style="margin-top:10px;" onclick="document.getElementById(\'panelAsignar\').remove()">Cancelar</button></div>';
+
+    // Remove previous panel if exists
+    const prev = document.getElementById('panelAsignar');
+    if (prev) prev.remove();
+
+    // Insert after the exams list
+    document.getElementById('listaExamenes').insertAdjacentHTML('afterend', html);
+    document.getElementById('panelAsignar').scrollIntoView({ behavior: 'smooth' });
+  }
+
+  async function confirmarAsignacion(examenId, profesorId, profesorNombre, titulo) {
+    try {
+      const examen = await getExamen(examenId);
+      if (!examen) { alert('No se pudo cargar el examen'); return; }
+
+      const admins = await getAllAdmins();
+      const profesor = admins.find(a => a.id === profesorId);
+
+      await createExamen({
+        titulo: examen.titulo,
+        subtitulo: examen.subtitulo || '',
+        tiempoMinutos: examen.tiempoMinutos || 40,
+        notaMinima: examen.notaMinima || 70,
+        notaMaxima: examen.notaMaxima || 100,
+        puntuacion: examen.puntuacion || 'igual',
+        preguntas: examen.preguntas || [],
+        createdBy: profesorId,
+        createdByName: profesorNombre,
+        institucion: profesor ? profesor.institucion || '' : ''
+      });
+
+      document.getElementById('panelAsignar').innerHTML = '<div class="msg msg-ok">✅ Examen "' + titulo + '" asignado a <strong>' + profesorNombre + '</strong>. El profesor lo verá en su panel.</div>';
+      setTimeout(() => { const el = document.getElementById('panelAsignar'); if (el) el.remove(); }, 3000);
+      loadExamenes();
+    } catch(e) {
+      alert('Error: ' + e.message);
+    }
+  }
+
+  let editandoExamenId = null;
+
+  async function editarExamen(id) {
+    try {
+      const examen = await getExamen(id);
+      if (!examen) { alert('No se pudo cargar el examen'); return; }
+
+      // Fill the form with existing data
+      document.getElementById('exTitulo').value = examen.titulo || '';
+      document.getElementById('exSubtitulo').value = examen.subtitulo || '';
+      document.getElementById('exTiempo').value = examen.tiempoMinutos || 40;
+      document.getElementById('exNota').value = examen.notaMinima || 70;
+
+      // Load questions into editor
+      preguntasTemp = (examen.preguntas || []).map(p => ({
+        pregunta: p.pregunta || '',
+        opciones: p.opciones || ['', ''],
+        correcta: p.correcta !== undefined ? p.correcta : 0,
+        imagen: p.imagen || ''
+      }));
+      renderPreguntas();
+
+      editandoExamenId = id;
+
+      // Scroll to top and show message
+      document.getElementById('exMsg').innerHTML = '<div class="msg" style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);color:#f59e0b;">✏️ Editando examen: <strong>' + examen.titulo + '</strong> — Modifica lo que necesites y pulsa Guardar.</div>';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch(e) {
+      alert('Error cargando examen: ' + e.message);
+    }
+  }
+
+  // ── Estudiantes ──
+  async function crearEstudiante() {
+    const u = document.getElementById('usrUsername').value;
+    const n = document.getElementById('usrNombre').value;
+    const e = document.getElementById('usrEmail').value.trim();
+    const c = document.getElementById('usrCursoSelect').value || 'Sin curso';
+    const p = document.getElementById('usrPassword').value;
+    if (!u||!n||!p) { document.getElementById('usrMsg').innerHTML = '<div class="msg msg-err">⚠️ Complete username, nombre y contraseña</div>'; alert('⚠️ Complete username, nombre y contraseña'); return; }
+
+    try {
+      // Check username uniqueness only within this professor's students
+      const existing = await db.collection('usuarios')
+        .where('username', '==', u.trim().toLowerCase())
+        .where('createdBy', '==', currentUser.id)
+        .get();
+      if (!existing.empty) { document.getElementById('usrMsg').innerHTML = '<div class="msg msg-err">❌ Ya tienes un estudiante con ese username</div>'; return; }
+      await db.collection('usuarios').add({
+        username: u.trim().toLowerCase(),
+        password: p,
+        nombre: n.trim(),
+        email: e || '',
+        curso: c,
+        createdBy: currentUser.id,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      document.getElementById('usrMsg').innerHTML = '<div class="msg msg-ok">✅ Estudiante creado</div>';
+      document.getElementById('usrUsername').value='';
+      document.getElementById('usrNombre').value='';
+      document.getElementById('usrEmail').value='';
+      document.getElementById('usrPassword').value='';
+      loadEstudiantes();
+    } catch(err) {
+      document.getElementById('usrMsg').innerHTML = '<div class="msg msg-err">❌ '+err.message+'</div>';
+    }
+  }
+
+  async function loadEstudiantes() {
+    const users = await getUsers(adminFilter);
+
+    // Get courses from both users and cursos collection
+    const cursosDeUsuarios = [...new Set(users.map(u => u.curso).filter(Boolean).filter(c => c !== 'Sin curso'))];
+    let cursosDeColeccion = [];
+    try {
+      const snap = await db.collection('cursos').get();
+      cursosDeColeccion = snap.docs.map(d => d.data().nombre).filter(Boolean);
+    } catch(e) {}
+    const cursos = [...new Set([...cursosDeUsuarios, ...cursosDeColeccion])].sort();
+
+    const select = document.getElementById('usrCursoSelect');
+    const currentVal = select.value;
+    select.innerHTML = '<option value="">-- Seleccionar curso --</option>';
+    cursos.forEach(c => { select.innerHTML += `<option value="${c}">${c}</option>`; });
+    if (currentVal) select.value = currentVal;
+
+    if (users.length === 0) { document.getElementById('listaUsuarios').innerHTML = '<p style="color:#64748b;font-style:italic;">No hay estudiantes</p>'; return; }
+    const cursosDisponibles = cursos;
+    let html = '<table><thead><tr><th>Username</th><th>Nombre</th><th>Curso</th><th>Acciones</th></tr></thead><tbody>';
+    users.forEach(u => {
+      let selectOpts = '<option value="">Sin curso</option>';
+      cursosDisponibles.forEach(c => { selectOpts += `<option value="${c}" ${u.curso===c?'selected':''}>${c}</option>`; });
+      html += `<tr>
+        <td><strong>${u.username}</strong></td>
+        <td>${u.nombre||'-'}</td>
+        <td><select onchange="cambiarCursoUsr('${u.id}',this.value)" style="padding:4px 8px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#f1f5f9;font-size:0.8rem;">${selectOpts}</select></td>
+        <td style="display:flex;gap:4px;flex-wrap:wrap;"><button class="btn btn-sm btn-blue" onclick="cambiarClaveUsr('${u.id}','${u.username}')" title="Cambiar clave">🔑</button><button class="btn btn-sm btn-red" onclick="eliminarUsr('${u.id}')" title="Eliminar">🗑️</button></td>
+      </tr>`;
+    });
+    html += '</tbody></table>';
+    document.getElementById('listaUsuarios').innerHTML = html;
+  }
+
+  async function cambiarClaveUsr(id, name) { const p = prompt('Nueva contraseña para "'+name+'":'); if (p && p.length >= 4) { await updateUserPassword(id, p); alert('✅ Actualizada'); } }
+
+  async function cambiarCursoUsr(id, curso) {
+    try {
+      await db.collection('usuarios').doc(id).update({ curso: curso || 'Sin curso' });
+    } catch(e) { alert('Error: ' + e.message); }
+  }
+
+  async function eliminarUsr(id) { if (confirm('¿Eliminar?')) { await deleteUser(id); loadEstudiantes(); } }
+
+  // ── Cursos ──
+  async function loadCursos() {
+    const users = await getUsers(adminFilter);
+    if (users.length === 0) { document.getElementById('listaCursos').innerHTML = '<div class="card"><p style="color:#64748b;font-style:italic;">No hay estudiantes registrados</p></div>'; return; }
+
+    // Get all grades for these students
+    let notas = [];
+    try {
+      const snap = await db.collection('notas').get();
+      notas = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const userIds = users.map(u => u.id);
+      notas = notas.filter(n => userIds.includes(n.userId));
+    } catch(e) { console.error(e); }
+
+    // Group students by curso
+    const cursos = {};
+    users.forEach(u => {
+      const curso = u.curso || 'Sin curso';
+      if (!cursos[curso]) cursos[curso] = [];
+      cursos[curso].push(u);
+    });
+
+    let html = '';
+    Object.keys(cursos).sort().forEach(cursoName => {
+      const estudiantes = cursos[cursoName];
+      const aprobados = [];
+      const reprobados = [];
+      const sinExamen = [];
+
+      estudiantes.forEach(est => {
+        const notasEst = notas.filter(n => n.userId === est.id);
+        if (notasEst.length === 0) {
+          sinExamen.push(est);
+        } else {
+          const ultimaNota = notasEst.sort((a,b) => (b.fecha?.seconds||0) - (a.fecha?.seconds||0))[0];
+          if (ultimaNota.aprobado) aprobados.push({ ...est, nota: ultimaNota.nota, examen: ultimaNota.examenTitulo });
+          else reprobados.push({ ...est, nota: ultimaNota.nota, examen: ultimaNota.examenTitulo });
+        }
+      });
+
+      html += `<div class="card">
+        <h2 style="display:flex;justify-content:space-between;align-items:center;">
+          <span>📚 ${cursoName}</span>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <span style="font-size:0.8rem;color:#64748b;font-weight:400;">${estudiantes.length} estudiante(s)</span>
+            <button class="btn btn-sm btn-red" onclick="eliminarCurso('${cursoName.replace(/'/g, "\\'")}')">🗑️ Eliminar curso</button>
+          </div>
+        </h2>
+        <div class="stats-row" style="margin-top:12px;">
+          <div class="stat-card"><div class="num" style="color:#34d399;font-size:1.5rem;">${aprobados.length}</div><div class="lbl">Aprobados</div></div>
+          <div class="stat-card"><div class="num" style="color:#f87171;font-size:1.5rem;">${reprobados.length}</div><div class="lbl">Reprobados</div></div>
+          <div class="stat-card"><div class="num" style="color:#64748b;font-size:1.5rem;">${sinExamen.length}</div><div class="lbl">Sin examen</div></div>
+        </div>`;
+
+      if (aprobados.length > 0) {
+        html += '<h3 style="color:#34d399;font-size:0.82rem;margin:12px 0 6px;">✅ Aprobados</h3>';
+        html += '<table><thead><tr><th>Estudiante</th><th>Nota</th><th>Examen</th></tr></thead><tbody>';
+        aprobados.forEach(e => { html += `<tr><td><strong>${e.nombre}</strong></td><td style="color:#34d399;font-weight:700;">${e.nota}/100</td><td>${e.examen||'-'}</td></tr>`; });
+        html += '</tbody></table>';
+      }
+
+      if (reprobados.length > 0) {
+        html += '<h3 style="color:#f87171;font-size:0.82rem;margin:12px 0 6px;">❌ Reprobados</h3>';
+        html += '<table><thead><tr><th>Estudiante</th><th>Nota</th><th>Examen</th></tr></thead><tbody>';
+        reprobados.forEach(e => { html += `<tr><td><strong>${e.nombre}</strong></td><td style="color:#f87171;font-weight:700;">${e.nota}/100</td><td>${e.examen||'-'}</td></tr>`; });
+        html += '</tbody></table>';
+      }
+
+      if (sinExamen.length > 0) {
+        html += '<h3 style="color:#64748b;font-size:0.82rem;margin:12px 0 6px;">⏳ Sin examen realizado</h3>';
+        html += '<table><thead><tr><th>Estudiante</th></tr></thead><tbody>';
+        sinExamen.forEach(e => { html += `<tr><td>${e.nombre}</td></tr>`; });
+        html += '</tbody></table>';
+      }
+
+      html += '</div>';
+    });
+
+    document.getElementById('listaCursos').innerHTML = html;
+  }
+
+  async function eliminarCurso(cursoName) {
+    if (!confirm('¿Eliminar el curso "' + cursoName + '"? Los estudiantes de este curso quedarán como "Sin curso".')) return;
+    try {
+      const users = await getUsers(adminFilter);
+      const delCurso = users.filter(u => u.curso === cursoName);
+      for (const u of delCurso) {
+        await db.collection('usuarios').doc(u.id).update({ curso: 'Sin curso' });
+      }
+      // Also delete from cursos collection
+      try { await db.collection('cursos').doc(cursoName).delete(); } catch(e) {}
+      loadCursos();
+      loadEstudiantes();
+    } catch(e) { alert('Error: ' + e.message); }
+  }
+
+  async function crearCurso() {
+    const nombre = document.getElementById('nuevoCursoNombre').value.trim();
+    if (!nombre) { document.getElementById('cursoMsg').innerHTML = '<div class="msg msg-err">⚠️ Ingrese un nombre para el curso</div>'; alert('⚠️ Ingrese un nombre para el curso'); return; }
+
+    // Check if course already exists
+    const users = await getUsers(adminFilter);
+    const cursosExistentes = [...new Set(users.map(u => u.curso).filter(Boolean))];
+    if (cursosExistentes.includes(nombre)) {
+      document.getElementById('cursoMsg').innerHTML = '<div class="msg msg-err">❌ El curso "' + nombre + '" ya existe</div>';
+      return;
+    }
+
+    // Create a placeholder user to register the course (or store in a courses collection)
+    try {
+      await db.collection('cursos').doc(nombre).set({
+        nombre: nombre,
+        createdBy: currentUser.id,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      document.getElementById('cursoMsg').innerHTML = '<div class="msg msg-ok">✅ Curso "' + nombre + '" creado</div>';
+      document.getElementById('nuevoCursoNombre').value = '';
+      loadCursos();
+      loadEstudiantes();
+    } catch(e) {
+      document.getElementById('cursoMsg').innerHTML = '<div class="msg msg-err">❌ Error: ' + e.message + '</div>';
+    }
+  }
+
+  // ── Notas ──
+  async function loadNotas() {
+    // Get all grades - if admin, filter by their students
+    let notas = [];
+    try {
+      const snap = await db.collection('notas').get();
+      notas = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    } catch(e) { console.error(e); }
+
+    // Filter: if not superadmin, show only grades from their students
+    if (!isSuperAdmin) {
+      const misUsuarios = await getUsers(currentUser.id);
+      const misUserIds = misUsuarios.map(u => u.id);
+      notas = notas.filter(n => n.createdBy === currentUser.id || misUserIds.includes(n.userId));
+    }
+
+    notas.sort((a,b) => (b.fecha?.seconds||0) - (a.fecha?.seconds||0));
+
+    if (notas.length === 0) { document.getElementById('listaNotas').innerHTML = '<p style="color:#64748b;font-style:italic;">No hay notas</p>'; document.getElementById('notasStats').innerHTML = ''; return; }
+
+    const total = notas.length;
+    const aprobados = notas.filter(n => n.aprobado).length;
+    const promedio = Math.round(notas.reduce((s,n) => s + n.nota, 0) / total);
+    document.getElementById('notasStats').innerHTML = `<div class="stat-card"><div class="num">${total}</div><div class="lbl">Exámenes</div></div><div class="stat-card"><div class="num" style="color:#34d399">${aprobados}</div><div class="lbl">Aprobados</div></div><div class="stat-card"><div class="num" style="color:#f87171">${total-aprobados}</div><div class="lbl">Reprobados</div></div><div class="stat-card"><div class="num" style="color:#60a5fa">${promedio}%</div><div class="lbl">Promedio</div></div>`;
+
+    // Group by student
+    const porEstudiante = {};
+    notas.forEach(n => {
+      const key = n.userId || n.username || 'desconocido';
+      if (!porEstudiante[key]) porEstudiante[key] = { nombre: n.nombre || n.username, notas: [] };
+      porEstudiante[key].notas.push(n);
+    });
+
+    let html = '<div style="margin-bottom:12px; display:flex; gap:8px; flex-wrap:wrap;"><button class="btn btn-sm btn-red" onclick="eliminarTodasNotas()">🗑️ Eliminar todas las notas</button><button class="btn btn-sm btn-blue" onclick="exportarNotasPDF()">📄 Exportar PDF de notas</button></div>';
+
+    // Render by student
+    Object.keys(porEstudiante).forEach(key => {
+      const est = porEstudiante[key];
+      const promEst = Math.round(est.notas.reduce((s,n) => s + n.nota, 0) / est.notas.length);
+      const aprobEst = est.notas.filter(n => n.aprobado).length;
+
+      html += `<div style="background:#0f172a;border:1px solid #334155;border-radius:10px;padding:14px;margin-bottom:12px;">`;
+      html += `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">`;
+      html += `<div><strong style="color:#f8fafc;font-size:0.95rem;">👤 ${est.nombre}</strong><span style="margin-left:10px;font-size:0.75rem;color:#64748b;">${est.notas.length} examen(es) — Promedio: ${promEst}% — Aprobados: ${aprobEst}/${est.notas.length}</span></div>`;
+      html += `</div>`;
+      html += `<table style="width:100%;"><thead><tr><th>Examen</th><th>Nota</th><th>Estado</th><th>Fecha</th><th></th></tr></thead><tbody>`;
+      est.notas.forEach(n => {
+        const badge = n.aprobado ? '<span class="badge badge-green">✓</span>' : '<span class="badge badge-red">✗</span>';
+        html += `<tr><td>${n.examenTitulo||n.examenId||'-'}</td><td><strong>${n.nota}/100</strong></td><td>${badge}</td><td style="color:#64748b;">${n.fechaLocal||'-'}</td><td><button class="btn btn-sm btn-red" onclick="eliminarNota('${n.id}')" style="padding:2px 6px;">✕</button></td></tr>`;
+      });
+      html += `</tbody></table></div>`;
+    });
+
+    document.getElementById('listaNotas').innerHTML = html;
+  }
+
+  async function eliminarNota(id) {
+    if (!confirm('¿Eliminar esta nota?')) return;
+    try { await db.collection('notas').doc(id).delete(); } catch(e) { alert('Error: '+e.message); }
+    loadNotas();
+  }
+
+  async function eliminarTodasNotas() {
+    if (!confirm('¿Eliminar TODAS las notas? Esta acción no se puede deshacer.')) return;
+    const snap = await db.collection('notas').get();
+    let notas = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    if (!isSuperAdmin) {
+      const misUsuarios = await getUsers(currentUser.id);
+      const misUserIds = misUsuarios.map(u => u.id);
+      notas = notas.filter(n => n.createdBy === currentUser.id || misUserIds.includes(n.userId));
+    }
+    for (const n of notas) { await db.collection('notas').doc(n.id).delete(); }
+    loadNotas();
+  }
+
+  async function exportarNotasPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('landscape');
+    const fecha = new Date().toLocaleString('es-ES');
+
+    // Get data
+    const users = await getUsers(adminFilter);
+    let notas = [];
+    try {
+      const snap = await db.collection('notas').get();
+      notas = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      if (!isSuperAdmin) {
+        const misUserIds = users.map(u => u.id);
+        notas = notas.filter(n => n.createdBy === currentUser.id || misUserIds.includes(n.userId));
+      }
+    } catch(e) { console.error(e); }
+
+    // Get unique exams
+    const examenes = [...new Set(notas.map(n => n.examenTitulo || n.examenId || 'Examen'))];
+
+    // Header
+    const institucion = currentUser.institucion || 'Evaluacion Digital';
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.text(institucion, 148, 15, { align: 'center' });
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Reporte de Notas — ' + fecha, 148, 22, { align: 'center' });
+    doc.text('Profesor: ' + (currentUser.nombre || ''), 148, 28, { align: 'center' });
+
+    // Build table data: rows = students, columns = exams
+    const headers = ['#', 'Estudiante', 'Curso', ...examenes, 'Promedio'];
+    const rows = [];
+
+    users.forEach((user, idx) => {
+      const row = [idx + 1, user.nombre || user.username, user.curso || '-'];
+      let totalNotas = 0;
+      let countNotas = 0;
+
+      examenes.forEach(exName => {
+        const notaEst = notas.find(n => n.userId === user.id && (n.examenTitulo || n.examenId || 'Examen') === exName);
+        if (notaEst) {
+          row.push(String(notaEst.nota));
+          totalNotas += notaEst.nota;
+          countNotas++;
+        } else {
+          row.push('-');
+        }
+      });
+
+      const promedio = countNotas > 0 ? Math.round(totalNotas / countNotas * 100) / 100 : '-';
+      row.push(String(promedio));
+      rows.push(row);
+    });
+
+    // Generate table
+    doc.autoTable({
+      head: [headers],
+      body: rows,
+      startY: 34,
+      styles: { fontSize: 8, cellPadding: 3 },
+      headStyles: { fillColor: [0, 120, 212], textColor: 255, fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: [240, 245, 255] },
+      columnStyles: { 0: { cellWidth: 10 } }
+    });
+
+    // Footer
+    doc.setFontSize(7);
+    doc.setTextColor(128);
+    doc.text('Generado por Evaluacion Digital — ' + fecha, 14, doc.internal.pageSize.height - 10);
+
+    doc.save('Notas_' + institucion.replace(/\s/g, '_') + '.pdf');
+  }
+
+  // ── Admins (superadmin only) ──
+  async function crearAdmin() {
+    const u = document.getElementById('admUsername').value;
+    const n = document.getElementById('admNombre').value;
+    const inst = document.getElementById('admInstitucion').value.trim();
+    const p = document.getElementById('admPassword').value;
+    const r = document.getElementById('admRole').value;
+    if (!u||!n||!p) { document.getElementById('admMsg').innerHTML = '<div class="msg msg-err">⚠️ Complete todos</div>'; return; }
+    const res = await createAdmin(u, p, n, r, inst);
+    if (res.success) { document.getElementById('admMsg').innerHTML = '<div class="msg msg-ok">✅ Admin creado</div>'; document.getElementById('admUsername').value=''; document.getElementById('admNombre').value=''; document.getElementById('admInstitucion').value=''; document.getElementById('admPassword').value=''; loadAdmins(); }
+    else { document.getElementById('admMsg').innerHTML = '<div class="msg msg-err">❌ '+res.error+'</div>'; }
+  }
+
+  async function loadAdmins() {
+    const admins = await getAllAdmins();
+    let html = '<table><thead><tr><th>Username</th><th>Nombre</th><th>Institución</th><th>Rol</th><th>Acciones</th></tr></thead><tbody>';
+    admins.forEach(a => { html += `<tr><td><strong>${a.username}</strong></td><td>${a.nombre}</td><td>${a.institucion||'-'}</td><td><span class="badge ${a.role==='superadmin'?'badge-purple':'badge-blue'}">${a.role}</span></td><td>${a.role!=='superadmin'?'<button class="btn btn-sm btn-red" onclick="eliminarAdm(\''+a.id+'\')">🗑️</button>':''}</td></tr>`; });
+    html += '</tbody></table>';
+    document.getElementById('listaAdmins').innerHTML = html;
+
+    // Load professors into the assign dropdown
+    const profSelect = document.getElementById('assignProfesor');
+    if (profSelect) {
+      profSelect.innerHTML = '<option value="">-- Seleccionar profesor --</option>';
+      admins.filter(a => a.role === 'admin').forEach(a => {
+        profSelect.innerHTML += `<option value="${a.id}">${a.nombre} (${a.username})</option>`;
+      });
+    }
+
+    // Load external exams
+    loadExternosAsignados();
+  }
+
+  async function asignarExamenExterno() {
+    const url = document.getElementById('assignUrl').value.trim();
+    const nombre = document.getElementById('assignNombre').value.trim();
+    const profesorId = document.getElementById('assignProfesor').value;
+
+    if (!url || !nombre) { document.getElementById('assignMsg').innerHTML = '<div class="msg msg-err">⚠️ Ingrese URL y nombre</div>'; return; }
+    if (!profesorId) { document.getElementById('assignMsg').innerHTML = '<div class="msg msg-err">⚠️ Seleccione un profesor</div>'; return; }
+
+    // Add ?prof=ID to the URL so the exam filters students by professor
+    const separator = url.includes('?') ? '&' : '?';
+    const fullUrl = url + separator + 'prof=' + profesorId;
+
+    try {
+      await db.collection('examenes_externos').add({
+        url: fullUrl,
+        urlBase: url,
+        nombre: nombre,
+        profesorId: profesorId,
+        asignadoPor: currentUser.id,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      document.getElementById('assignMsg').innerHTML = '<div class="msg msg-ok">✅ Examen asignado. La URL incluye el filtro del profesor — solo sus estudiantes podrán ingresar.</div>';
+      document.getElementById('assignUrl').value = '';
+      document.getElementById('assignNombre').value = '';
+      loadExternosAsignados();
+    } catch(e) {
+      document.getElementById('assignMsg').innerHTML = '<div class="msg msg-err">❌ Error: ' + e.message + '</div>';
+    }
+  }
+
+  async function loadExternosAsignados() {
+    try {
+      const snap = await db.collection('examenes_externos').get();
+      const externos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      if (externos.length === 0) { document.getElementById('listaExternosAsignados').innerHTML = '<p style="color:#64748b;font-style:italic;">No hay exámenes externos asignados</p>'; return; }
+
+      const admins = await getAllAdmins();
+      let html = '<table><thead><tr><th>Examen</th><th>Profesor</th><th>URL</th><th>Acción</th></tr></thead><tbody>';
+      externos.forEach(ex => {
+        const prof = admins.find(a => a.id === ex.profesorId);
+        html += `<tr><td><strong>${ex.nombre}</strong></td><td>${prof ? prof.nombre : 'Sin asignar'}</td><td><a href="${ex.url}" target="_blank" style="color:#60a5fa;font-size:0.8rem;">${ex.url.substring(0,40)}...</a></td><td><button class="btn btn-sm btn-red" onclick="eliminarExterno('${ex.id}')">🗑️</button></td></tr>`;
+      });
+      html += '</tbody></table>';
+      document.getElementById('listaExternosAsignados').innerHTML = html;
+    } catch(e) {
+      document.getElementById('listaExternosAsignados').innerHTML = '<p style="color:#f87171;">Error cargando</p>';
+    }
+  }
+
+  async function eliminarExterno(id) {
+    if (!confirm('¿Eliminar este examen del listado?')) return;
+    await db.collection('examenes_externos').doc(id).delete();
+    loadExternosAsignados();
+    loadExamenes();
+  }
+
+  async function eliminarAdm(id) { if (confirm('¿Eliminar admin?')) { await deleteAdmin(id); loadAdmins(); } }
+
+  // ── Init ──
+  loadExamenes();
+</script>
+</body>
+</html>

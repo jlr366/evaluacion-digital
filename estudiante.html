@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mis Exámenes</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
+    .container { max-width: 800px; margin: 0 auto; padding: 24px; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+    .header h1 { font-size: 1.4rem; font-weight: 800; color: #f8fafc; }
+    .card { background: #1e293b; border: 1px solid rgba(148,163,184,0.1); border-radius: 14px; padding: 24px; margin-bottom: 20px; }
+    .card h2 { font-size: 1.1rem; color: #60a5fa; margin-bottom: 16px; }
+    .btn { padding: 8px 16px; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 0.85rem; }
+    .btn-gray { background: #334155; color: #94a3b8; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    th { text-align: left; padding: 8px 10px; background: #0f172a; color: #60a5fa; font-weight: 700; text-transform: uppercase; font-size: 0.7rem; border-bottom: 1px solid #334155; }
+    td { padding: 8px 10px; border-bottom: 1px solid #1e293b; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: 700; }
+    .badge-green { background: rgba(16,185,129,0.15); color: #34d399; }
+    .badge-red { background: rgba(239,68,68,0.15); color: #f87171; }
+    .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
+    .stat-card { background: #0f172a; border: 1px solid #334155; border-radius: 10px; padding: 14px; text-align: center; }
+    .stat-card .num { font-size: 1.8rem; font-weight: 800; color: #f8fafc; }
+    .stat-card .lbl { font-size: 0.7rem; text-transform: uppercase; color: #64748b; margin-top: 4px; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>📊 Mis Resultados</h1>
+    <button class="btn btn-gray" onclick="sessionStorage.removeItem('currentUser'); window.location.href='index.html';">🚪 Salir</button>
+  </div>
+
+  <div id="welcome" class="card" style="text-align:center;">
+    <h2 id="studentName">Cargando...</h2>
+  </div>
+
+  <div id="stats" class="stats-row"></div>
+
+  <div class="card">
+    <h2>Historial de exámenes</h2>
+    <div id="notasTable">Cargando...</div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script>
+  const currentUser = JSON.parse(sessionStorage.getItem('currentUser') || 'null');
+  if (!currentUser) { window.location.href = 'index.html'; }
+
+  document.getElementById('studentName').textContent = '👤 ' + (currentUser.nombre || currentUser.username);
+
+  (async function() {
+    const notas = await getGradesByUser(currentUser.id);
+    if (notas.length === 0) {
+      document.getElementById('notasTable').innerHTML = '<p style="color:#64748b; font-style:italic;">Aún no has realizado ningún examen.</p>';
+      return;
+    }
+
+    const total = notas.length;
+    const aprobados = notas.filter(n => n.aprobado).length;
+    const promedio = Math.round(notas.reduce((s,n) => s + n.nota, 0) / total);
+
+    document.getElementById('stats').innerHTML = `
+      <div class="stat-card"><div class="num">${total}</div><div class="lbl">Exámenes</div></div>
+      <div class="stat-card"><div class="num" style="color:#34d399">${aprobados}</div><div class="lbl">Aprobados</div></div>
+      <div class="stat-card"><div class="num" style="color:#60a5fa">${promedio}%</div><div class="lbl">Promedio</div></div>
+    `;
+
+    let html = '<table><thead><tr><th>Examen</th><th>Nota</th><th>Estado</th><th>Fecha</th></tr></thead><tbody>';
+    notas.forEach(n => {
+      const badge = n.aprobado ? '<span class="badge badge-green">Aprobado</span>' : '<span class="badge badge-red">Reprobado</span>';
+      html += `<tr><td><strong>${n.examenTitulo||'Examen'}</strong></td><td><strong>${n.nota}/100</strong></td><td>${badge}</td><td>${n.fechaLocal||'-'}</td></tr>`;
+    });
+    html += '</tbody></table>';
+    document.getElementById('notasTable').innerHTML = html;
+  })();
+</script>
+</body>
+</html>

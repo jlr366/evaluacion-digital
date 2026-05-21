@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cómo funciona — Evaluación Digital</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <style>
+    .step { display: flex; gap: 24px; align-items: flex-start; margin-bottom: 32px; }
+    .step-num { flex-shrink: 0; width: 48px; height: 48px; border-radius: 12px; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: 900; }
+    .step-content h3 { font-size: 1.1rem; color: #f8fafc; margin-bottom: 6px; }
+    .step-content p { color: var(--text-muted); font-size: 0.92rem; line-height: 1.6; }
+    .tip { background: rgba(0,188,242,0.06); border: 1px solid rgba(0,188,242,0.2); border-radius: 10px; padding: 16px; margin-top: 12px; font-size: 0.85rem; color: var(--accent); }
+    .tip::before { content: '💡 '; }
+    .faq-item { border-bottom: 1px solid var(--border); padding: 16px 0; }
+    .faq-item h3 { font-size: 0.95rem; color: #f8fafc; margin-bottom: 6px; }
+    .faq-item p { color: var(--text-muted); font-size: 0.88rem; }
+    @media (max-width: 768px) { .step { flex-direction: column; gap: 12px; } }
+  </style>
+</head>
+<body>
+
+<header class="navbar">
+  <div class="inner">
+    <div class="brand"><img src="logo_evaluacion_digital_transparente.png" alt="Logo" style="height:56px; filter:drop-shadow(0 2px 12px rgba(0,188,242,0.6)) brightness(1.3);"> <span>Evaluación</span>Digital</div>
+    <nav>
+      <a href="index.html">Inicio</a>
+      <a href="manual.html" class="active">Cómo funciona</a>
+      <a href="precios.html">Planes</a>
+      <a href="cursos.html">Cursos Cloud</a>
+      <a href="login.html">Ingresar</a>
+    </nav>
+  </div>
+</header>
+
+<section class="hero" style="padding:50px 24px 30px;">
+  <h1>📖 Cómo funciona <span>Evaluación Digital</span></h1>
+  <p>Guía rápida para crear tu primer examen y empezar a evaluar</p>
+</section>
+
+<!-- Guide for Professors -->
+<section class="section">
+  <div class="section-title">
+    <h2>Guía para Profesores</h2>
+    <p>De cero a tu primer examen publicado</p>
+  </div>
+
+  <div style="max-width:750px; margin:0 auto;">
+
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-content">
+        <h3>Ingresa a tu cuenta</h3>
+        <p>Ve a <strong>Ingresar</strong> y escribe tu usuario y contraseña de profesor. Si no tienes cuenta, pídela al administrador de tu institución.</p>
+        <div class="tip">Tu administrador te dará las credenciales. Si eres el administrador principal, usa: <strong>superadmin</strong> / <strong>Bestias300</strong></div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-content">
+        <h3>Crea tus estudiantes</h3>
+        <p>En la pestaña <strong>👥 Usuarios</strong>, crea una cuenta para cada estudiante con username, nombre, curso y contraseña. Puedes organizarlos por curso o sección.</p>
+        <div class="tip">Los cursos se guardan automáticamente. Al crear el segundo estudiante, puedes seleccionar un curso ya existente.</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-content">
+        <h3>Crea un examen</h3>
+        <p>En la pestaña <strong>📝 Exámenes</strong>:</p>
+        <ul style="color:var(--text-muted); font-size:0.9rem; margin:8px 0; padding-left:20px; line-height:2;">
+          <li>Escribe el título y subtítulo del examen</li>
+          <li>Configura el tiempo (en minutos) y la nota mínima para aprobar</li>
+          <li>Agrega preguntas con el botón <strong>"+ Agregar pregunta"</strong></li>
+          <li>Escribe las opciones de respuesta</li>
+          <li>Marca la(s) respuesta(s) correcta(s) — se pintan de amarillo</li>
+          <li>Si la pregunta tiene más de una respuesta, activa <strong>"Múltiples respuestas"</strong></li>
+          <li>Pulsa <strong>"Guardar examen"</strong></li>
+        </ul>
+        <div class="tip">Al guardar, se genera una URL única. Esa es la dirección que compartes con tus estudiantes.</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-content">
+        <h3>Comparte la URL con tus estudiantes</h3>
+        <p>Copia la URL del examen y envíala por WhatsApp, email, o cualquier medio. El estudiante abre el link, se loguea con su usuario/contraseña, y hace el examen.</p>
+        <div class="tip">Las opciones se barajan automáticamente en cada intento. El anti-copia está activo por defecto.</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">5</div>
+      <div class="step-content">
+        <h3>Revisa las notas</h3>
+        <p>En la pestaña <strong>📊 Notas</strong> verás todas las notas organizadas por estudiante. En la pestaña <strong>📚 Cursos</strong> verás aprobados y reprobados por grupo.</p>
+        <div class="tip">Puedes eliminar notas individuales o todas a la vez si necesitas reiniciar.</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">6</div>
+      <div class="step-content">
+        <h3>Edita o elimina exámenes</h3>
+        <p>En la lista de exámenes puedes:</p>
+        <ul style="color:var(--text-muted); font-size:0.9rem; margin:8px 0; padding-left:20px; line-height:2;">
+          <li><strong>📋 URL</strong> — Copiar la URL para compartir</li>
+          <li><strong>👁️ Ver</strong> — Previsualizar el examen como lo ve el estudiante</li>
+          <li><strong>✏️ Editar</strong> — Agregar o quitar preguntas</li>
+          <li><strong>🗑️ Eliminar</strong> — Borrar el examen</li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- Guide for Students -->
+<section class="section" style="border-top:1px solid var(--border);">
+  <div class="section-title">
+    <h2>Guía para Estudiantes</h2>
+    <p>Cómo hacer un examen</p>
+  </div>
+
+  <div style="max-width:750px; margin:0 auto;">
+
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-content">
+        <h3>Recibe el link del examen</h3>
+        <p>Tu profesor te enviará una URL por WhatsApp, email o en clase. Ábrela en tu navegador (Chrome, Safari, Firefox).</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-content">
+        <h3>Inicia sesión</h3>
+        <p>Escribe el usuario y contraseña que te dio tu profesor. Si no los tienes, pídelos.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-content">
+        <h3>Responde las preguntas</h3>
+        <p>Lee cada pregunta y selecciona la respuesta correcta. Si dice "Seleccione 2 respuestas", marca dos opciones. El temporizador arriba te indica cuánto tiempo queda.</p>
+        <div class="tip">No puedes copiar las preguntas ni abrir otras pestañas. Concéntrate en responder.</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-content">
+        <h3>Finaliza el examen</h3>
+        <p>Cuando termines, pulsa <strong>"Finalizar examen"</strong>. Si se acaba el tiempo, se envía automáticamente. Verás tu nota inmediatamente.</p>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="section" style="border-top:1px solid var(--border);">
+  <div class="section-title">
+    <h2>Preguntas frecuentes</h2>
+  </div>
+
+  <div style="max-width:700px; margin:0 auto;">
+    <div class="faq-item">
+      <h3>¿Necesito instalar algo?</h3>
+      <p>No. Todo funciona desde el navegador web. No hay apps que descargar.</p>
+    </div>
+    <div class="faq-item">
+      <h3>¿Funciona en celular?</h3>
+      <p>Sí. Tanto la creación de exámenes como la resolución funcionan en celular, tablet y computadora.</p>
+    </div>
+    <div class="faq-item">
+      <h3>¿Los estudiantes pueden copiar las preguntas?</h3>
+      <p>No. El sistema bloquea copiar/pegar, clic derecho, capturas de pantalla y herramientas de desarrollador.</p>
+    </div>
+    <div class="faq-item">
+      <h3>¿Las respuestas siempre están en el mismo orden?</h3>
+      <p>No. Las opciones se barajan aleatoriamente cada vez que un estudiante abre el examen.</p>
+    </div>
+    <div class="faq-item">
+      <h3>¿Puedo editar un examen después de crearlo?</h3>
+      <p>Sí. Puedes agregar, quitar o modificar preguntas en cualquier momento.</p>
+    </div>
+    <div class="faq-item">
+      <h3>¿Qué pasa si el estudiante pierde conexión durante el examen?</h3>
+      <p>El temporizador sigue corriendo. Si se reconecta antes de que termine el tiempo, puede continuar. Si no, se envía lo que haya respondido.</p>
+    </div>
+    <div class="faq-item">
+      <h3>¿Puedo ver qué respondió cada estudiante?</h3>
+      <p>Sí. En la pestaña de Notas puedes ver el detalle de cada examen realizado.</p>
+    </div>
+    <div class="faq-item">
+      <h3>¿Cuántos exámenes puedo crear?</h3>
+      <p>Depende de tu plan. El plan gratuito permite hasta 3 exámenes. El plan Pro es ilimitado.</p>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="section" style="text-align:center; padding-bottom:60px;">
+  <h2 style="font-size:1.8rem; font-weight:800; color:#f8fafc; margin-bottom:12px;">¿Listo para crear tu primer examen?</h2>
+  <p style="color:var(--text-muted); margin-bottom:24px;">Solo toma 5 minutos. Es gratis para empezar.</p>
+  <a href="login.html" class="btn btn-primary">🚀 Crear cuenta gratis</a>
+</section>
+
+<footer class="footer">
+  <p style="margin-bottom:8px;">
+    <a href="index.html">Inicio</a> · <a href="manual.html">Cómo funciona</a> · <a href="precios.html">Planes</a> · <a href="cursos.html">Cursos</a> · <a href="login.html">Ingresar</a>
+  </p>
+  <p>© 2025 Evaluación Digital — evaluacion-digital.com</p>
+</footer>
+
+</body>
+</html>
