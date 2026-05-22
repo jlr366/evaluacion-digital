@@ -1105,7 +1105,7 @@
           ${isSuperAdmin ? '<td>' + asignado + '</td>' : ''}
           <td style="display:flex; gap:4px; flex-wrap:wrap;">
             <button class="btn btn-sm btn-blue" onclick="navigator.clipboard.writeText('${url}');this.textContent='✓ Copiado'" title="Copiar URL">📋 URL</button>
-            <button class="btn btn-sm btn-green" onclick="window.open('${url}','_blank')" title="Previsualizar">👁️ Ver</button>
+            <button class="btn btn-sm btn-green" onclick="window.open('${url}&preview=1','_blank')" title="Vista previa sin login">👁️ Ver</button>
             <button class="btn btn-sm" style="background:#f59e0b;color:#000;" onclick="editarExamen('${ex.id}')" title="Editar">✏️ Editar</button>
             ${isSuperAdmin ? '<button class="btn btn-sm" style="background:#8b5cf6;color:#fff;" onclick="asignarExamenAProfesor(\''+ex.id+'\',\''+ex.titulo.replace(/'/g,'')+'\')" title="Asignar a profesor">👤 Asignar</button>' : ''}
             <button class="btn btn-sm btn-red" onclick="eliminarExamen('${ex.id}')" title="Eliminar">🗑️</button>

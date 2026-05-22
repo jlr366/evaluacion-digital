@@ -630,6 +630,7 @@
   // Get exam ID from URL
   const params = new URLSearchParams(window.location.search);
   const examenId = params.get('id');
+  const isPreview = params.get('preview') === '1';
   let examenData = null;
   let currentUser = null;
   let currentSesionId = null;
@@ -654,6 +655,21 @@
       document.title = examenData.titulo;
       tiempoRestante = (examenData.tiempoMinutos || 40) * 60;
       examenCargado = true;
+
+      // Preview mode: skip login, start directly
+      if (isPreview) {
+        // Show preview banner
+        document.body.insertAdjacentHTML('afterbegin', `
+          <div id="previewBanner" style="position:fixed;top:0;left:0;right:0;z-index:999;background:linear-gradient(135deg,#f59e0b,#d97706);color:#000;text-align:center;padding:10px 20px;font-size:0.88rem;font-weight:700;display:flex;align-items:center;justify-content:center;gap:16px;">
+            <span>👁️ MODO VISTA PREVIA — Las respuestas y notas NO se guardan</span>
+            <button onclick="window.close()" style="background:#000;color:#fbbf24;border:none;padding:4px 14px;border-radius:6px;cursor:pointer;font-weight:700;font-size:0.8rem;">✕ Cerrar</button>
+          </div>`);
+        // Push content down
+        document.querySelector('.container').style.marginTop = '44px';
+        // Set fake user
+        currentUser = { id: 'preview', nombre: 'Vista Previa', username: 'preview', tipo: 'preview' };
+        iniciarExamen();
+      }
     } catch(err) {
       console.error('Error cargando examen:', err);
       document.querySelector('.container').innerHTML = '<div class="card" style="text-align:center;"><h2 style="color:#f87171;">❌ Error de conexión</h2><p style="color:#94a3b8;">No se pudo conectar con la base de datos. Recargue la página.</p></div>';
@@ -683,13 +699,15 @@
       currentUser = r.user;
       currentUser.email = sinCorreo ? '' : emailInput;
 
-      // Check for active session (anti-trampa)
-      const sesionCheck = await registrarSesion(currentUser.id, examenId, examenData.reconexionMinutos);
-      if (!sesionCheck.success) {
-        document.getElementById('loginMsg').innerHTML = '<div class="msg msg-err">🚫 ' + sesionCheck.error + '</div>';
-        return;
+      // Check for active session (anti-trampa) — skip in preview
+      if (!isPreview) {
+        const sesionCheck = await registrarSesion(currentUser.id, examenId, examenData.reconexionMinutos);
+        if (!sesionCheck.success) {
+          document.getElementById('loginMsg').innerHTML = '<div class="msg msg-err">🚫 ' + sesionCheck.error + '</div>';
+          return;
+        }
+        currentSesionId = sesionCheck.sesionId;
       }
-      currentSesionId = sesionCheck.sesionId;
 
       iniciarExamen();
     }
@@ -1188,8 +1206,8 @@
   async function finalizar() {
     clearInterval(timer);
 
-    // Release session lock
-    if (currentUser) await liberarSesion(currentUser.id, examenId);
+    // Release session lock — skip in preview
+    if (currentUser && !isPreview) await liberarSesion(currentUser.id, examenId);
     let correctas = 0;
     let puntosObtenidos = 0;
     let puntosTotales = 0;
@@ -1226,8 +1244,8 @@
     const nota = notaFinal;
     const aprobado = nota >= (examenData.notaMinima || (notaMaxima * 0.7));
 
-    // Save to Firebase
-    if (currentUser) {
+    // Save to Firebase — skip in preview mode
+    if (currentUser && !isPreview) {
       await saveGrade({ examenId, examenTitulo: examenData.titulo, userId: currentUser.id, username: currentUser.username, nombre: currentUser.nombre, nota, totalPreguntas: examenData.preguntas.length, correctas, aprobado, createdBy: examenData.createdBy||'', puntosObtenidos, puntosTotales, notaMaxima });
     }
 
@@ -1235,8 +1253,8 @@
     document.getElementById('secResultado').classList.remove('hidden');
     document.getElementById('secResultado').innerHTML = `<div class="resultado ${aprobado?'aprobado':'reprobado'}"><h2>${aprobado?'🎉 ¡Aprobó!':'😔 Reprobó'}</h2><p style="color:#94a3b8;">Estudiante: <strong style="color:#f1f5f9;">${currentUser?currentUser.nombre:'—'}</strong></p><div class="nota-badge">${nota} / ${notaMaxima}</div><p style="color:#94a3b8;margin-top:8px;">Correctas: ${correctas} de ${examenData.preguntas.length} | Puntos: ${puntosObtenidos}/${puntosTotales}</p><div style="margin-top:20px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap;"><button onclick="generarPDF(${nota},${correctas},${aprobado})" class="btn btn-primary" style="padding:10px 20px;font-size:0.85rem;">📄 Descargar PDF</button></div><p style="color:#64748b;margin-top:12px;font-size:0.8rem;">${currentUser&&currentUser.email?'📧 Se envió un resumen a '+currentUser.email:''}  </p></div>`;
 
-    // Send email (if email provided)
-    enviarEmail(nota, correctas, aprobado);
+    // Send email (if email provided) — skip in preview
+    if (!isPreview) enviarEmail(nota, correctas, aprobado);
   }
 
   function generarPDF(nota, correctas, aprobado) {
