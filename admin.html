@@ -388,6 +388,7 @@
             </div>
             <div style="display:flex;gap:6px;flex-wrap:wrap;">
               <button class="btn btn-sm btn-blue" onclick="toggleProfesorDetalle('${p.id}')">📊 Ver detalle</button>
+              <button class="btn btn-sm" style="background:#059669;color:white;" onclick="imprimirProfesorPDF('${p.id}','${p.nombre.replace(/'/g,'')}','${p.institucion ? p.institucion.replace(/'/g,'') : ''}')">🖨️ PDF</button>
               <button class="btn btn-sm btn-red" onclick="eliminarAdminConfirm('${p.id}','${p.nombre.replace(/'/g,'')}')">🗑️</button>
             </div>
           </div>
@@ -495,6 +496,188 @@
     if (confirm('¿Eliminar al profesor "' + nombre + '"? Se eliminarán también sus datos.')) {
       await deleteAdmin(id);
       loadProfesoresDetalle();
+    }
+  }
+
+  async function imprimirProfesorPDF(profId, profNombre, profInstitucion) {
+    try {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      const fecha = new Date().toLocaleString('es-ES');
+
+      // Load data
+      const [examenes, estudiantes, notas] = await Promise.all([
+        getExamenes(profId),
+        getUsers(profId),
+        db.collection('notas').where('createdBy','==',profId).get().then(s => s.docs.map(d=>({id:d.id,...d.data()})))
+      ]);
+
+      const aprobados = notas.filter(n => n.aprobado).length;
+      const reprobados = notas.length - aprobados;
+      const promedio = notas.length > 0 ? Math.round(notas.reduce((s,n) => s + (n.nota||0), 0) / notas.length * 10) / 10 : 0;
+
+      // ── Header ──
+      doc.setFillColor(6, 13, 26);
+      doc.rect(0, 0, 210, 40, 'F');
+      doc.setFontSize(18);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(248, 250, 252);
+      doc.text('Reporte de Profesor', 105, 16, { align: 'center' });
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(148, 163, 184);
+      doc.text('Evaluación Digital — ' + fecha, 105, 24, { align: 'center' });
+
+      // ── Profesor info ──
+      doc.setDrawColor(0, 120, 212);
+      doc.setLineWidth(0.5);
+      doc.line(14, 44, 196, 44);
+
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(0, 0, 0);
+      doc.text('👨‍🏫 ' + profNombre, 14, 54);
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(80, 80, 80);
+      doc.text('Institución: ' + (profInstitucion || 'No especificada'), 14, 62);
+
+      // ── Stats boxes ──
+      const stats = [
+        { label: 'Exámenes', val: examenes.length, color: [0, 120, 212] },
+        { label: 'Estudiantes', val: estudiantes.length, color: [139, 92, 246] },
+        { label: 'Evaluaciones', val: notas.length, color: [30, 41, 59] },
+        { label: 'Aprobados', val: aprobados, color: [5, 150, 105] },
+        { label: 'Reprobados', val: reprobados, color: [220, 38, 38] },
+        { label: 'Promedio', val: promedio, color: [245, 158, 11] },
+      ];
+      let sx = 14;
+      stats.forEach(s => {
+        doc.setFillColor(...s.color);
+        doc.roundedRect(sx, 68, 29, 18, 2, 2, 'F');
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(255, 255, 255);
+        doc.text(String(s.val), sx + 14.5, 77, { align: 'center' });
+        doc.setFontSize(6.5);
+        doc.setFont('helvetica', 'normal');
+        doc.text(s.label, sx + 14.5, 83, { align: 'center' });
+        sx += 31;
+      });
+
+      let y = 94;
+      doc.setDrawColor(200, 200, 200);
+      doc.line(14, y, 196, y);
+      y += 8;
+
+      // ── Exámenes ──
+      if (examenes.length > 0) {
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(0, 120, 212);
+        doc.text('EXÁMENES (' + examenes.length + ')', 14, y); y += 6;
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(100, 100, 100);
+        doc.text('Título', 14, y);
+        doc.text('Preguntas', 120, y);
+        doc.text('Tiempo', 155, y);
+        doc.text('Nota máx.', 175, y);
+        y += 4;
+        doc.setLineWidth(0.2);
+        doc.line(14, y, 196, y); y += 4;
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(0, 0, 0);
+        examenes.forEach(ex => {
+          if (y > 265) { doc.addPage(); y = 20; }
+          doc.text(ex.titulo.substring(0, 60), 14, y);
+          doc.text(String((ex.preguntas||[]).length), 120, y);
+          doc.text(ex.tiempoMinutos + ' min', 155, y);
+          doc.text(String(ex.notaMaxima || 100), 175, y);
+          y += 6;
+        });
+        y += 4;
+        doc.setDrawColor(200, 200, 200);
+        doc.line(14, y, 196, y); y += 8;
+      }
+
+      // ── Estudiantes ──
+      if (estudiantes.length > 0) {
+        if (y > 240) { doc.addPage(); y = 20; }
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(139, 92, 246);
+        doc.text('ESTUDIANTES (' + estudiantes.length + ')', 14, y); y += 6;
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(100, 100, 100);
+        doc.text('Nombre', 14, y);
+        doc.text('Usuario', 90, y);
+        doc.text('Curso', 140, y);
+        y += 4;
+        doc.line(14, y, 196, y); y += 4;
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(0, 0, 0);
+        estudiantes.forEach(est => {
+          if (y > 265) { doc.addPage(); y = 20; }
+          doc.text(est.nombre.substring(0, 40), 14, y);
+          doc.text(est.username.substring(0, 25), 90, y);
+          doc.text((est.curso || 'Sin curso').substring(0, 25), 140, y);
+          y += 6;
+        });
+        y += 4;
+        doc.line(14, y, 196, y); y += 8;
+      }
+
+      // ── Notas ──
+      if (notas.length > 0) {
+        if (y > 230) { doc.addPage(); y = 20; }
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(5, 150, 105);
+        doc.text('HISTORIAL DE NOTAS (' + notas.length + ')', 14, y); y += 6;
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(100, 100, 100);
+        doc.text('Estudiante', 14, y);
+        doc.text('Examen', 70, y);
+        doc.text('Nota', 148, y);
+        doc.text('Estado', 165, y);
+        doc.text('Fecha', 185, y);
+        y += 4;
+        doc.line(14, y, 196, y); y += 4;
+        doc.setFont('helvetica', 'normal');
+        const notasOrdenadas = notas.sort((a,b) => (b.fecha?.seconds||0) - (a.fecha?.seconds||0));
+        notasOrdenadas.forEach(n => {
+          if (y > 265) { doc.addPage(); y = 20; }
+          doc.setTextColor(0, 0, 0);
+          doc.text((n.nombre || n.username || '').substring(0, 30), 14, y);
+          doc.text((n.examenTitulo || '').substring(0, 35), 70, y);
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(n.aprobado ? 5 : 220, n.aprobado ? 150 : 38, n.aprobado ? 105 : 38);
+          doc.text(String(n.nota), 148, y);
+          doc.setFont('helvetica', 'normal');
+          doc.setTextColor(n.aprobado ? 5 : 220, n.aprobado ? 150 : 38, n.aprobado ? 105 : 38);
+          doc.text(n.aprobado ? 'Aprobado' : 'Reprobado', 165, y);
+          doc.setTextColor(120, 120, 120);
+          doc.text(n.fechaLocal ? n.fechaLocal.substring(0, 12) : '', 185, y);
+          y += 6;
+        });
+      }
+
+      // ── Footer ──
+      const pageCount = doc.internal.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(7);
+        doc.setTextColor(150, 150, 150);
+        doc.text('Evaluación Digital — evaluacion-digital.com — Página ' + i + ' de ' + pageCount, 105, 292, { align: 'center' });
+      }
+
+      doc.save('Reporte_' + profNombre.replace(/\s/g,'_') + '.pdf');
+    } catch(e) {
+      alert('Error generando PDF: ' + e.message);
+      console.error(e);
     }
   }
 
