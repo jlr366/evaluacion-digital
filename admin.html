@@ -87,8 +87,19 @@
         <div class="form-group"><label>Nota máxima (escala)</label><input type="number" id="exNotaMax" value="100" placeholder="7, 10, 20, 100..." /></div>
       </div>
       <div class="form-row">
-        <div class="form-group"><label>Nota mínima para aprobar (en la misma escala)</label><input type="number" id="exNota" value="70" step="0.1" /><span style="font-size:0.72rem;color:#64748b;">Ej: si escala es 7, pon 4.9 | si es 100, pon 70</span></div>
         <div class="form-group">
+          <label>⏱️ Tiempo de reconexión permitido (minutos)</label>
+          <input type="number" id="exReconexion" value="5" min="0" max="60" />
+          <span style="font-size:0.72rem;color:#64748b;">Si el estudiante cierra el examen accidentalmente, tiene este tiempo para volver a entrar. Pon 0 para no permitir reconexión.</span>
+        </div>
+        <div class="form-group">
+          <label>Nota mínima para aprobar (en la misma escala)</label>
+          <input type="number" id="exNota" value="70" step="0.1" />
+          <span style="font-size:0.72rem;color:#64748b;">Ej: si escala es 7, pon 4.9 | si es 100, pon 70</span>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group" style="grid-column:2;">
           <label>Sistema de puntuación</label>
           <select id="exPuntuacion" onchange="togglePuntuacion()">
             <option value="igual">Todas las preguntas valen igual</option>
@@ -580,6 +591,7 @@
       tiempoMinutos: parseInt(document.getElementById('exTiempo').value) || 40,
       notaMinima: notaMinima,
       notaMaxima: notaMaxima,
+      reconexionMinutos: parseInt(document.getElementById('exReconexion').value) || 0,
       puntuacion: document.getElementById('exPuntuacion').value || 'igual',
       preguntas: preguntasTemp,
       createdBy: currentUser.id,
@@ -821,6 +833,7 @@
       document.getElementById('exSubtitulo').value = examen.subtitulo || '';
       document.getElementById('exTiempo').value = examen.tiempoMinutos || 40;
       document.getElementById('exNota').value = examen.notaMinima || 70;
+      document.getElementById('exReconexion').value = examen.reconexionMinutos !== undefined ? examen.reconexionMinutos : 5;
 
       // Load questions into editor
       preguntasTemp = (examen.preguntas || []).map(p => {

@@ -145,6 +145,7 @@ async function createExamen(data) {
     tiempoMinutos: data.tiempoMinutos || 40,
     notaMinima: data.notaMinima || 70,
     notaMaxima: data.notaMaxima || 100,
+    reconexionMinutos: data.reconexionMinutos !== undefined ? data.reconexionMinutos : 5,
     puntuacion: data.puntuacion || 'igual',
     preguntas: data.preguntas || [],
     createdBy: data.createdBy || '',
@@ -236,12 +237,12 @@ async function getGradesByExamen(examenId) {
 
 // ── SESIONES ACTIVAS (anti-trampa: un solo login por usuario por examen) ──
 
-async function registrarSesion(userId, examenId) {
+async function registrarSesion(userId, examenId, reconexionMinutos) {
   try {
     const ahora = Date.now();
-    const expiracion = 3 * 60 * 60 * 1000; // 3 horas
+    // Use exam's reconnect window (in minutes), default 5 min, 0 = no reconnect allowed
+    const ventanaMs = (reconexionMinutos !== undefined ? reconexionMinutos : 5) * 60 * 1000;
 
-    // Check if active session exists
     const snap = await db.collection('sesiones_activas')
       .where('userId', '==', userId)
       .where('examenId', '==', examenId)
@@ -250,11 +251,18 @@ async function registrarSesion(userId, examenId) {
     if (!snap.empty) {
       const sesion = snap.docs[0].data();
       const edad = ahora - (sesion.timestamp || 0);
-      if (edad < expiracion) {
-        // Active session exists and not expired
-        return { success: false, error: 'Este usuario ya tiene una sesión activa en este examen. Solo se permite un acceso a la vez.' };
+
+      if (ventanaMs === 0) {
+        // No reconnect allowed at all
+        return { success: false, error: 'Este usuario ya tiene una sesión activa. El profesor no permite reconexión en este examen.' };
+      }
+
+      if (edad < ventanaMs) {
+        // Within reconnect window — allow back in, update timestamp
+        await snap.docs[0].ref.update({ timestamp: ahora });
+        return { success: true, sesionId: snap.docs[0].id };
       } else {
-        // Expired — delete it
+        // Expired window — delete old session
         await snap.docs[0].ref.delete();
       }
     }
@@ -268,7 +276,7 @@ async function registrarSesion(userId, examenId) {
     return { success: true, sesionId: ref.id };
   } catch(e) {
     console.error('registrarSesion error:', e);
-    return { success: true, sesionId: null }; // fail open — don't block exam on DB error
+    return { success: true, sesionId: null }; // fail open
   }
 }
 

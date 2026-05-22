@@ -486,7 +486,7 @@
       currentUser.email = sinCorreo ? '' : emailInput;
 
       // Check for active session (anti-trampa)
-      const sesionCheck = await registrarSesion(currentUser.id, examenId);
+      const sesionCheck = await registrarSesion(currentUser.id, examenId, examenData.reconexionMinutos);
       if (!sesionCheck.success) {
         document.getElementById('loginMsg').innerHTML = '<div class="msg msg-err">🚫 ' + sesionCheck.error + '</div>';
         return;
