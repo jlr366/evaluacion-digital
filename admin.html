@@ -536,7 +536,7 @@
       doc.setFontSize(14);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(0, 0, 0);
-      doc.text('👨‍🏫 ' + profNombre, 14, 54);
+      doc.text('Profesor: ' + profNombre, 14, 54);
       doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(80, 80, 80);
@@ -1454,20 +1454,21 @@
 
   // ── Notas ──
   async function loadNotas() {
-    // Get all grades - if admin, filter by their students
+    if (isSuperAdmin) {
+      await loadNotasPorProfesor();
+      return;
+    }
+
+    // ── Profesor normal: sus propias notas ──
     let notas = [];
     try {
       const snap = await db.collection('notas').get();
       notas = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     } catch(e) { console.error(e); }
 
-    // Filter: if not superadmin, show only grades from their students
-    if (!isSuperAdmin) {
-      const misUsuarios = await getUsers(currentUser.id);
-      const misUserIds = misUsuarios.map(u => u.id);
-      notas = notas.filter(n => n.createdBy === currentUser.id || misUserIds.includes(n.userId));
-    }
-
+    const misUsuarios = await getUsers(currentUser.id);
+    const misUserIds = misUsuarios.map(u => u.id);
+    notas = notas.filter(n => n.createdBy === currentUser.id || misUserIds.includes(n.userId));
     notas.sort((a,b) => (b.fecha?.seconds||0) - (a.fecha?.seconds||0));
 
     if (notas.length === 0) { document.getElementById('listaNotas').innerHTML = '<p style="color:#64748b;font-style:italic;">No hay notas</p>'; document.getElementById('notasStats').innerHTML = ''; return; }
@@ -1477,7 +1478,6 @@
     const promedio = Math.round(notas.reduce((s,n) => s + n.nota, 0) / total);
     document.getElementById('notasStats').innerHTML = `<div class="stat-card"><div class="num">${total}</div><div class="lbl">Exámenes</div></div><div class="stat-card"><div class="num" style="color:#34d399">${aprobados}</div><div class="lbl">Aprobados</div></div><div class="stat-card"><div class="num" style="color:#f87171">${total-aprobados}</div><div class="lbl">Reprobados</div></div><div class="stat-card"><div class="num" style="color:#60a5fa">${promedio}%</div><div class="lbl">Promedio</div></div>`;
 
-    // Group by student
     const porEstudiante = {};
     notas.forEach(n => {
       const key = n.userId || n.username || 'desconocido';
@@ -1485,27 +1485,136 @@
       porEstudiante[key].notas.push(n);
     });
 
-    let html = '<div style="margin-bottom:12px; display:flex; gap:8px; flex-wrap:wrap;"><button class="btn btn-sm btn-red" onclick="eliminarTodasNotas()">🗑️ Eliminar todas las notas</button><button class="btn btn-sm btn-blue" onclick="exportarNotasPDF()">📄 Exportar PDF de notas</button></div>';
-
-    // Render by student
+    let html = '<div style="margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap;"><button class="btn btn-sm btn-red" onclick="eliminarTodasNotas()">🗑️ Eliminar todas</button><button class="btn btn-sm btn-blue" onclick="exportarNotasPDF()">📄 Exportar PDF</button></div>';
     Object.keys(porEstudiante).forEach(key => {
       const est = porEstudiante[key];
       const promEst = Math.round(est.notas.reduce((s,n) => s + n.nota, 0) / est.notas.length);
       const aprobEst = est.notas.filter(n => n.aprobado).length;
-
-      html += `<div style="background:#0f172a;border:1px solid #334155;border-radius:10px;padding:14px;margin-bottom:12px;">`;
-      html += `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">`;
-      html += `<div><strong style="color:#f8fafc;font-size:0.95rem;">👤 ${est.nombre}</strong><span style="margin-left:10px;font-size:0.75rem;color:#64748b;">${est.notas.length} examen(es) — Promedio: ${promEst}% — Aprobados: ${aprobEst}/${est.notas.length}</span></div>`;
-      html += `</div>`;
-      html += `<table style="width:100%;"><thead><tr><th>Examen</th><th>Nota</th><th>Estado</th><th>Fecha</th><th></th></tr></thead><tbody>`;
-      est.notas.forEach(n => {
-        const badge = n.aprobado ? '<span class="badge badge-green">✓</span>' : '<span class="badge badge-red">✗</span>';
-        html += `<tr><td>${n.examenTitulo||n.examenId||'-'}</td><td><strong>${n.nota}/100</strong></td><td>${badge}</td><td style="color:#64748b;">${n.fechaLocal||'-'}</td><td><button class="btn btn-sm btn-red" onclick="eliminarNota('${n.id}')" style="padding:2px 6px;">✕</button></td></tr>`;
-      });
-      html += `</tbody></table></div>`;
+      html += `<div style="background:#0f172a;border:1px solid #334155;border-radius:10px;padding:14px;margin-bottom:12px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <div><strong style="color:#f8fafc;font-size:0.95rem;">${est.nombre}</strong><span style="margin-left:10px;font-size:0.75rem;color:#64748b;">${est.notas.length} examen(es) — Promedio: ${promEst}% — Aprobados: ${aprobEst}/${est.notas.length}</span></div>
+        </div>
+        <table style="width:100%;"><thead><tr><th>Examen</th><th>Nota</th><th>Estado</th><th>Fecha</th><th></th></tr></thead><tbody>
+        ${est.notas.map(n => `<tr>
+          <td>${n.examenTitulo||'-'}</td>
+          <td><strong>${n.nota}/100</strong></td>
+          <td>${n.aprobado ? '<span class="badge badge-green">Aprobado</span>' : '<span class="badge badge-red">Reprobado</span>'}</td>
+          <td style="color:#64748b;">${n.fechaLocal||'-'}</td>
+          <td><button class="btn btn-sm btn-red" onclick="eliminarNota('${n.id}')" style="padding:2px 6px;">✕</button></td>
+        </tr>`).join('')}
+        </tbody></table></div>`;
     });
-
     document.getElementById('listaNotas').innerHTML = html;
+  }
+
+  // ── Superadmin: notas agrupadas por profesor ──
+  async function loadNotasPorProfesor() {
+    const container = document.getElementById('listaNotas');
+    document.getElementById('notasStats').innerHTML = '';
+    container.innerHTML = '<p style="color:#64748b;">Cargando...</p>';
+
+    try {
+      const admins = await getAllAdmins();
+      const profesores = admins.filter(a => a.role === 'admin' || a.role === 'demo');
+      const allNotasSnap = await db.collection('notas').get();
+      const allNotas = allNotasSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+      // Global stats
+      const totalGlobal = allNotas.length;
+      const aprobGlobal = allNotas.filter(n => n.aprobado).length;
+      const promGlobal = totalGlobal > 0 ? Math.round(allNotas.reduce((s,n) => s + (n.nota||0), 0) / totalGlobal) : 0;
+      document.getElementById('notasStats').innerHTML = `
+        <div class="stat-card"><div class="num">${totalGlobal}</div><div class="lbl">Total evaluaciones</div></div>
+        <div class="stat-card"><div class="num" style="color:#34d399">${aprobGlobal}</div><div class="lbl">Aprobados</div></div>
+        <div class="stat-card"><div class="num" style="color:#f87171">${totalGlobal - aprobGlobal}</div><div class="lbl">Reprobados</div></div>
+        <div class="stat-card"><div class="num" style="color:#60a5fa">${promGlobal}%</div><div class="lbl">Promedio global</div></div>
+        <div class="stat-card"><div class="num" style="color:#a78bfa">${profesores.length}</div><div class="lbl">Profesores</div></div>`;
+
+      if (profesores.length === 0) { container.innerHTML = '<p style="color:#64748b;font-style:italic;">No hay profesores registrados.</p>'; return; }
+
+      container.innerHTML = profesores.map(p => {
+        const notasProf = allNotas.filter(n => n.createdBy === p.id);
+        const aprobP = notasProf.filter(n => n.aprobado).length;
+        const promP = notasProf.length > 0 ? Math.round(notasProf.reduce((s,n) => s + (n.nota||0), 0) / notasProf.length) : 0;
+        return `
+        <div class="card" style="margin-bottom:14px;border-left:3px solid #0078d4;">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+            <div>
+              <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                <span style="font-size:1rem;font-weight:800;color:#f8fafc;">${p.nombre}</span>
+                <span class="badge ${p.role==='demo'?'badge-purple':'badge-blue'}">${p.role}</span>
+                <span style="font-size:0.78rem;color:#64748b;">${notasProf.length} evaluaciones · ${aprobP} aprobados · Promedio: ${promP}%</span>
+              </div>
+              <div style="font-size:0.75rem;color:#64748b;margin-top:2px;">@${p.username} · ${p.institucion||'Sin institución'}</div>
+            </div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+              <button class="btn btn-sm btn-blue" onclick="toggleNotasProfesor('${p.id}')">📊 Ver notas</button>
+              <button class="btn btn-sm" style="background:#059669;color:white;" onclick="imprimirProfesorPDF('${p.id}','${p.nombre.replace(/'/g,'')}','${(p.institucion||'').replace(/'/g,'')}')">🖨️ PDF</button>
+            </div>
+          </div>
+          <div id="notasProf_${p.id}" class="hidden" style="margin-top:14px;border-top:1px solid rgba(148,163,184,0.1);padding-top:12px;">
+            <p style="color:#64748b;font-size:0.82rem;">Cargando...</p>
+          </div>
+        </div>`;
+      }).join('');
+    } catch(e) {
+      container.innerHTML = '<p style="color:#f87171;">Error: ' + e.message + '</p>';
+    }
+  }
+
+  async function toggleNotasProfesor(profId) {
+    const el = document.getElementById('notasProf_' + profId);
+    if (!el) return;
+    if (!el.classList.contains('hidden')) { el.classList.add('hidden'); return; }
+    el.classList.remove('hidden');
+    el.innerHTML = '<p style="color:#64748b;font-size:0.82rem;">⏳ Cargando...</p>';
+
+    try {
+      const snap = await db.collection('notas').where('createdBy','==',profId).get();
+      const notas = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+        .sort((a,b) => (b.fecha?.seconds||0) - (a.fecha?.seconds||0));
+
+      if (notas.length === 0) { el.innerHTML = '<p style="color:#64748b;font-size:0.82rem;">Sin notas registradas.</p>'; return; }
+
+      // Group by student
+      const porEst = {};
+      notas.forEach(n => {
+        const k = n.userId || n.username;
+        if (!porEst[k]) porEst[k] = { nombre: n.nombre || n.username, notas: [] };
+        porEst[k].notas.push(n);
+      });
+
+      let html = '';
+      Object.values(porEst).forEach(est => {
+        const promEst = Math.round(est.notas.reduce((s,n) => s + (n.nota||0), 0) / est.notas.length);
+        const aprobEst = est.notas.filter(n => n.aprobado).length;
+        html += `<div style="background:#0f172a;border:1px solid #334155;border-radius:10px;padding:12px;margin-bottom:10px;">
+          <div style="margin-bottom:8px;">
+            <strong style="color:#f1f5f9;">${est.nombre}</strong>
+            <span style="font-size:0.75rem;color:#64748b;margin-left:8px;">${est.notas.length} examen(es) · Promedio: ${promEst}% · Aprobados: ${aprobEst}/${est.notas.length}</span>
+          </div>
+          <table style="width:100%;font-size:0.8rem;">
+            <thead><tr>
+              <th style="text-align:left;padding:4px 8px;color:#60a5fa;font-size:0.68rem;text-transform:uppercase;border-bottom:1px solid #334155;">Examen</th>
+              <th style="text-align:left;padding:4px 8px;color:#60a5fa;font-size:0.68rem;text-transform:uppercase;border-bottom:1px solid #334155;">Nota</th>
+              <th style="text-align:left;padding:4px 8px;color:#60a5fa;font-size:0.68rem;text-transform:uppercase;border-bottom:1px solid #334155;">Estado</th>
+              <th style="text-align:left;padding:4px 8px;color:#60a5fa;font-size:0.68rem;text-transform:uppercase;border-bottom:1px solid #334155;">Fecha</th>
+            </tr></thead>
+            <tbody>
+              ${est.notas.map(n => `<tr>
+                <td style="padding:4px 8px;border-bottom:1px solid #1e293b;color:#cbd5e1;">${(n.examenTitulo||'-').substring(0,40)}</td>
+                <td style="padding:4px 8px;border-bottom:1px solid #1e293b;font-weight:700;color:${n.aprobado?'#34d399':'#f87171'};">${n.nota}</td>
+                <td style="padding:4px 8px;border-bottom:1px solid #1e293b;"><span class="badge ${n.aprobado?'badge-green':'badge-red'}">${n.aprobado?'Aprobado':'Reprobado'}</span></td>
+                <td style="padding:4px 8px;border-bottom:1px solid #1e293b;color:#64748b;">${n.fechaLocal||'-'}</td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>`;
+      });
+      el.innerHTML = html;
+    } catch(e) {
+      el.innerHTML = '<p style="color:#f87171;">Error: ' + e.message + '</p>';
+    }
   }
 
   async function eliminarNota(id) {
