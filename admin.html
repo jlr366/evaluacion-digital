@@ -89,8 +89,8 @@
       <div class="form-row">
         <div class="form-group">
           <label>⏱️ Tiempo de reconexión permitido (minutos)</label>
-          <input type="number" id="exReconexion" value="5" min="0" max="60" />
-          <span style="font-size:0.72rem;color:#64748b;">Si el estudiante cierra el examen accidentalmente, tiene este tiempo para volver a entrar. Pon 0 para no permitir reconexión.</span>
+          <input type="number" id="exReconexion" value="60" min="0" max="120" />
+          <span style="font-size:0.72rem;color:#64748b;">Si el estudiante cierra el examen accidentalmente, tiene este tiempo para volver a entrar. Pon 0 para no permitir reconexión. Máximo 120 min (2 horas).</span>
         </div>
         <div class="form-group">
           <label>Nota mínima para aprobar (en la misma escala)</label>
@@ -833,7 +833,7 @@
       document.getElementById('exSubtitulo').value = examen.subtitulo || '';
       document.getElementById('exTiempo').value = examen.tiempoMinutos || 40;
       document.getElementById('exNota').value = examen.notaMinima || 70;
-      document.getElementById('exReconexion').value = examen.reconexionMinutos !== undefined ? examen.reconexionMinutos : 5;
+      document.getElementById('exReconexion').value = examen.reconexionMinutos !== undefined ? examen.reconexionMinutos : 60;
 
       // Load questions into editor
       preguntasTemp = (examen.preguntas || []).map(p => {

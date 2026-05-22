@@ -145,7 +145,7 @@ async function createExamen(data) {
     tiempoMinutos: data.tiempoMinutos || 40,
     notaMinima: data.notaMinima || 70,
     notaMaxima: data.notaMaxima || 100,
-    reconexionMinutos: data.reconexionMinutos !== undefined ? data.reconexionMinutos : 5,
+    reconexionMinutos: data.reconexionMinutos !== undefined ? data.reconexionMinutos : 60,
     puntuacion: data.puntuacion || 'igual',
     preguntas: data.preguntas || [],
     createdBy: data.createdBy || '',
@@ -241,7 +241,7 @@ async function registrarSesion(userId, examenId, reconexionMinutos) {
   try {
     const ahora = Date.now();
     // Use exam's reconnect window (in minutes), default 5 min, 0 = no reconnect allowed
-    const ventanaMs = (reconexionMinutos !== undefined ? reconexionMinutos : 5) * 60 * 1000;
+    const ventanaMs = (reconexionMinutos !== undefined ? reconexionMinutos : 60) * 60 * 1000;
 
     const snap = await db.collection('sesiones_activas')
       .where('userId', '==', userId)
