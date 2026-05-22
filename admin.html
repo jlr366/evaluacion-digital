@@ -1723,6 +1723,40 @@
     else { document.getElementById('admMsg').innerHTML = '<div class="msg msg-err">❌ '+res.error+'</div>'; }
   }
 
+  async function loadDemos() {
+    const admins = await getAllAdmins();
+    const demos = admins.filter(a => a.role === 'demo');
+    if (demos.length === 0) {
+      document.getElementById('listaDemos').innerHTML = '<p style="color:#64748b;font-style:italic;">No hay cuentas demo pendientes de activar.</p>';
+    } else {
+      let dHtml = '<table><thead><tr><th>Nombre</th><th>Username</th><th>Institución</th><th>Acción</th></tr></thead><tbody>';
+      demos.forEach(d => {
+        dHtml += `<tr>
+          <td><strong>${d.nombre}</strong></td>
+          <td>${d.username}</td>
+          <td>${d.institucion||'-'}</td>
+          <td style="display:flex;gap:6px;">
+            <button class="btn btn-sm btn-green" onclick="activarDemo('${d.id}','${d.nombre.replace(/'/g,'')}')">✅ Activar</button>
+            <button class="btn btn-sm btn-red" onclick="eliminarAdm('${d.id}')">🗑️</button>
+          </td>
+        </tr>`;
+      });
+      dHtml += '</tbody></table>';
+      document.getElementById('listaDemos').innerHTML = dHtml;
+    }
+  }
+
+  async function loadAssignProfesor() {
+    const admins = await getAllAdmins();
+    const profSelect = document.getElementById('assignProfesor');
+    if (profSelect) {
+      profSelect.innerHTML = '<option value="">-- Seleccionar profesor --</option>';
+      admins.filter(a => a.role === 'admin').forEach(a => {
+        profSelect.innerHTML += `<option value="${a.id}">${a.nombre} (${a.username})</option>`;
+      });
+    }
+  }
+
   async function loadAdmins() {
     const admins = await getAllAdmins();
     let html = '<table><thead><tr><th>Username</th><th>Nombre</th><th>Institución</th><th>Rol</th><th>Acciones</th></tr></thead><tbody>';
