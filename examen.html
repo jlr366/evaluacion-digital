@@ -434,6 +434,7 @@
   const examenId = params.get('id');
   let examenData = null;
   let currentUser = null;
+  let currentSesionId = null;
   let tiempoRestante = 2400;
   let timer = null;
   let examenCargado = false;
@@ -483,6 +484,15 @@
     if (r.success) {
       currentUser = r.user;
       currentUser.email = sinCorreo ? '' : emailInput;
+
+      // Check for active session (anti-trampa)
+      const sesionCheck = await registrarSesion(currentUser.id, examenId);
+      if (!sesionCheck.success) {
+        document.getElementById('loginMsg').innerHTML = '<div class="msg msg-err">🚫 ' + sesionCheck.error + '</div>';
+        return;
+      }
+      currentSesionId = sesionCheck.sesionId;
+
       iniciarExamen();
     }
     else { document.getElementById('loginMsg').innerHTML='<div class="msg msg-err">❌ '+r.error+'</div>'; }
@@ -757,6 +767,11 @@
     updateProgress();
   }
 
+  // Release session on page close/leave
+  window.addEventListener('beforeunload', () => {
+    if (currentUser && examenId) liberarSesion(currentUser.id, examenId);
+  });
+
   // Redraw lines on scroll/resize (positions change)
   window.addEventListener('resize', () => {
     if (!examenData) return;
@@ -782,6 +797,9 @@
 
   async function finalizar() {
     clearInterval(timer);
+
+    // Release session lock
+    if (currentUser) await liberarSesion(currentUser.id, examenId);
     let correctas = 0;
     let puntosObtenidos = 0;
     let puntosTotales = 0;

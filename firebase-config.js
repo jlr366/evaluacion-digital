@@ -234,6 +234,56 @@ async function getGradesByExamen(examenId) {
   }
 }
 
+// ── SESIONES ACTIVAS (anti-trampa: un solo login por usuario por examen) ──
+
+async function registrarSesion(userId, examenId) {
+  try {
+    const ahora = Date.now();
+    const expiracion = 3 * 60 * 60 * 1000; // 3 horas
+
+    // Check if active session exists
+    const snap = await db.collection('sesiones_activas')
+      .where('userId', '==', userId)
+      .where('examenId', '==', examenId)
+      .get();
+
+    if (!snap.empty) {
+      const sesion = snap.docs[0].data();
+      const edad = ahora - (sesion.timestamp || 0);
+      if (edad < expiracion) {
+        // Active session exists and not expired
+        return { success: false, error: 'Este usuario ya tiene una sesión activa en este examen. Solo se permite un acceso a la vez.' };
+      } else {
+        // Expired — delete it
+        await snap.docs[0].ref.delete();
+      }
+    }
+
+    // Register new session
+    const ref = await db.collection('sesiones_activas').add({
+      userId,
+      examenId,
+      timestamp: ahora
+    });
+    return { success: true, sesionId: ref.id };
+  } catch(e) {
+    console.error('registrarSesion error:', e);
+    return { success: true, sesionId: null }; // fail open — don't block exam on DB error
+  }
+}
+
+async function liberarSesion(userId, examenId) {
+  try {
+    const snap = await db.collection('sesiones_activas')
+      .where('userId', '==', userId)
+      .where('examenId', '==', examenId)
+      .get();
+    for (const doc of snap.docs) await doc.ref.delete();
+  } catch(e) {
+    console.error('liberarSesion error:', e);
+  }
+}
+
 async function getGradesByUser(userId) {
   try {
     const snap = await db.collection('notas').where('userId', '==', userId).get();
