@@ -22,36 +22,37 @@
       z-index: 0;
     }
 
-    .container { max-width: 1100px; margin: 0 auto; padding: 24px; position: relative; z-index: 1; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 16px 20px; position: relative; z-index: 1; }
 
     /* ── Exam layout: sidebar + main ── */
     .exam-layout {
       display: grid;
-      grid-template-columns: 220px 1fr;
-      gap: 24px;
+      grid-template-columns: 200px 1fr;
+      gap: 20px;
       align-items: start;
+      min-height: calc(100vh - 100px);
     }
 
     /* ── Sidebar ── */
     .exam-sidebar {
       position: sticky;
-      top: 80px;
-      background: rgba(15,23,42,0.85);
-      border: 1px solid rgba(0,120,212,0.15);
+      top: 76px;
+      background: rgba(15,23,42,0.9);
+      border: 1px solid rgba(0,120,212,0.2);
       border-radius: 14px;
-      padding: 18px;
+      padding: 16px;
       backdrop-filter: blur(8px);
     }
     .sidebar-title {
-      font-size: 0.7rem;
+      font-size: 0.65rem;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 1px;
+      letter-spacing: 1.5px;
       color: #60a5fa;
-      margin-bottom: 6px;
+      margin-bottom: 4px;
     }
     .sidebar-exam-name {
-      font-size: 0.88rem;
+      font-size: 0.92rem;
       font-weight: 700;
       color: #f1f5f9;
       margin-bottom: 14px;
@@ -60,28 +61,28 @@
       padding-bottom: 12px;
     }
     .sidebar-dots-label {
-      font-size: 0.68rem;
+      font-size: 0.65rem;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
+      letter-spacing: 1px;
       color: #475569;
       margin-bottom: 8px;
-      font-weight: 600;
+      font-weight: 700;
     }
     .sidebar-dots {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 6px;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 5px;
     }
 
     /* ── Main question area ── */
-    .exam-main {
-      min-width: 0;
-    }
+    .exam-main { min-width: 0; }
     .exam-main-header {
-      margin-bottom: 20px;
+      margin-bottom: 16px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid rgba(0,120,212,0.15);
     }
     .exam-main-label {
-      font-size: 0.72rem;
+      font-size: 0.75rem;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 1px;
@@ -89,16 +90,31 @@
       margin-bottom: 4px;
     }
     .exam-main-title {
-      font-size: 1.5rem;
+      font-size: 1.6rem;
       font-weight: 900;
       color: #f8fafc;
       letter-spacing: -0.5px;
     }
 
+    /* ── Question card fills the space ── */
+    .pregunta {
+      background: rgba(15,23,42,0.9);
+      border: 1px solid rgba(0,120,212,0.15);
+      border-radius: 14px;
+      padding: 28px 32px;
+      margin-bottom: 0;
+      transition: 0.2s;
+      position: relative;
+      width: 100%;
+    }
+    .pregunta:hover { border-color: rgba(0,120,212,0.3); }
+
     @media (max-width: 768px) {
-      .exam-layout { grid-template-columns: 1fr; }
+      .exam-layout { grid-template-columns: 1fr; gap: 14px; }
       .exam-sidebar { position: static; }
-      .sidebar-dots { grid-template-columns: repeat(6, 1fr); }
+      .sidebar-dots { grid-template-columns: repeat(8, 1fr); }
+      .exam-main-title { font-size: 1.2rem; }
+      .pregunta { padding: 20px 18px; }
     }
 
     /* ── Sticky timer bar ── */
@@ -243,14 +259,14 @@
       box-shadow: 0 2px 8px rgba(0,120,212,0.3);
     }
 
-    .pregunta h3 { font-size: 1.25rem; font-weight: 700; color: #f1f5f9; line-height: 1.7; margin-bottom: 20px; }
-    .pregunta img { max-width: 100%; border-radius: 10px; margin-bottom: 14px; border: 1px solid rgba(0,120,212,0.2); }
+    .pregunta h3 { font-size: 1.35rem; font-weight: 700; color: #f1f5f9; line-height: 1.65; margin-bottom: 24px; }
+    .pregunta img { max-width: 100%; border-radius: 10px; margin-bottom: 16px; border: 1px solid rgba(0,120,212,0.2); }
 
     .opcion {
-      margin: 8px 0;
-      padding: 14px 20px;
+      margin: 10px 0;
+      padding: 16px 22px;
       border-radius: 12px;
-      border: 1px solid rgba(148,163,184,0.08);
+      border: 1px solid rgba(148,163,184,0.1);
       cursor: pointer;
       transition: 0.15s;
       touch-action: manipulation;
@@ -258,7 +274,13 @@
     }
 
     .opcion:hover { background: rgba(0,120,212,0.1); border-color: rgba(0,120,212,0.3); }
-    .opcion label { display: flex; align-items: center; gap: 14px; cursor: pointer; font-size: 1.05rem; color: #cbd5e1; }
+    .opcion label { display: flex; align-items: center; gap: 14px; cursor: pointer; font-size: 1.1rem; color: #cbd5e1; line-height: 1.5; }
+
+    @media (max-width: 768px) {
+      .pregunta h3 { font-size: 1.1rem; }
+      .opcion label { font-size: 1rem; }
+      .opcion { padding: 13px 16px; }
+    }
 
     /* ── Result ── */
     .resultado { text-align: center; padding: 40px 28px; border-radius: 16px; animation: fadeIn 0.5s; }
