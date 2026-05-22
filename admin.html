@@ -111,7 +111,10 @@
 
       <h3 style="color:#94a3b8; font-size:0.85rem; margin:16px 0 10px;">Preguntas</h3>
       <div id="preguntasEditor"></div>
-      <button class="btn btn-blue" style="margin-top:10px;" onclick="addPregunta()">+ Agregar pregunta</button>
+      <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
+        <button class="btn btn-blue" onclick="addPregunta('opcion')">+ Opción múltiple</button>
+        <button class="btn" style="background:rgba(168,85,247,0.2);border:1px solid rgba(168,85,247,0.4);color:#c084fc;" onclick="addPregunta('pares')">🧩 Unión de pares</button>
+      </div>
 
       <div style="margin-top:20px;">
         <button class="btn btn-green" onclick="guardarExamen()">💾 Guardar examen</button>
@@ -324,12 +327,16 @@
     renderPreguntas();
   }
 
-  function addPregunta() {
+  function addPregunta(tipo) {
     if (isDemo && preguntasTemp.length >= 5) {
       alert('🎯 Cuenta demo: máximo 5 preguntas por examen.\n\nActualiza tu plan en evaluacion-digital.com/precios.html');
       return;
     }
-    preguntasTemp.push({ pregunta: '', opciones: ['', '', '', ''], correcta: 0, imagen: '', puntos: 1 });
+    if (tipo === 'pares') {
+      preguntasTemp.push({ tipo: 'pares', pregunta: '', pares: [{ izq: '', der: '' }, { izq: '', der: '' }, { izq: '', der: '' }], puntos: 1 });
+    } else {
+      preguntasTemp.push({ tipo: 'opcion', pregunta: '', opciones: ['', '', '', ''], correcta: 0, imagen: '', puntos: 1 });
+    }
     renderPreguntas();
   }
 
@@ -342,6 +349,39 @@
     const container = document.getElementById('preguntasEditor');
     container.innerHTML = '';
     preguntasTemp.forEach((p, idx) => {
+      if (p.tipo === 'pares') {
+        // ── Pares editor ──
+        let paresHtml = '';
+        (p.pares || []).forEach((par, pi) => {
+          paresHtml += `<div style="display:grid;grid-template-columns:1fr auto 1fr auto;gap:8px;align-items:center;margin-bottom:8px;">
+            <input type="text" value="${(par.izq||'').replace(/"/g,'&quot;')}" onchange="setParIzq(${idx},${pi},this.value)" placeholder="Elemento izquierdo ${pi+1}" style="padding:9px 12px;background:#0f172a;border:1px solid #334155;border-radius:8px;color:#f1f5f9;font-size:0.85rem;">
+            <span style="color:#60a5fa;font-size:1.2rem;">⟷</span>
+            <input type="text" value="${(par.der||'').replace(/"/g,'&quot;')}" onchange="setParDer(${idx},${pi},this.value)" placeholder="Par correcto ${pi+1}" style="padding:9px 12px;background:#0f172a;border:1px solid #334155;border-radius:8px;color:#f1f5f9;font-size:0.85rem;">
+            ${(p.pares.length > 2) ? `<button style="background:#dc2626;color:white;border:none;width:24px;height:24px;border-radius:6px;cursor:pointer;font-size:0.8rem;" onclick="removePar(${idx},${pi})">✕</button>` : '<span style="width:24px;"></span>'}
+          </div>`;
+        });
+
+        const html = `
+          <div class="pregunta-editor">
+            <div class="num">${idx+1}</div>
+            <button class="del" onclick="removePregunta(${idx})">✕</button>
+            <div style="margin-left:36px;">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+                <span style="background:rgba(168,85,247,0.15);border:1px solid rgba(168,85,247,0.4);color:#c084fc;padding:5px 12px;border-radius:8px;font-size:0.78rem;font-weight:700;">🧩 Unión de pares</span>
+                ${puntuacionPersonalizada ? `<label style="display:flex;align-items:center;gap:4px;font-size:0.8rem;color:#f59e0b;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);padding:5px 10px;border-radius:8px;">⭐ Puntos: <input type="number" value="${p.puntos||1}" min="1" max="100" onchange="setPreguntaPuntos(${idx},this.value)" style="width:50px;padding:3px 6px;background:#1e293b;border:1px solid #334155;border-radius:4px;color:#f1f5f9;font-size:0.85rem;"></label>` : ''}
+              </div>
+              <div class="form-group"><label>Enunciado / instrucción</label><textarea onchange="setPreguntaTexto(${idx},this.value)" style="min-height:50px;">${p.pregunta}</textarea></div>
+              <label style="font-size:0.72rem;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:#94a3b8;display:block;margin-bottom:8px;">Pares (izquierda ⟷ derecha correcta)</label>
+              ${paresHtml}
+              <button class="btn btn-sm" style="margin-top:4px;background:#334155;color:#94a3b8;" onclick="addPar(${idx})">+ Agregar par</button>
+              <p style="font-size:0.72rem;color:#64748b;margin-top:8px;">💡 El estudiante arrastrará los elementos derechos para unirlos con los izquierdos. Los derechos se mostrarán en orden aleatorio.</p>
+            </div>
+          </div>`;
+        container.insertAdjacentHTML('beforeend', html);
+        return;
+      }
+
+      // ── Opción múltiple / única (original) ──
       const isMulti = Array.isArray(p.correcta);
       let optsHtml = '';
       p.opciones.forEach((op, oi) => {
@@ -403,6 +443,12 @@
       if (resumenEl) resumenEl.innerHTML = `<span style="color:${color}">${puntosAsignados} / ${puntosMax}</span> ${disponibles > 0 ? '(faltan '+disponibles+' por asignar)' : disponibles === 0 ? '✅ Completo' : '⚠️ Excede por '+Math.abs(disponibles)}`;
     }
   }
+
+  // ── Pares helpers ──
+  function setParIzq(idx, pi, val) { preguntasTemp[idx].pares[pi].izq = val; }
+  function setParDer(idx, pi, val) { preguntasTemp[idx].pares[pi].der = val; }
+  function addPar(idx) { preguntasTemp[idx].pares.push({ izq: '', der: '' }); renderPreguntas(); }
+  function removePar(idx, pi) { if (preguntasTemp[idx].pares.length > 2) { preguntasTemp[idx].pares.splice(pi, 1); renderPreguntas(); } }
 
   function setPreguntaTexto(idx, val) { preguntasTemp[idx].pregunta = val; }
   function setPreguntaImg(idx, val) { preguntasTemp[idx].imagen = val; }
@@ -507,9 +553,18 @@
     }
 
     // Validation: check all questions have at least 2 options with text
-    const opcionVacia = preguntasTemp.findIndex(p => p.opciones.filter(o => o.trim()).length < 2);
+    const opcionVacia = preguntasTemp.findIndex(p => p.tipo !== 'pares' && p.opciones.filter(o => o.trim()).length < 2);
     if (opcionVacia >= 0) {
       const msg = 'La pregunta ' + (opcionVacia+1) + ' necesita al menos 2 opciones con texto.';
+      document.getElementById('exMsg').innerHTML = '<div class="msg msg-err">⚠️ ' + msg + '</div>';
+      alert('⚠️ ' + msg);
+      return;
+    }
+
+    // Validation: check pares questions have at least 2 pairs filled
+    const paresVacia = preguntasTemp.findIndex(p => p.tipo === 'pares' && (p.pares || []).filter(par => par.izq.trim() && par.der.trim()).length < 2);
+    if (paresVacia >= 0) {
+      const msg = 'La pregunta ' + (paresVacia+1) + ' (unión de pares) necesita al menos 2 pares completos.';
       document.getElementById('exMsg').innerHTML = '<div class="msg msg-err">⚠️ ' + msg + '</div>';
       alert('⚠️ ' + msg);
       return;
@@ -764,12 +819,19 @@
       document.getElementById('exNota').value = examen.notaMinima || 70;
 
       // Load questions into editor
-      preguntasTemp = (examen.preguntas || []).map(p => ({
-        pregunta: p.pregunta || '',
-        opciones: p.opciones || ['', ''],
-        correcta: p.correcta !== undefined ? p.correcta : 0,
-        imagen: p.imagen || ''
-      }));
+      preguntasTemp = (examen.preguntas || []).map(p => {
+        if (p.tipo === 'pares') {
+          return { tipo: 'pares', pregunta: p.pregunta || '', pares: p.pares || [{ izq: '', der: '' }, { izq: '', der: '' }], puntos: p.puntos || 1 };
+        }
+        return {
+          tipo: 'opcion',
+          pregunta: p.pregunta || '',
+          opciones: p.opciones || ['', ''],
+          correcta: p.correcta !== undefined ? p.correcta : 0,
+          imagen: p.imagen || '',
+          puntos: p.puntos || 1
+        };
+      });
       renderPreguntas();
 
       editandoExamenId = id;

@@ -206,6 +206,134 @@
       .exam-header { padding: 20px; margin-top: 60px; }
       .exam-header h1 { font-size: 1.3rem; }
     }
+
+    /* ── Puzzle / Pares ── */
+    .pares-container {
+      display: grid;
+      grid-template-columns: 1fr 60px 1fr;
+      gap: 0;
+      align-items: start;
+      margin-top: 12px;
+      position: relative;
+    }
+    .pares-col { display: flex; flex-direction: column; gap: 10px; }
+    .par-piece {
+      padding: 10px 16px;
+      border-radius: 10px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: #f1f5f9;
+      cursor: grab;
+      user-select: none;
+      transition: 0.15s;
+      position: relative;
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+    }
+    .par-piece:active { cursor: grabbing; }
+    .par-izq {
+      background: rgba(0,120,212,0.12);
+      border: 1px solid rgba(0,120,212,0.3);
+      border-right: none;
+      border-radius: 10px 0 0 10px;
+      padding-right: 20px;
+    }
+    .par-izq::after {
+      content: '';
+      position: absolute;
+      right: -14px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 0; height: 0;
+      border-top: 22px solid transparent;
+      border-bottom: 22px solid transparent;
+      border-left: 14px solid rgba(0,120,212,0.3);
+      z-index: 2;
+    }
+    .par-der {
+      background: rgba(30,41,59,0.8);
+      border: 1px solid rgba(148,163,184,0.15);
+      border-left: none;
+      border-radius: 0 10px 10px 0;
+      padding-left: 20px;
+      cursor: grab;
+    }
+    .par-der::before {
+      content: '';
+      position: absolute;
+      left: -14px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 0; height: 0;
+      border-top: 22px solid transparent;
+      border-bottom: 22px solid transparent;
+      border-right: 14px solid rgba(148,163,184,0.15);
+      z-index: 2;
+    }
+    .par-der.dragging { opacity: 0.4; }
+    .par-der.drag-over { background: rgba(0,120,212,0.2); border-color: rgba(0,120,212,0.5); }
+    .par-slot {
+      background: rgba(30,41,59,0.4);
+      border: 2px dashed rgba(148,163,184,0.2);
+      border-left: none;
+      border-radius: 0 10px 10px 0;
+      padding-left: 20px;
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      font-size: 0.8rem;
+      color: #475569;
+      cursor: default;
+      transition: 0.15s;
+    }
+    .par-slot.drag-over { background: rgba(0,120,212,0.15); border-color: rgba(0,120,212,0.5); color: #60a5fa; }
+    .par-slot.filled { background: rgba(0,120,212,0.12); border: 1px solid rgba(0,120,212,0.3); border-left: none; color: #f1f5f9; cursor: default; }
+    .par-slot.filled::before {
+      content: '';
+      position: absolute;
+      left: -14px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 0; height: 0;
+      border-top: 22px solid transparent;
+      border-bottom: 22px solid transparent;
+      border-right: 14px solid rgba(0,120,212,0.3);
+      z-index: 2;
+    }
+    .par-slot { position: relative; }
+    .par-slot .remove-par { position: absolute; top: 4px; right: 6px; background: none; border: none; color: #64748b; cursor: pointer; font-size: 0.75rem; padding: 2px 4px; border-radius: 4px; }
+    .par-slot .remove-par:hover { color: #f87171; }
+    .pares-bank {
+      margin-top: 14px;
+      padding: 12px;
+      background: rgba(15,23,42,0.6);
+      border: 1px dashed rgba(148,163,184,0.15);
+      border-radius: 10px;
+    }
+    .pares-bank-label { font-size: 0.72rem; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+    .pares-bank-items { display: flex; flex-wrap: wrap; gap: 8px; min-height: 40px; }
+    .bank-piece {
+      padding: 8px 14px;
+      background: rgba(30,41,59,0.9);
+      border: 1px solid rgba(148,163,184,0.2);
+      border-radius: 8px;
+      font-size: 0.85rem;
+      color: #cbd5e1;
+      cursor: grab;
+      user-select: none;
+      transition: 0.15s;
+    }
+    .bank-piece:hover { border-color: rgba(0,120,212,0.4); color: #f1f5f9; }
+    .bank-piece:active { cursor: grabbing; opacity: 0.6; }
+    .bank-piece.dragging { opacity: 0.3; }
+    @media (max-width: 600px) {
+      .pares-container { grid-template-columns: 1fr; gap: 6px; }
+      .par-izq { border-radius: 10px; border-right: 1px solid rgba(0,120,212,0.3); }
+      .par-izq::after { display: none; }
+      .par-slot, .par-slot.filled { border-left: 1px solid rgba(0,120,212,0.3); border-radius: 10px; padding-left: 16px; }
+      .par-slot::before, .par-slot.filled::before { display: none; }
+    }
   </style>
 </head>
 <body>
@@ -472,21 +600,72 @@
     }
 
     examenData.preguntas.forEach((item, idx) => {
-      const esMulti = Array.isArray(item.correcta);
-      const inputType = esMulti ? 'checkbox' : 'radio';
-      // Shuffle options
-      const opts = item.opciones.map((t,i) => ({t,i}));
-      for (let i=opts.length-1;i>0;i--) { const j=Math.floor(Math.random()*(i+1)); [opts[i],opts[j]]=[opts[j],opts[i]]; }
-      item._shuffled = opts;
-      item._shuffledCorrecta = esMulti ? item.correcta.map(c => opts.findIndex(o=>o.i===c)) : opts.findIndex(o=>o.i===item.correcta);
-
-      let optsHtml = esMulti ? '<p class="multi-hint">📌 Seleccione '+item.correcta.length+' respuestas</p>' : '';
-      opts.forEach((o,i) => { optsHtml += `<div class="opcion"><label><input type="${inputType}" name="p${idx}" value="${i}" onchange="updateProgress()"><span>${o.t}</span></label></div>`; });
-      const imgHtml = item.imagen ? `<img src="${item.imagen}" alt="Imagen">` : '';
-
       const div = document.createElement('div');
       div.className = 'pregunta';
-      div.innerHTML = `<div class="pregunta-num">${idx+1}</div><h3>${item.pregunta}</h3>${imgHtml}${optsHtml}`;
+
+      if (item.tipo === 'pares') {
+        // ── Puzzle / Pares question ──
+        const pares = item.pares || [];
+        // Shuffle the right-side items
+        const derItems = pares.map((p, i) => ({ text: p.der, origIdx: i }));
+        for (let i = derItems.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [derItems[i], derItems[j]] = [derItems[j], derItems[i]];
+        }
+        item._derShuffled = derItems;
+        item._userPares = new Array(pares.length).fill(null); // null = not matched
+
+        div.innerHTML = `
+          <div class="pregunta-num">${idx + 1}</div>
+          <h3>${item.pregunta}</h3>
+          <p style="font-size:0.78rem;color:#60a5fa;margin-bottom:12px;background:rgba(0,120,212,0.08);padding:6px 10px;border-radius:6px;display:inline-block;">🧩 Arrastra los elementos de abajo hacia su par correcto</p>
+          <div class="pares-container" id="paresGrid${idx}">
+            <div class="pares-col" id="paresIzq${idx}">
+              ${pares.map((p, pi) => `
+                <div class="par-izq par-piece" style="height:44px;">${p.izq}</div>
+              `).join('')}
+            </div>
+            <div style="width:60px;"></div>
+            <div class="pares-col" id="paresSlots${idx}">
+              ${pares.map((p, pi) => `
+                <div class="par-slot" id="slot${idx}_${pi}" data-pregidx="${idx}" data-slotidx="${pi}"
+                  ondragover="parDragOver(event)" ondragleave="parDragLeave(event)" ondrop="parDrop(event)">
+                  <span class="slot-placeholder" style="pointer-events:none;">Arrastra aquí...</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+          <div class="pares-bank" id="paresBanco${idx}">
+            <div class="pares-bank-label">📦 Elementos disponibles — arrastra hacia su par</div>
+            <div class="pares-bank-items" id="bancoPiezas${idx}"
+              ondragover="bankDragOver(event)" ondragleave="bankDragLeave(event)" ondrop="bankDrop(event)" data-pregidx="${idx}">
+              ${derItems.map((d, di) => `
+                <div class="bank-piece" id="piece${idx}_${d.origIdx}" draggable="true"
+                  data-pregidx="${idx}" data-origidx="${d.origIdx}"
+                  ondragstart="parDragStart(event)" ondragend="parDragEnd(event)"
+                  ontouchstart="touchStart(event)" ontouchmove="touchMove(event)" ontouchend="touchEnd(event)">
+                  ${d.text}
+                </div>
+              `).join('')}
+            </div>
+          </div>`;
+      } else {
+        // ── Original multiple choice / single choice ──
+        const esMulti = Array.isArray(item.correcta);
+        const inputType = esMulti ? 'checkbox' : 'radio';
+        // Shuffle options
+        const opts = item.opciones.map((t, i) => ({ t, i }));
+        for (let i = opts.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [opts[i], opts[j]] = [opts[j], opts[i]]; }
+        item._shuffled = opts;
+        item._shuffledCorrecta = esMulti ? item.correcta.map(c => opts.findIndex(o => o.i === c)) : opts.findIndex(o => o.i === item.correcta);
+
+        let optsHtml = esMulti ? '<p class="multi-hint">📌 Seleccione ' + item.correcta.length + ' respuestas</p>' : '';
+        opts.forEach((o, i) => { optsHtml += `<div class="opcion"><label><input type="${inputType}" name="p${idx}" value="${i}" onchange="updateProgress()"><span>${o.t}</span></label></div>`; });
+        const imgHtml = item.imagen ? `<img src="${item.imagen}" alt="Imagen">` : '';
+
+        div.innerHTML = `<div class="pregunta-num">${idx + 1}</div><h3>${item.pregunta}</h3>${imgHtml}${optsHtml}`;
+      }
+
       container.appendChild(div);
     });
 
@@ -494,11 +673,204 @@
     setTimeout(applyAntiAI, 100);
   }
 
+  // ── Drag & Drop for Pares ──
+  let dragPregIdx = null;
+  let dragOrigIdx = null;
+  let dragFromSlot = null; // if dragging from a slot back
+
+  function parDragStart(e) {
+    const el = e.currentTarget;
+    dragPregIdx = parseInt(el.dataset.pregidx);
+    dragOrigIdx = parseInt(el.dataset.origidx);
+    dragFromSlot = el.dataset.fromslot !== undefined ? parseInt(el.dataset.fromslot) : null;
+    el.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', dragOrigIdx);
+  }
+
+  function parDragEnd(e) {
+    e.currentTarget.classList.remove('dragging');
+  }
+
+  function parDragOver(e) {
+    e.preventDefault();
+    e.currentTarget.classList.add('drag-over');
+    e.dataTransfer.dropEffect = 'move';
+  }
+
+  function parDragLeave(e) {
+    e.currentTarget.classList.remove('drag-over');
+  }
+
+  function parDrop(e) {
+    e.preventDefault();
+    const slot = e.currentTarget;
+    slot.classList.remove('drag-over');
+    const slotIdx = parseInt(slot.dataset.slotidx);
+    const pregIdx = parseInt(slot.dataset.pregidx);
+
+    if (dragPregIdx !== pregIdx) return;
+
+    const item = examenData.preguntas[pregIdx];
+
+    // If slot already has a piece, send it back to bank
+    if (item._userPares[slotIdx] !== null) {
+      returnToBank(pregIdx, item._userPares[slotIdx]);
+    }
+
+    // If piece was in another slot, clear that slot
+    if (dragFromSlot !== null) {
+      item._userPares[dragFromSlot] = null;
+      renderSlot(pregIdx, dragFromSlot, null);
+    }
+
+    // Place piece in slot
+    item._userPares[slotIdx] = dragOrigIdx;
+    renderSlot(pregIdx, slotIdx, dragOrigIdx);
+
+    // Hide piece from bank
+    const bankPiece = document.getElementById('piece' + pregIdx + '_' + dragOrigIdx);
+    if (bankPiece) bankPiece.style.display = 'none';
+
+    dragPregIdx = null; dragOrigIdx = null; dragFromSlot = null;
+    updateProgress();
+  }
+
+  function bankDragOver(e) { e.preventDefault(); e.currentTarget.classList.add('drag-over'); }
+  function bankDragLeave(e) { e.currentTarget.classList.remove('drag-over'); }
+  function bankDrop(e) {
+    e.preventDefault();
+    e.currentTarget.classList.remove('drag-over');
+    const pregIdx = parseInt(e.currentTarget.dataset.pregidx);
+    if (dragPregIdx !== pregIdx) return;
+    // If came from a slot, clear that slot
+    if (dragFromSlot !== null) {
+      examenData.preguntas[pregIdx]._userPares[dragFromSlot] = null;
+      renderSlot(pregIdx, dragFromSlot, null);
+    }
+    returnToBank(pregIdx, dragOrigIdx);
+    dragPregIdx = null; dragOrigIdx = null; dragFromSlot = null;
+    updateProgress();
+  }
+
+  function returnToBank(pregIdx, origIdx) {
+    const bankPiece = document.getElementById('piece' + pregIdx + '_' + origIdx);
+    if (bankPiece) { bankPiece.style.display = ''; bankPiece.removeAttribute('data-fromslot'); }
+  }
+
+  function renderSlot(pregIdx, slotIdx, origIdx) {
+    const slot = document.getElementById('slot' + pregIdx + '_' + slotIdx);
+    if (!slot) return;
+    if (origIdx === null) {
+      slot.className = 'par-slot';
+      slot.dataset.pregidx = pregIdx;
+      slot.dataset.slotidx = slotIdx;
+      slot.innerHTML = '<span class="slot-placeholder" style="pointer-events:none;">Arrastra aquí...</span>';
+      slot.ondragover = parDragOver;
+      slot.ondragleave = parDragLeave;
+      slot.ondrop = parDrop;
+    } else {
+      const item = examenData.preguntas[pregIdx];
+      const text = item._derShuffled.find(d => d.origIdx === origIdx)?.text || '';
+      slot.className = 'par-slot filled';
+      slot.dataset.pregidx = pregIdx;
+      slot.dataset.slotidx = slotIdx;
+      slot.innerHTML = `<span draggable="true" data-pregidx="${pregIdx}" data-origidx="${origIdx}" data-fromslot="${slotIdx}"
+        ondragstart="slotDragStart(event)" ondragend="parDragEnd(event)"
+        ontouchstart="touchStart(event)" ontouchmove="touchMove(event)" ontouchend="touchEnd(event)"
+        style="flex:1;cursor:grab;">${text}</span>
+        <button class="remove-par" onclick="removeFromSlot(${pregIdx},${slotIdx})">✕</button>`;
+      slot.ondragover = null; slot.ondragleave = null; slot.ondrop = null;
+    }
+  }
+
+  function slotDragStart(e) {
+    const el = e.currentTarget;
+    dragPregIdx = parseInt(el.dataset.pregidx);
+    dragOrigIdx = parseInt(el.dataset.origidx);
+    dragFromSlot = parseInt(el.dataset.fromslot);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', dragOrigIdx);
+  }
+
+  function removeFromSlot(pregIdx, slotIdx) {
+    const item = examenData.preguntas[pregIdx];
+    const origIdx = item._userPares[slotIdx];
+    if (origIdx !== null) {
+      item._userPares[slotIdx] = null;
+      renderSlot(pregIdx, slotIdx, null);
+      returnToBank(pregIdx, origIdx);
+      updateProgress();
+    }
+  }
+
+  // ── Touch support for mobile ──
+  let touchEl = null, touchClone = null, touchPregIdx = null, touchOrigIdx = null, touchFromSlot = null;
+
+  function touchStart(e) {
+    const el = e.currentTarget;
+    touchEl = el;
+    touchPregIdx = parseInt(el.dataset.pregidx);
+    touchOrigIdx = parseInt(el.dataset.origidx);
+    touchFromSlot = el.dataset.fromslot !== undefined ? parseInt(el.dataset.fromslot) : null;
+
+    // Create floating clone
+    touchClone = el.cloneNode(true);
+    touchClone.style.cssText = 'position:fixed;z-index:9999;opacity:0.85;pointer-events:none;padding:8px 14px;background:rgba(0,120,212,0.3);border:1px solid #0078d4;border-radius:8px;font-size:0.85rem;color:#f1f5f9;';
+    document.body.appendChild(touchClone);
+    el.style.opacity = '0.3';
+  }
+
+  function touchMove(e) {
+    if (!touchClone) return;
+    e.preventDefault();
+    const t = e.touches[0];
+    touchClone.style.left = (t.clientX - 40) + 'px';
+    touchClone.style.top = (t.clientY - 20) + 'px';
+  }
+
+  function touchEnd(e) {
+    if (!touchClone) return;
+    const t = e.changedTouches[0];
+    touchClone.remove(); touchClone = null;
+    if (touchEl) touchEl.style.opacity = '';
+
+    // Find element under touch point
+    const target = document.elementFromPoint(t.clientX, t.clientY);
+    if (!target) return;
+
+    const slot = target.closest('.par-slot');
+    const bank = target.closest('.pares-bank-items');
+
+    if (slot && parseInt(slot.dataset.pregidx) === touchPregIdx) {
+      // Simulate drop on slot
+      dragPregIdx = touchPregIdx; dragOrigIdx = touchOrigIdx; dragFromSlot = touchFromSlot;
+      const fakeEvent = { preventDefault: () => {}, currentTarget: slot };
+      parDrop(fakeEvent);
+    } else if (bank && parseInt(bank.dataset.pregidx) === touchPregIdx && touchFromSlot !== null) {
+      // Return to bank from slot
+      examenData.preguntas[touchPregIdx]._userPares[touchFromSlot] = null;
+      renderSlot(touchPregIdx, touchFromSlot, null);
+      returnToBank(touchPregIdx, touchOrigIdx);
+      updateProgress();
+    }
+
+    touchEl = null; touchPregIdx = null; touchOrigIdx = null; touchFromSlot = null;
+  }
+
   function updateProgress() {
     let answered = 0;
-    examenData.preguntas.forEach((_,i) => { if (document.querySelector(`input[name="p${i}"]:checked`)) answered++; });
+    examenData.preguntas.forEach((item, i) => {
+      if (item.tipo === 'pares') {
+        // Count as answered if all slots are filled
+        const filled = (item._userPares || []).filter(v => v !== null).length;
+        if (filled === (item.pares || []).length) answered++;
+      } else {
+        if (document.querySelector(`input[name="p${i}"]:checked`)) answered++;
+      }
+    });
     document.getElementById('respondidas').textContent = answered;
-    document.getElementById('progressBar').style.width = Math.round(answered/examenData.preguntas.length*100)+'%';
+    document.getElementById('progressBar').style.width = Math.round(answered / examenData.preguntas.length * 100) + '%';
   }
 
   async function finalizar() {
@@ -510,16 +882,24 @@
     examenData.preguntas.forEach((item, idx) => {
       const puntosPreg = item.puntos || 1;
       puntosTotales += puntosPreg;
-      const esMulti = Array.isArray(item.correcta);
       let acerto = false;
-      if (esMulti) {
-        const checked = Array.from(document.querySelectorAll(`input[name="p${idx}"]:checked`)).map(el=>parseInt(el.value)).sort();
-        const correct = (Array.isArray(item._shuffledCorrecta)?item._shuffledCorrecta:[]).sort();
-        acerto = checked.length===correct.length && checked.every((v,i)=>v===correct[i]);
+
+      if (item.tipo === 'pares') {
+        // All pairs must be correct
+        const userPares = item._userPares || [];
+        acerto = (item.pares || []).every((par, pi) => userPares[pi] === pi);
       } else {
-        const sel = document.querySelector(`input[name="p${idx}"]:checked`);
-        acerto = sel && parseInt(sel.value) === item._shuffledCorrecta;
+        const esMulti = Array.isArray(item.correcta);
+        if (esMulti) {
+          const checked = Array.from(document.querySelectorAll(`input[name="p${idx}"]:checked`)).map(el=>parseInt(el.value)).sort();
+          const correct = (Array.isArray(item._shuffledCorrecta)?item._shuffledCorrecta:[]).sort();
+          acerto = checked.length===correct.length && checked.every((v,i)=>v===correct[i]);
+        } else {
+          const sel = document.querySelector(`input[name="p${idx}"]:checked`);
+          acerto = sel && parseInt(sel.value) === item._shuffledCorrecta;
+        }
       }
+
       if (acerto) { correctas++; puntosObtenidos += puntosPreg; }
     });
 
@@ -595,22 +975,33 @@
       examenData.preguntas.forEach((item, idx) => {
         if (y > 260) { doc.addPage(); y = 20; }
 
-        const esMulti = Array.isArray(item.correcta);
         let respuestaUsuario = '';
         let respuestaCorrecta = '';
         let esCorrecta = false;
 
-        if (esMulti) {
-          const checked = Array.from(document.querySelectorAll(`input[name="p${idx}"]:checked`)).map(el=>parseInt(el.value));
-          respuestaUsuario = checked.map(i => item._shuffled[i]?.t || '?').join(', ') || 'Sin respuesta';
-          respuestaCorrecta = item.correcta.map(i => item.opciones[i]).join(', ');
-          const correct = (Array.isArray(item._shuffledCorrecta)?item._shuffledCorrecta:[]).sort();
-          esCorrecta = checked.sort().length===correct.length && checked.every((v,i)=>v===correct[i]);
+        if (item.tipo === 'pares') {
+          const userPares = item._userPares || [];
+          esCorrecta = (item.pares || []).every((par, pi) => userPares[pi] === pi);
+          const pares = item.pares || [];
+          respuestaUsuario = userPares.map((origIdx, pi) => {
+            const der = origIdx !== null ? (item._derShuffled?.find(d => d.origIdx === origIdx)?.text || '?') : 'Sin respuesta';
+            return pares[pi]?.izq + ' → ' + der;
+          }).join(' | ');
+          respuestaCorrecta = pares.map(p => p.izq + ' → ' + p.der).join(' | ');
         } else {
-          const sel = document.querySelector(`input[name="p${idx}"]:checked`);
-          respuestaUsuario = sel ? (item._shuffled[parseInt(sel.value)]?.t || '?') : 'Sin respuesta';
-          respuestaCorrecta = item.opciones[item.correcta];
-          esCorrecta = sel && parseInt(sel.value) === item._shuffledCorrecta;
+          const esMulti = Array.isArray(item.correcta);
+          if (esMulti) {
+            const checked = Array.from(document.querySelectorAll(`input[name="p${idx}"]:checked`)).map(el=>parseInt(el.value));
+            respuestaUsuario = checked.map(i => item._shuffled[i]?.t || '?').join(', ') || 'Sin respuesta';
+            respuestaCorrecta = item.correcta.map(i => item.opciones[i]).join(', ');
+            const correct = (Array.isArray(item._shuffledCorrecta)?item._shuffledCorrecta:[]).sort();
+            esCorrecta = checked.sort().length===correct.length && checked.every((v,i)=>v===correct[i]);
+          } else {
+            const sel = document.querySelector(`input[name="p${idx}"]:checked`);
+            respuestaUsuario = sel ? (item._shuffled[parseInt(sel.value)]?.t || '?') : 'Sin respuesta';
+            respuestaCorrecta = item.opciones[item.correcta];
+            esCorrecta = sel && parseInt(sel.value) === item._shuffledCorrecta;
+          }
         }
 
         // Question number and text
