@@ -144,9 +144,12 @@ async function createExamen(data) {
     subtitulo: data.subtitulo || '',
     tiempoMinutos: data.tiempoMinutos || 40,
     notaMinima: data.notaMinima || 70,
+    notaMaxima: data.notaMaxima || 100,
+    puntuacion: data.puntuacion || 'igual',
     preguntas: data.preguntas || [],
     createdBy: data.createdBy || '',
     createdByName: data.createdByName || '',
+    institucion: data.institucion || '',
     activo: true,
     createdAt: firebase.firestore.FieldValue.serverTimestamp()
   });

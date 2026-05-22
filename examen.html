@@ -209,6 +209,25 @@
   </style>
 </head>
 <body>
+
+<!-- ── Sticky Timer Bar ── -->
+<div id="timerBar" class="timer-bar hidden">
+  <div class="brand">
+    <img src="logo_evaluacion_digital_transparente.png" alt="Logo" onerror="this.style.display='none'">
+    <span id="timerExamTitle" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:0.8rem;color:#94a3b8;"></span>
+  </div>
+  <div class="timer-center">
+    <div id="timerDisplay" class="timer-display">
+      <div class="dot"></div>
+      <span id="tiempo">40:00</span>
+    </div>
+  </div>
+  <div class="progress-wrap">
+    <div class="progress-label"><span id="respondidas">0</span> / <span id="totalPreg">0</span> respondidas</div>
+    <div class="progress-bar"><div id="progressBar" class="progress-fill" style="width:0%"></div></div>
+  </div>
+</div>
+
 <div class="container">
   <!-- Decorative header -->
   <div id="examHeader" style="text-align:center; padding:40px 20px 30px; border-bottom:1px solid rgba(148,163,184,0.12); margin-bottom:24px; position:relative; overflow:hidden;">
