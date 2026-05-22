@@ -22,7 +22,84 @@
       z-index: 0;
     }
 
-    .container { max-width: 860px; margin: 0 auto; padding: 24px; position: relative; z-index: 1; }
+    .container { max-width: 1100px; margin: 0 auto; padding: 24px; position: relative; z-index: 1; }
+
+    /* ── Exam layout: sidebar + main ── */
+    .exam-layout {
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    /* ── Sidebar ── */
+    .exam-sidebar {
+      position: sticky;
+      top: 80px;
+      background: rgba(15,23,42,0.85);
+      border: 1px solid rgba(0,120,212,0.15);
+      border-radius: 14px;
+      padding: 18px;
+      backdrop-filter: blur(8px);
+    }
+    .sidebar-title {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #60a5fa;
+      margin-bottom: 6px;
+    }
+    .sidebar-exam-name {
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: #f1f5f9;
+      margin-bottom: 14px;
+      line-height: 1.4;
+      border-bottom: 1px solid rgba(0,120,212,0.15);
+      padding-bottom: 12px;
+    }
+    .sidebar-dots-label {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #475569;
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+    .sidebar-dots {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+    }
+
+    /* ── Main question area ── */
+    .exam-main {
+      min-width: 0;
+    }
+    .exam-main-header {
+      margin-bottom: 20px;
+    }
+    .exam-main-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #60a5fa;
+      margin-bottom: 4px;
+    }
+    .exam-main-title {
+      font-size: 1.5rem;
+      font-weight: 900;
+      color: #f8fafc;
+      letter-spacing: -0.5px;
+    }
+
+    @media (max-width: 768px) {
+      .exam-layout { grid-template-columns: 1fr; }
+      .exam-sidebar { position: static; }
+      .sidebar-dots { grid-template-columns: repeat(6, 1fr); }
+    }
 
     /* ── Sticky timer bar ── */
     .timer-bar {
@@ -166,13 +243,13 @@
       box-shadow: 0 2px 8px rgba(0,120,212,0.3);
     }
 
-    .pregunta h3 { font-size: 1.08rem; font-weight: 600; color: #f1f5f9; line-height: 1.7; margin-bottom: 16px; }
+    .pregunta h3 { font-size: 1.25rem; font-weight: 700; color: #f1f5f9; line-height: 1.7; margin-bottom: 20px; }
     .pregunta img { max-width: 100%; border-radius: 10px; margin-bottom: 14px; border: 1px solid rgba(0,120,212,0.2); }
 
     .opcion {
-      margin: 6px 0;
-      padding: 12px 16px;
-      border-radius: 10px;
+      margin: 8px 0;
+      padding: 14px 20px;
+      border-radius: 12px;
       border: 1px solid rgba(148,163,184,0.08);
       cursor: pointer;
       transition: 0.15s;
@@ -181,7 +258,7 @@
     }
 
     .opcion:hover { background: rgba(0,120,212,0.1); border-color: rgba(0,120,212,0.3); }
-    .opcion label { display: flex; align-items: center; gap: 12px; cursor: pointer; font-size: 1rem; color: #cbd5e1; }
+    .opcion label { display: flex; align-items: center; gap: 14px; cursor: pointer; font-size: 1.05rem; color: #cbd5e1; }
 
     /* ── Result ── */
     .resultado { text-align: center; padding: 40px 28px; border-radius: 16px; animation: fadeIn 0.5s; }
@@ -304,22 +381,22 @@
     .pares-reset { margin-top:10px; padding:6px 14px; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); color:#f87171; border-radius:8px; font-size:0.8rem; cursor:pointer; font-weight:600; }
     .pares-reset:hover { background:rgba(239,68,68,0.2); }
 
-    /* ── Question navigation ── */
+    /* ── Question navigation dots ── */
     .nav-dot {
-      width: 28px; height: 28px;
+      width: 100%;
+      aspect-ratio: 1;
       border-radius: 8px;
       border: 2px solid #334155;
       background: rgba(30,41,59,0.6);
       color: #64748b;
-      font-size: 0.7rem;
+      font-size: 0.72rem;
       font-weight: 700;
       cursor: pointer;
       display: flex; align-items: center; justify-content: center;
       transition: 0.15s;
-      flex-shrink: 0;
     }
     .nav-dot:hover { border-color: #60a5fa; color: #60a5fa; }
-    .nav-dot.activa { border-color: #0078d4; background: rgba(0,120,212,0.2); color: #60a5fa; box-shadow: 0 0 8px rgba(0,120,212,0.3); }
+    .nav-dot.activa { border-color: #0078d4; background: rgba(0,120,212,0.25); color: #60a5fa; box-shadow: 0 0 8px rgba(0,120,212,0.3); }
     .nav-dot.respondida { border-color: #10b981; background: rgba(16,185,129,0.15); color: #34d399; }
     .nav-dot.activa.respondida { border-color: #0078d4; background: rgba(0,120,212,0.25); color: #60a5fa; }
 
@@ -388,32 +465,47 @@
 
   <!-- Exam -->
   <div id="secExamen" class="hidden" style="padding-top: 80px;">
-    <!-- Question navigator header -->
-    <div id="navHeader" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;gap:12px;flex-wrap:wrap;">
-      <div style="font-size:0.85rem;color:#94a3b8;font-weight:600;">
-        Pregunta <span id="navActual">1</span> de <span id="navTotal">0</span>
+    <div class="exam-layout">
+
+      <!-- Sidebar -->
+      <div class="exam-sidebar">
+        <div class="sidebar-title">Evaluación</div>
+        <div class="sidebar-exam-name" id="sidebarExamName">—</div>
+        <div class="sidebar-dots-label">Preguntas</div>
+        <div class="sidebar-dots" id="navDots"></div>
+        <div style="margin-top:14px;padding-top:12px;border-top:1px solid rgba(0,120,212,0.1);font-size:0.75rem;color:#475569;">
+          <span style="color:#34d399;">■</span> Respondida &nbsp;
+          <span style="color:#60a5fa;">■</span> Actual
+        </div>
+        <div style="margin-top:8px;font-size:0.78rem;color:#64748b;" id="navRespondidas">0 respondidas</div>
       </div>
-      <div id="navDots" style="display:flex;gap:6px;flex-wrap:wrap;flex:1;justify-content:center;max-width:500px;"></div>
-      <div style="font-size:0.78rem;color:#64748b;" id="navRespondidas">0 respondidas</div>
-    </div>
 
-    <!-- Single question display -->
-    <div id="preguntasContainer"></div>
+      <!-- Main -->
+      <div class="exam-main">
+        <div class="exam-main-header">
+          <div class="exam-main-label">Pregunta <span id="navActual">1</span> de <span id="navTotal">0</span></div>
+          <div class="exam-main-title">Preguntas del Examen</div>
+        </div>
 
-    <!-- Navigation buttons -->
-    <div style="display:flex;gap:12px;justify-content:center;margin-top:24px;margin-bottom:60px;flex-wrap:wrap;">
-      <button class="btn" id="btnAnterior" onclick="navPregunta(-1)"
-        style="background:rgba(30,41,59,0.8);border:1px solid #334155;color:#94a3b8;padding:12px 28px;">
-        ← Anterior
-      </button>
-      <button class="btn btn-primary" id="btnSiguiente" onclick="navPregunta(1)"
-        style="padding:12px 28px;">
-        Siguiente →
-      </button>
-      <button class="btn btn-danger" id="btnFinalizar" onclick="confirmarFinalizar()"
-        style="padding:12px 28px;display:none;">
-        ✅ Finalizar examen
-      </button>
+        <div id="preguntasContainer"></div>
+
+        <!-- Navigation buttons -->
+        <div style="display:flex;gap:12px;margin-top:28px;margin-bottom:40px;flex-wrap:wrap;">
+          <button class="btn" id="btnAnterior" onclick="navPregunta(-1)"
+            style="background:rgba(30,41,59,0.8);border:1px solid #334155;color:#94a3b8;padding:13px 28px;font-size:1rem;">
+            ← Anterior
+          </button>
+          <button class="btn btn-primary" id="btnSiguiente" onclick="navPregunta(1)"
+            style="padding:13px 28px;font-size:1rem;">
+            Siguiente →
+          </button>
+          <button class="btn btn-danger" id="btnFinalizar" onclick="confirmarFinalizar()"
+            style="padding:13px 28px;font-size:1rem;display:none;">
+            ✅ Finalizar examen
+          </button>
+        </div>
+      </div>
+
     </div>
   </div>
 
@@ -594,6 +686,9 @@
     document.getElementById('timerExamTitle').textContent = examenData.titulo || '';
     document.getElementById('navTotal').textContent = examenData.preguntas.length;
     document.getElementById('totalPreg').textContent = examenData.preguntas.length;
+    // Set sidebar exam name
+    const sidebarName = document.getElementById('sidebarExamName');
+    if (sidebarName) sidebarName.textContent = examenData.titulo || 'Examen';
 
     // Pre-process all questions (shuffle options, init pares)
     prepararPreguntas();
@@ -642,6 +737,7 @@
   function buildNavDots() {
     const container = document.getElementById('navDots');
     container.innerHTML = '';
+    container.className = 'sidebar-dots';
     examenData.preguntas.forEach((_, i) => {
       const dot = document.createElement('div');
       dot.className = 'nav-dot';
