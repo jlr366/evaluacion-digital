@@ -112,7 +112,8 @@
       <h3 style="color:#94a3b8; font-size:0.85rem; margin:16px 0 10px;">Preguntas</h3>
       <div id="preguntasEditor"></div>
       <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
-        <button class="btn btn-blue" onclick="addPregunta('opcion')">+ Opción múltiple</button>
+        <button class="btn btn-blue" onclick="addPregunta('opcion')">⚪ Una sola respuesta</button>
+        <button class="btn" style="background:rgba(16,185,129,0.2);border:1px solid rgba(16,185,129,0.4);color:#34d399;" onclick="addPregunta('multi')">☑️ Múltiple respuesta</button>
         <button class="btn" style="background:rgba(168,85,247,0.2);border:1px solid rgba(168,85,247,0.4);color:#c084fc;" onclick="addPregunta('pares')">🧩 Unión de pares</button>
       </div>
 
@@ -334,6 +335,8 @@
     }
     if (tipo === 'pares') {
       preguntasTemp.push({ tipo: 'pares', pregunta: '', pares: [{ izq: '', der: '' }, { izq: '', der: '' }, { izq: '', der: '' }], puntos: 1 });
+    } else if (tipo === 'multi') {
+      preguntasTemp.push({ tipo: 'opcion', pregunta: '', opciones: ['', '', '', ''], correcta: [], imagen: '', puntos: 1 });
     } else {
       preguntasTemp.push({ tipo: 'opcion', pregunta: '', opciones: ['', '', '', ''], correcta: 0, imagen: '', puntos: 1 });
     }
