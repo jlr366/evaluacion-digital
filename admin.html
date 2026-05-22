@@ -212,47 +212,70 @@
 
   <!-- TAB: Admins (solo superadmin) -->
   <div id="secAdmins" class="hidden">
-    <!-- Assign external exams -->
-    <div class="card">
-      <h2>📎 Asignar examen externo a un profesor</h2>
-      <p style="color:#64748b; font-size:0.82rem; margin-bottom:16px;">Pega la URL de un examen que ya está en GitHub Pages y asígnalo a un profesor. El examen no se modifica — solo se vincula.</p>
-      <div id="assignMsg"></div>
-      <div class="form-group"><label>URL del examen</label><input type="text" id="assignUrl" placeholder="https://jlr366.github.io/az900-hard2/" /></div>
-      <div class="form-group"><label>Nombre del examen</label><input type="text" id="assignNombre" placeholder="Examen AWS Cloud Practitioner" /></div>
-      <div class="form-group"><label>Asignar a profesor</label><select id="assignProfesor"><option value="">Cargando profesores...</option></select></div>
-      <button class="btn btn-blue" onclick="asignarExamenExterno()">📎 Asignar examen</button>
+
+    <!-- Sub-tabs -->
+    <div style="display:flex;gap:6px;margin-bottom:20px;flex-wrap:wrap;">
+      <button class="btn btn-blue" id="subTabProfesores" onclick="showSubTab('profesores')" style="font-size:0.82rem;">👨‍🏫 Profesores</button>
+      <button class="btn btn-gray" id="subTabCrear" onclick="showSubTab('crear')" style="font-size:0.82rem;">➕ Crear admin</button>
+      <button class="btn btn-gray" id="subTabExternos" onclick="showSubTab('externos')" style="font-size:0.82rem;">📎 Exámenes externos</button>
+      <button class="btn btn-gray" id="subTabDemos" onclick="showSubTab('demos')" style="font-size:0.82rem;">🎯 Demos pendientes</button>
     </div>
 
-    <!-- List of assigned external exams -->
-    <div class="card">
-      <h2>Exámenes externos asignados</h2>
-      <div id="listaExternosAsignados">Cargando...</div>
-    </div>
-
-    <!-- Demo accounts -->
-    <div class="card">
-      <h2>🎯 Cuentas Demo pendientes de activar</h2>
-      <p style="color:#64748b;font-size:0.82rem;margin-bottom:14px;">Profesores que se registraron como demo. Actívalos para darles acceso completo.</p>
-      <div id="listaDemos">Cargando...</div>
-    </div>
-
-    <!-- Create admins -->
-    <div class="card">
-      <h2>Crear administrador</h2>
-      <div id="admMsg"></div>
-      <div class="form-group"><label>Username</label><input type="text" id="admUsername" placeholder="profesor1" /></div>
-      <div class="form-group"><label>Nombre</label><input type="text" id="admNombre" placeholder="Prof. García" /></div>
-      <div class="form-group"><label>Institución</label><input type="text" id="admInstitucion" placeholder="Universidad Nacional, Academia XYZ..." /></div>
-      <div class="form-group"><label>Contraseña</label><input type="text" id="admPassword" placeholder="clave123" /></div>
-      <div class="form-group"><label>Rol</label>
-        <select id="admRole"><option value="admin">Admin (solo ve lo suyo)</option><option value="superadmin">Super Admin (ve todo)</option></select>
+    <!-- SUB: Profesores -->
+    <div id="subSecProfesores">
+      <div class="card" style="margin-bottom:16px;">
+        <h2>👨‍🏫 Profesores registrados</h2>
+        <p style="color:#64748b;font-size:0.82rem;margin-bottom:0;">Haz clic en un profesor para ver sus exámenes, estudiantes y notas.</p>
       </div>
-      <button class="btn btn-blue" onclick="crearAdmin()">+ Crear admin</button>
+      <div id="listaProfesoresDetalle">Cargando...</div>
     </div>
-    <div class="card">
-      <h2>Administradores</h2>
-      <div id="listaAdmins">Cargando...</div>
+
+    <!-- SUB: Crear admin -->
+    <div id="subSecCrear" class="hidden">
+      <div class="card">
+        <h2>➕ Crear administrador / profesor</h2>
+        <div id="admMsg"></div>
+        <div class="form-row">
+          <div class="form-group"><label>Username</label><input type="text" id="admUsername" placeholder="profesor1" /></div>
+          <div class="form-group"><label>Nombre completo</label><input type="text" id="admNombre" placeholder="Prof. García" /></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Institución</label><input type="text" id="admInstitucion" placeholder="Universidad Nacional, Academia XYZ..." /></div>
+          <div class="form-group"><label>Contraseña</label><input type="text" id="admPassword" placeholder="clave123" /></div>
+        </div>
+        <div class="form-group"><label>Rol</label>
+          <select id="admRole"><option value="admin">Profesor / Admin (solo ve lo suyo)</option><option value="superadmin">Super Admin (ve todo)</option></select>
+        </div>
+        <button class="btn btn-blue" onclick="crearAdmin()">+ Crear</button>
+      </div>
     </div>
+
+    <!-- SUB: Exámenes externos -->
+    <div id="subSecExternos" class="hidden">
+      <div class="card">
+        <h2>📎 Asignar examen externo a un profesor</h2>
+        <p style="color:#64748b; font-size:0.82rem; margin-bottom:16px;">Pega la URL de un examen que ya está en GitHub Pages y asígnalo a un profesor.</p>
+        <div id="assignMsg"></div>
+        <div class="form-group"><label>URL del examen</label><input type="text" id="assignUrl" placeholder="https://jlr366.github.io/az900-hard2/" /></div>
+        <div class="form-group"><label>Nombre del examen</label><input type="text" id="assignNombre" placeholder="Examen AWS Cloud Practitioner" /></div>
+        <div class="form-group"><label>Asignar a profesor</label><select id="assignProfesor"><option value="">Cargando profesores...</option></select></div>
+        <button class="btn btn-blue" onclick="asignarExamenExterno()">📎 Asignar examen</button>
+      </div>
+      <div class="card">
+        <h2>Exámenes externos asignados</h2>
+        <div id="listaExternosAsignados">Cargando...</div>
+      </div>
+    </div>
+
+    <!-- SUB: Demos -->
+    <div id="subSecDemos" class="hidden">
+      <div class="card">
+        <h2>🎯 Cuentas Demo pendientes de activar</h2>
+        <p style="color:#64748b;font-size:0.82rem;margin-bottom:14px;">Profesores que se registraron como demo. Actívalos para darles acceso completo.</p>
+        <div id="listaDemos">Cargando...</div>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -329,7 +352,150 @@
     if (tab === 'usuarios') loadEstudiantes();
     if (tab === 'cursos') loadCursos();
     if (tab === 'notas') loadNotas();
-    if (tab === 'admins') loadAdmins();
+    if (tab === 'admins') { showSubTab('profesores'); }
+  }
+
+  function showSubTab(sub) {
+    ['profesores','crear','externos','demos'].forEach(s => {
+      document.getElementById('subSec' + s.charAt(0).toUpperCase() + s.slice(1)).classList.toggle('hidden', s !== sub);
+      const btn = document.getElementById('subTab' + s.charAt(0).toUpperCase() + s.slice(1));
+      if (btn) { btn.className = s === sub ? 'btn btn-blue' : 'btn btn-gray'; btn.style.fontSize = '0.82rem'; }
+    });
+    if (sub === 'profesores') loadProfesoresDetalle();
+    if (sub === 'externos') { loadExternosAsignados(); loadAssignProfesor(); }
+    if (sub === 'demos') loadDemos();
+  }
+
+  async function loadProfesoresDetalle() {
+    const container = document.getElementById('listaProfesoresDetalle');
+    container.innerHTML = '<p style="color:#64748b;">Cargando...</p>';
+    try {
+      const admins = await getAllAdmins();
+      const profesores = admins.filter(a => a.role === 'admin' || a.role === 'demo');
+      if (profesores.length === 0) {
+        container.innerHTML = '<div class="card"><p style="color:#64748b;font-style:italic;">No hay profesores registrados.</p></div>';
+        return;
+      }
+      container.innerHTML = profesores.map(p => `
+        <div class="card" style="margin-bottom:14px;border-left:3px solid #0078d4;">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+            <div>
+              <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                <span style="font-size:1.05rem;font-weight:800;color:#f8fafc;">👨‍🏫 ${p.nombre}</span>
+                <span class="badge ${p.role==='demo'?'badge-purple':'badge-blue'}">${p.role}</span>
+              </div>
+              <div style="font-size:0.78rem;color:#64748b;margin-top:3px;">@${p.username} · ${p.institucion||'Sin institución'}</div>
+            </div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+              <button class="btn btn-sm btn-blue" onclick="toggleProfesorDetalle('${p.id}')">📊 Ver detalle</button>
+              <button class="btn btn-sm btn-red" onclick="eliminarAdminConfirm('${p.id}','${p.nombre.replace(/'/g,'')}')">🗑️</button>
+            </div>
+          </div>
+          <div id="detalle_${p.id}" class="hidden" style="margin-top:16px;border-top:1px solid rgba(148,163,184,0.1);padding-top:14px;">
+            <p style="color:#64748b;font-size:0.82rem;">Cargando datos...</p>
+          </div>
+        </div>`).join('');
+    } catch(e) {
+      container.innerHTML = '<div class="card"><p style="color:#f87171;">Error: ' + e.message + '</p></div>';
+    }
+  }
+
+  async function toggleProfesorDetalle(profId) {
+    const el = document.getElementById('detalle_' + profId);
+    if (!el) return;
+    if (!el.classList.contains('hidden')) { el.classList.add('hidden'); return; }
+    el.classList.remove('hidden');
+    el.innerHTML = '<p style="color:#64748b;font-size:0.82rem;">⏳ Cargando...</p>';
+
+    try {
+      const [examenes, estudiantes, notas] = await Promise.all([
+        getExamenes(profId),
+        getUsers(profId),
+        db.collection('notas').where('createdBy','==',profId).get().then(s => s.docs.map(d=>({id:d.id,...d.data()})))
+      ]);
+
+      const aprobados = notas.filter(n => n.aprobado).length;
+      const reprobados = notas.length - aprobados;
+
+      el.innerHTML = `
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:16px;">
+          <div style="background:#0f172a;border:1px solid #334155;border-radius:10px;padding:12px;text-align:center;">
+            <div style="font-size:1.6rem;font-weight:800;color:#60a5fa;">${examenes.length}</div>
+            <div style="font-size:0.7rem;color:#64748b;text-transform:uppercase;">Exámenes</div>
+          </div>
+          <div style="background:#0f172a;border:1px solid #334155;border-radius:10px;padding:12px;text-align:center;">
+            <div style="font-size:1.6rem;font-weight:800;color:#a78bfa;">${estudiantes.length}</div>
+            <div style="font-size:0.7rem;color:#64748b;text-transform:uppercase;">Estudiantes</div>
+          </div>
+          <div style="background:#0f172a;border:1px solid #334155;border-radius:10px;padding:12px;text-align:center;">
+            <div style="font-size:1.6rem;font-weight:800;color:#f8fafc;">${notas.length}</div>
+            <div style="font-size:0.7rem;color:#64748b;text-transform:uppercase;">Evaluaciones</div>
+          </div>
+          <div style="background:#0f172a;border:1px solid #334155;border-radius:10px;padding:12px;text-align:center;">
+            <div style="font-size:1.6rem;font-weight:800;color:#34d399;">${aprobados}</div>
+            <div style="font-size:0.7rem;color:#64748b;text-transform:uppercase;">Aprobados</div>
+          </div>
+          <div style="background:#0f172a;border:1px solid #334155;border-radius:10px;padding:12px;text-align:center;">
+            <div style="font-size:1.6rem;font-weight:800;color:#f87171;">${reprobados}</div>
+            <div style="font-size:0.7rem;color:#64748b;text-transform:uppercase;">Reprobados</div>
+          </div>
+        </div>
+
+        ${examenes.length > 0 ? `
+        <div style="margin-bottom:14px;">
+          <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;color:#60a5fa;margin-bottom:8px;">📝 Exámenes</div>
+          <table style="width:100%;border-collapse:collapse;font-size:0.8rem;">
+            <thead><tr>
+              <th style="text-align:left;padding:6px 8px;background:#0f172a;color:#60a5fa;font-size:0.68rem;text-transform:uppercase;border-bottom:1px solid #334155;">Título</th>
+              <th style="text-align:left;padding:6px 8px;background:#0f172a;color:#60a5fa;font-size:0.68rem;text-transform:uppercase;border-bottom:1px solid #334155;">Preguntas</th>
+              <th style="text-align:left;padding:6px 8px;background:#0f172a;color:#60a5fa;font-size:0.68rem;text-transform:uppercase;border-bottom:1px solid #334155;">Tiempo</th>
+            </tr></thead>
+            <tbody>${examenes.map(e=>`<tr>
+              <td style="padding:6px 8px;border-bottom:1px solid #1e293b;color:#cbd5e1;">${e.titulo}</td>
+              <td style="padding:6px 8px;border-bottom:1px solid #1e293b;color:#94a3b8;">${(e.preguntas||[]).length}</td>
+              <td style="padding:6px 8px;border-bottom:1px solid #1e293b;color:#94a3b8;">${e.tiempoMinutos} min</td>
+            </tr>`).join('')}</tbody>
+          </table>
+        </div>` : '<p style="color:#64748b;font-size:0.82rem;margin-bottom:12px;">Sin exámenes creados.</p>'}
+
+        ${estudiantes.length > 0 ? `
+        <div style="margin-bottom:14px;">
+          <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;color:#a78bfa;margin-bottom:8px;">👥 Estudiantes</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;">
+            ${estudiantes.map(u=>`<span style="background:rgba(167,139,250,0.1);border:1px solid rgba(167,139,250,0.2);color:#c4b5fd;padding:4px 10px;border-radius:8px;font-size:0.78rem;">${u.nombre} <span style="color:#64748b;">(${u.curso||'Sin curso'})</span></span>`).join('')}
+          </div>
+        </div>` : '<p style="color:#64748b;font-size:0.82rem;margin-bottom:12px;">Sin estudiantes registrados.</p>'}
+
+        ${notas.length > 0 ? `
+        <div>
+          <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;color:#34d399;margin-bottom:8px;">📊 Últimas notas</div>
+          <table style="width:100%;border-collapse:collapse;font-size:0.8rem;">
+            <thead><tr>
+              <th style="text-align:left;padding:6px 8px;background:#0f172a;color:#34d399;font-size:0.68rem;text-transform:uppercase;border-bottom:1px solid #334155;">Estudiante</th>
+              <th style="text-align:left;padding:6px 8px;background:#0f172a;color:#34d399;font-size:0.68rem;text-transform:uppercase;border-bottom:1px solid #334155;">Examen</th>
+              <th style="text-align:left;padding:6px 8px;background:#0f172a;color:#34d399;font-size:0.68rem;text-transform:uppercase;border-bottom:1px solid #334155;">Nota</th>
+              <th style="text-align:left;padding:6px 8px;background:#0f172a;color:#34d399;font-size:0.68rem;text-transform:uppercase;border-bottom:1px solid #334155;">Estado</th>
+            </tr></thead>
+            <tbody>${notas.slice(0,10).map(n=>`<tr>
+              <td style="padding:6px 8px;border-bottom:1px solid #1e293b;color:#cbd5e1;">${n.nombre||n.username}</td>
+              <td style="padding:6px 8px;border-bottom:1px solid #1e293b;color:#94a3b8;">${(n.examenTitulo||'').substring(0,30)}</td>
+              <td style="padding:6px 8px;border-bottom:1px solid #1e293b;font-weight:700;color:${n.aprobado?'#34d399':'#f87171'};">${n.nota}</td>
+              <td style="padding:6px 8px;border-bottom:1px solid #1e293b;"><span class="badge ${n.aprobado?'badge-green':'badge-red'}">${n.aprobado?'Aprobado':'Reprobado'}</span></td>
+            </tr>`).join('')}</tbody>
+          </table>
+          ${notas.length > 10 ? `<p style="font-size:0.75rem;color:#64748b;margin-top:6px;">Mostrando 10 de ${notas.length} notas.</p>` : ''}
+        </div>` : '<p style="color:#64748b;font-size:0.82rem;">Sin notas registradas.</p>'}
+      `;
+    } catch(e) {
+      el.innerHTML = '<p style="color:#f87171;">Error cargando datos: ' + e.message + '</p>';
+    }
+  }
+
+  async function eliminarAdminConfirm(id, nombre) {
+    if (confirm('¿Eliminar al profesor "' + nombre + '"? Se eliminarán también sus datos.')) {
+      await deleteAdmin(id);
+      loadProfesoresDetalle();
+    }
   }
 
   // ── Preguntas Editor ──
