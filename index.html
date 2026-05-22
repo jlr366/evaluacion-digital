@@ -7,6 +7,67 @@
   <title>Evaluación Digital — Crea exámenes en línea en minutos</title>
   <meta name="description" content="Plataforma para crear exámenes digitales con anti-copia, resultados automáticos y gestión de estudiantes. Para profesores, academias e instituciones." />
   <link rel="stylesheet" href="css/styles.css" />
+  <!-- AOS - Animate On Scroll -->
+  <link rel="stylesheet" href="https://unpkg.com/aos@2.3.4/dist/aos.css" />
+  <style>
+    /* ── Hero particles background ── */
+    #particles-hero {
+      position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 0;
+    }
+    .particle {
+      position: absolute; border-radius: 50%;
+      background: radial-gradient(circle, rgba(0,188,242,0.6), transparent 70%);
+      animation: floatUp linear infinite;
+      opacity: 0;
+    }
+    @keyframes floatUp {
+      0%   { transform: translateY(0) scale(1);   opacity: 0; }
+      10%  { opacity: 0.6; }
+      90%  { opacity: 0.3; }
+      100% { transform: translateY(-120vh) scale(0.4); opacity: 0; }
+    }
+
+    /* ── Animated gradient hero text ── */
+    .hero h1 span {
+      background: linear-gradient(90deg, #00bcf2, #0078d4, #a78bfa, #00bcf2);
+      background-size: 300% 100%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: gradientShift 4s ease infinite;
+    }
+    @keyframes gradientShift {
+      0%   { background-position: 0% 50%; }
+      50%  { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    /* ── Card hover glow ── */
+    .card { transition: transform 0.25s, box-shadow 0.25s; }
+    .card:hover { transform: translateY(-4px); box-shadow: 0 8px 32px rgba(0,120,212,0.18); }
+
+    /* ── Stat counter animation ── */
+    .stat .num { transition: color 0.3s; }
+    .stat:hover .num { color: #00bcf2; }
+
+    /* ── Icon bounce ── */
+    .icon { display: inline-block; transition: transform 0.3s; }
+    .card:hover .icon { transform: scale(1.2) rotate(-5deg); }
+
+    /* ── CTA button pulse ── */
+    .btn-primary {
+      animation: subtlePulse 3s ease-in-out infinite;
+    }
+    @keyframes subtlePulse {
+      0%, 100% { box-shadow: 0 4px 14px rgba(0,120,212,0.3); }
+      50%       { box-shadow: 0 4px 28px rgba(0,188,242,0.55); }
+    }
+    .btn-primary:hover { animation: none; }
+
+    /* ── Navbar scroll effect ── */
+    .navbar { transition: background 0.3s, box-shadow 0.3s; }
+    .navbar.scrolled { background: rgba(6,13,26,0.98) !important; box-shadow: 0 2px 20px rgba(0,0,0,0.4); }
+  </style>
 </head>
 <body>
 
@@ -24,10 +85,11 @@
 </header>
 
 <!-- Hero -->
-<section class="hero">
-  <h1>Crea exámenes digitales<br><span>en minutos, no en horas.</span></h1>
-  <p>La plataforma más simple para evaluar a tus estudiantes en línea. Sin instalar nada. Sin complicaciones. Solo crea, comparte y evalúa.</p>
-  <div class="btns">
+<section class="hero" style="position:relative; overflow:hidden;">
+  <div id="particles-hero"></div>
+  <h1 data-aos="fade-down" data-aos-duration="800">Crea exámenes digitales<br><span>en minutos, no en horas.</span></h1>
+  <p data-aos="fade-up" data-aos-duration="800" data-aos-delay="200">La plataforma más simple para evaluar a tus estudiantes en línea. Sin instalar nada. Sin complicaciones. Solo crea, comparte y evalúa.</p>
+  <div class="btns" data-aos="fade-up" data-aos-duration="800" data-aos-delay="400">
     <a href="login.html" class="btn btn-primary">🚀 Crear mi primer examen</a>
     <a href="manual.html" class="btn btn-outline">Ver cómo funciona</a>
   </div>
@@ -41,17 +103,17 @@
   </div>
 
   <div class="grid grid-3">
-    <div class="card" style="text-align:center;">
+    <div class="card" style="text-align:center;" data-aos="fade-up" data-aos-delay="0">
       <div class="icon">✍️</div>
       <h3>1. Crea las preguntas</h3>
       <p>Escribe tus preguntas, agrega opciones múltiples, marca las correctas. Con imágenes si quieres.</p>
     </div>
-    <div class="card" style="text-align:center;">
+    <div class="card" style="text-align:center;" data-aos="fade-up" data-aos-delay="150">
       <div class="icon">🔗</div>
       <h3>2. Comparte la URL</h3>
       <p>Cada examen genera un link único. Envíalo por WhatsApp, email o donde quieras. Sin apps.</p>
     </div>
-    <div class="card" style="text-align:center;">
+    <div class="card" style="text-align:center;" data-aos="fade-up" data-aos-delay="300">
       <div class="icon">📊</div>
       <h3>3. Ve los resultados</h3>
       <p>Las notas se guardan automáticamente. Ve quién aprobó, quién reprobó y el promedio por curso.</p>
@@ -67,47 +129,47 @@
   </div>
 
   <div class="grid grid-3">
-    <div class="card">
+    <div class="card" data-aos="zoom-in" data-aos-delay="0">
       <div class="icon">🔒</div>
       <h3>Anti-copia inteligente</h3>
       <p>Bloqueo de copiar/pegar, clic derecho deshabilitado, no se puede abrir DevTools. Tus preguntas están protegidas.</p>
     </div>
-    <div class="card">
+    <div class="card" data-aos="zoom-in" data-aos-delay="80">
       <div class="icon">🔀</div>
       <h3>Opciones aleatorias</h3>
       <p>Las respuestas se barajan en cada intento. Cada estudiante ve las opciones en orden diferente.</p>
     </div>
-    <div class="card">
+    <div class="card" data-aos="zoom-in" data-aos-delay="160">
       <div class="icon">⏱️</div>
       <h3>Temporizador configurable</h3>
       <p>Define cuántos minutos tiene el estudiante. Cuando se acaba el tiempo, se envía automáticamente.</p>
     </div>
-    <div class="card">
+    <div class="card" data-aos="zoom-in" data-aos-delay="240">
       <div class="icon">☑️</div>
       <h3>Opción múltiple y única</h3>
       <p>Preguntas con una sola respuesta correcta o varias. Tú decides por cada pregunta.</p>
     </div>
-    <div class="card">
+    <div class="card" data-aos="zoom-in" data-aos-delay="320">
       <div class="icon">🖼️</div>
       <h3>Imágenes en preguntas</h3>
       <p>Agrega imágenes a cualquier pregunta. Ideal para diagramas, capturas de pantalla o esquemas.</p>
     </div>
-    <div class="card">
+    <div class="card" data-aos="zoom-in" data-aos-delay="400">
       <div class="icon">🎵</div>
       <h3>Música de fondo</h3>
       <p>Agrega una canción suave durante el examen para crear un ambiente de concentración.</p>
     </div>
-    <div class="card">
+    <div class="card" data-aos="zoom-in" data-aos-delay="480">
       <div class="icon">📚</div>
       <h3>Gestión por cursos</h3>
       <p>Organiza estudiantes por curso o sección. Ve aprobados y reprobados por grupo.</p>
     </div>
-    <div class="card">
+    <div class="card" data-aos="zoom-in" data-aos-delay="560">
       <div class="icon">👥</div>
       <h3>Control de acceso</h3>
       <p>Solo los estudiantes que tú crees pueden acceder. Cada uno con su usuario y contraseña.</p>
     </div>
-    <div class="card">
+    <div class="card" data-aos="zoom-in" data-aos-delay="640">
       <div class="icon">📱</div>
       <h3>Funciona en celular</h3>
       <p>Los estudiantes pueden hacer el examen desde su teléfono, tablet o computadora. Sin instalar nada.</p>
@@ -122,15 +184,15 @@
   </div>
 
   <div class="grid grid-3">
-    <div class="card" style="border-left:3px solid var(--primary);">
+    <div class="card" style="border-left:3px solid var(--primary);" data-aos="fade-right">
       <h3>👨‍🏫 Profesores independientes</h3>
       <p>Evalúa a tus estudiantes sin depender de plataformas complicadas. Crea exámenes en minutos y comparte un link.</p>
     </div>
-    <div class="card" style="border-left:3px solid var(--success);">
+    <div class="card" style="border-left:3px solid var(--success);" data-aos="fade-up">
       <h3>🏫 Academias y centros de formación</h3>
       <p>Gestiona múltiples cursos y profesores. Cada uno crea sus exámenes y ve solo sus estudiantes.</p>
     </div>
-    <div class="card" style="border-left:3px solid var(--purple);">
+    <div class="card" style="border-left:3px solid var(--purple);" data-aos="fade-left">
       <h3>🏢 Empresas y RRHH</h3>
       <p>Evalúa candidatos o capacita empleados con exámenes personalizados. Resultados inmediatos.</p>
     </div>
@@ -197,7 +259,35 @@
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script src="https://unpkg.com/aos@2.3.4/dist/aos.js"></script>
 <script>
+  // ── AOS init ──
+  AOS.init({ once: true, offset: 60, easing: 'ease-out-cubic' });
+
+  // ── Navbar scroll effect ──
+  window.addEventListener('scroll', () => {
+    document.querySelector('.navbar').classList.toggle('scrolled', window.scrollY > 40);
+  });
+
+  // ── Floating particles in hero ──
+  (function() {
+    const container = document.getElementById('particles-hero');
+    if (!container) return;
+    for (let i = 0; i < 22; i++) {
+      const p = document.createElement('div');
+      p.className = 'particle';
+      const size = Math.random() * 60 + 10;
+      p.style.cssText = `
+        width:${size}px; height:${size}px;
+        left:${Math.random()*100}%;
+        bottom:${Math.random()*20 - 10}%;
+        animation-duration:${Math.random()*12 + 8}s;
+        animation-delay:${Math.random()*8}s;
+        opacity:0;
+      `;
+      container.appendChild(p);
+    }
+  })();
   emailjs.init('orZQk0WGfKhLwMQUX');
 
   async function enviarContacto() {

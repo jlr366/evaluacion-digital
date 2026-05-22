@@ -208,6 +208,42 @@
       .exam-header h1 { font-size: 1.3rem; }
     }
 
+    /* ── Animations ── */
+    @keyframes slideInUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes popIn {
+      0%   { transform: scale(0.85); opacity: 0; }
+      70%  { transform: scale(1.04); }
+      100% { transform: scale(1);    opacity: 1; }
+    }
+    @keyframes celebracion {
+      0%,100% { transform: scale(1) rotate(0deg); }
+      20%     { transform: scale(1.06) rotate(-2deg); }
+      40%     { transform: scale(1.06) rotate(2deg); }
+      60%     { transform: scale(1.03) rotate(-1deg); }
+      80%     { transform: scale(1.03) rotate(1deg); }
+    }
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      15%     { transform: translateX(-8px); }
+      30%     { transform: translateX(8px); }
+      45%     { transform: translateX(-6px); }
+      60%     { transform: translateX(6px); }
+      75%     { transform: translateX(-3px); }
+      90%     { transform: translateX(3px); }
+    }
+    .pregunta { animation: slideInUp 0.4s ease both; }
+    .resultado.aprobado { animation: popIn 0.5s ease both, celebracion 0.8s ease 0.5s both; }
+    .resultado.reprobado { animation: popIn 0.5s ease both, shake 0.6s ease 0.5s both; }
+    .opcion { transition: background 0.15s, border-color 0.15s, transform 0.1s; }
+    .opcion:has(input:checked) {
+      background: rgba(0,120,212,0.18) !important;
+      border-color: rgba(0,120,212,0.5) !important;
+      transform: scale(1.01);
+    }
+
     /* ── Flechas / Pares ── */
     .pares-wrap {
       margin-top: 14px;
@@ -600,6 +636,11 @@
       }
 
       container.appendChild(div);
+    });
+
+    // Stagger animation delay per question
+    container.querySelectorAll('.pregunta').forEach((el, i) => {
+      el.style.animationDelay = (i * 80) + 'ms';
     });
 
     // Apply anti-AI zero-width characters after rendering
