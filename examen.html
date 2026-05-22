@@ -303,6 +303,31 @@
     .pares-hint strong { color: #f1f5f9; }
     .pares-reset { margin-top:10px; padding:6px 14px; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); color:#f87171; border-radius:8px; font-size:0.8rem; cursor:pointer; font-weight:600; }
     .pares-reset:hover { background:rgba(239,68,68,0.2); }
+
+    /* ── Question navigation ── */
+    .nav-dot {
+      width: 28px; height: 28px;
+      border-radius: 8px;
+      border: 2px solid #334155;
+      background: rgba(30,41,59,0.6);
+      color: #64748b;
+      font-size: 0.7rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: 0.15s;
+      flex-shrink: 0;
+    }
+    .nav-dot:hover { border-color: #60a5fa; color: #60a5fa; }
+    .nav-dot.activa { border-color: #0078d4; background: rgba(0,120,212,0.2); color: #60a5fa; box-shadow: 0 0 8px rgba(0,120,212,0.3); }
+    .nav-dot.respondida { border-color: #10b981; background: rgba(16,185,129,0.15); color: #34d399; }
+    .nav-dot.activa.respondida { border-color: #0078d4; background: rgba(0,120,212,0.25); color: #60a5fa; }
+
+    /* ── Slide animation ── */
+    @keyframes slideInRight { from { opacity:0; transform:translateX(30px); } to { opacity:1; transform:translateX(0); } }
+    @keyframes slideInLeft  { from { opacity:0; transform:translateX(-30px); } to { opacity:1; transform:translateX(0); } }
+    .slide-right { animation: slideInRight 0.25s ease both; }
+    .slide-left  { animation: slideInLeft  0.25s ease both; }
   </style>
 </head>
 <body>
@@ -363,9 +388,32 @@
 
   <!-- Exam -->
   <div id="secExamen" class="hidden" style="padding-top: 80px;">
+    <!-- Question navigator header -->
+    <div id="navHeader" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;gap:12px;flex-wrap:wrap;">
+      <div style="font-size:0.85rem;color:#94a3b8;font-weight:600;">
+        Pregunta <span id="navActual">1</span> de <span id="navTotal">0</span>
+      </div>
+      <div id="navDots" style="display:flex;gap:6px;flex-wrap:wrap;flex:1;justify-content:center;max-width:500px;"></div>
+      <div style="font-size:0.78rem;color:#64748b;" id="navRespondidas">0 respondidas</div>
+    </div>
+
+    <!-- Single question display -->
     <div id="preguntasContainer"></div>
-    <div style="text-align:center; margin-top:24px; margin-bottom:60px;">
-      <button class="btn btn-danger" onclick="finalizar()" style="padding:14px 32px; font-size:1rem;">✅ Finalizar examen</button>
+
+    <!-- Navigation buttons -->
+    <div style="display:flex;gap:12px;justify-content:center;margin-top:24px;margin-bottom:60px;flex-wrap:wrap;">
+      <button class="btn" id="btnAnterior" onclick="navPregunta(-1)"
+        style="background:rgba(30,41,59,0.8);border:1px solid #334155;color:#94a3b8;padding:12px 28px;">
+        ← Anterior
+      </button>
+      <button class="btn btn-primary" id="btnSiguiente" onclick="navPregunta(1)"
+        style="padding:12px 28px;">
+        Siguiente →
+      </button>
+      <button class="btn btn-danger" id="btnFinalizar" onclick="confirmarFinalizar()"
+        style="padding:12px 28px;display:none;">
+        ✅ Finalizar examen
+      </button>
     </div>
   </div>
 
@@ -542,17 +590,190 @@
     document.getElementById('secLogin').classList.add('hidden');
     document.getElementById('examHeader').classList.add('hidden');
     document.getElementById('secExamen').classList.remove('hidden');
-    // Show sticky timer bar
     document.getElementById('timerBar').classList.remove('hidden');
     document.getElementById('timerExamTitle').textContent = examenData.titulo || '';
-    cargarPreguntas();
+    document.getElementById('navTotal').textContent = examenData.preguntas.length;
     document.getElementById('totalPreg').textContent = examenData.preguntas.length;
+
+    // Pre-process all questions (shuffle options, init pares)
+    prepararPreguntas();
+    // Build nav dots
+    buildNavDots();
+    // Show first question
+    preguntaActual = 0;
+    mostrarPregunta(0, 'right');
+
     actualizarTiempo();
     timer = setInterval(() => {
       tiempoRestante--;
       actualizarTiempo();
       if (tiempoRestante <= 0) { clearInterval(timer); finalizar(); }
     }, 1000);
+  }
+
+  let preguntaActual = 0;
+  let slideDir = 'right';
+
+  function prepararPreguntas() {
+    examenData.preguntas.forEach((item, idx) => {
+      if (item.tipo === 'pares') {
+        const pares = item.pares || [];
+        const derItems = pares.map((p, i) => ({ text: p.der, origIdx: i }));
+        for (let i = derItems.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [derItems[i], derItems[j]] = [derItems[j], derItems[i]];
+        }
+        item._derShuffled = derItems;
+        item._conexiones = {};
+      } else {
+        const opts = item.opciones.map((t, i) => ({ t, i }));
+        for (let i = opts.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [opts[i], opts[j]] = [opts[j], opts[i]];
+        }
+        item._shuffled = opts;
+        item._shuffledCorrecta = Array.isArray(item.correcta)
+          ? item.correcta.map(c => opts.findIndex(o => o.i === c))
+          : opts.findIndex(o => o.i === item.correcta);
+      }
+    });
+  }
+
+  function buildNavDots() {
+    const container = document.getElementById('navDots');
+    container.innerHTML = '';
+    examenData.preguntas.forEach((_, i) => {
+      const dot = document.createElement('div');
+      dot.className = 'nav-dot';
+      dot.textContent = i + 1;
+      dot.id = `dot_${i}`;
+      dot.onclick = () => irAPregunta(i);
+      container.appendChild(dot);
+    });
+  }
+
+  function mostrarPregunta(idx, dir) {
+    const container = document.getElementById('preguntasContainer');
+    const item = examenData.preguntas[idx];
+    const div = document.createElement('div');
+    div.className = 'pregunta ' + (dir === 'right' ? 'slide-right' : 'slide-left');
+
+    if (item.tipo === 'pares') {
+      const pares = item.pares || [];
+      let izqHtml = pares.map((p, pi) =>
+        `<div class="par-btn" id="izq_${idx}_${pi}" onclick="clickIzq(${idx},${pi})">${p.izq}</div>`
+      ).join('');
+      let derHtml = item._derShuffled.map((d, di) =>
+        `<div class="par-btn par-btn-der" id="der_${idx}_${di}" onclick="clickDer(${idx},${di})">${d.text}</div>`
+      ).join('');
+      div.innerHTML = `
+        <div class="pregunta-num">${idx + 1}</div>
+        <h3>${item.pregunta}</h3>
+        <div class="pares-hint">
+          🔗 <strong>Cómo responder:</strong> Clic en un elemento de la izquierda → luego clic en su par de la derecha.<br>
+          🎨 <strong>Las respuestas asociadas comparten el mismo color</strong> (borde + flecha).<br>
+          ✏️ Para deshacer una conexión, clic sobre la flecha o sobre el elemento izquierdo ya conectado.
+        </div>
+        <div class="pares-wrap" id="paresWrap_${idx}">
+          <div class="pares-col-izq" id="colIzq_${idx}">${izqHtml}</div>
+          <div class="pares-svg-area" id="svgArea_${idx}"><svg id="svgLines_${idx}"></svg></div>
+          <div class="pares-col-der" id="colDer_${idx}">${derHtml}</div>
+        </div>
+        <button class="pares-reset" onclick="resetPares(${idx})">🗑️ Borrar todas las conexiones</button>`;
+
+      // Restore existing connections visually
+      setTimeout(() => {
+        if (Object.keys(item._conexiones).length > 0) redrawLines(idx);
+      }, 50);
+    } else {
+      const esMulti = Array.isArray(item.correcta);
+      const inputType = esMulti ? 'checkbox' : 'radio';
+      let optsHtml = esMulti ? '<p class="multi-hint">📌 Seleccione ' + item.correcta.length + ' respuestas</p>' : '';
+      item._shuffled.forEach((o, i) => {
+        const checked = esMulti
+          ? (item._userAnswers && item._userAnswers.includes(i) ? 'checked' : '')
+          : (item._userAnswer === i ? 'checked' : '');
+        optsHtml += `<div class="opcion"><label><input type="${inputType}" name="p${idx}" value="${i}" ${checked} onchange="saveAnswer(${idx})"><span>${o.t}</span></label></div>`;
+      });
+      const imgHtml = item.imagen ? `<img src="${item.imagen}" alt="Imagen">` : '';
+      div.innerHTML = `<div class="pregunta-num">${idx + 1}</div><h3>${item.pregunta}</h3>${imgHtml}${optsHtml}`;
+    }
+
+    container.innerHTML = '';
+    container.appendChild(div);
+
+    // Update nav state
+    document.getElementById('navActual').textContent = idx + 1;
+    document.querySelectorAll('.nav-dot').forEach((d, i) => {
+      d.classList.toggle('activa', i === idx);
+    });
+    updateNavButtons(idx);
+    updateProgress();
+    setTimeout(applyAntiAI, 100);
+  }
+
+  function saveAnswer(idx) {
+    const item = examenData.preguntas[idx];
+    if (item.tipo === 'pares') return;
+    const esMulti = Array.isArray(item.correcta);
+    if (esMulti) {
+      item._userAnswers = Array.from(document.querySelectorAll(`input[name="p${idx}"]:checked`)).map(el => parseInt(el.value));
+    } else {
+      const sel = document.querySelector(`input[name="p${idx}"]:checked`);
+      item._userAnswer = sel ? parseInt(sel.value) : undefined;
+    }
+    updateProgress();
+  }
+
+  function navPregunta(dir) {
+    const nuevo = preguntaActual + dir;
+    if (nuevo < 0 || nuevo >= examenData.preguntas.length) return;
+    irAPregunta(nuevo, dir > 0 ? 'right' : 'left');
+  }
+
+  function irAPregunta(idx, dir) {
+    dir = dir || (idx > preguntaActual ? 'right' : 'left');
+    preguntaActual = idx;
+    mostrarPregunta(idx, dir);
+  }
+
+  function updateNavButtons(idx) {
+    const total = examenData.preguntas.length;
+    const btnAnterior = document.getElementById('btnAnterior');
+    const btnSiguiente = document.getElementById('btnSiguiente');
+    const btnFinalizar = document.getElementById('btnFinalizar');
+    btnAnterior.style.opacity = idx === 0 ? '0.3' : '1';
+    btnAnterior.style.pointerEvents = idx === 0 ? 'none' : 'auto';
+    if (idx === total - 1) {
+      btnSiguiente.style.display = 'none';
+      btnFinalizar.style.display = '';
+    } else {
+      btnSiguiente.style.display = '';
+      btnFinalizar.style.display = 'none';
+    }
+  }
+
+  function confirmarFinalizar() {
+    const total = examenData.preguntas.length;
+    const respondidas = contarRespondidas();
+    if (respondidas < total) {
+      if (!confirm(`Tienes ${total - respondidas} pregunta(s) sin responder. ¿Deseas finalizar de todas formas?`)) return;
+    }
+    finalizar();
+  }
+
+  function contarRespondidas() {
+    let count = 0;
+    examenData.preguntas.forEach((item, i) => {
+      if (item.tipo === 'pares') {
+        if (Object.keys(item._conexiones || {}).length === (item.pares || []).length) count++;
+      } else {
+        const esMulti = Array.isArray(item.correcta);
+        if (esMulti) { if ((item._userAnswers || []).length > 0) count++; }
+        else { if (item._userAnswer !== undefined) count++; }
+      }
+    });
+    return count;
   }
 
   function actualizarTiempo() {
@@ -822,19 +1043,29 @@
   });
 
   function updateProgress() {
-    let answered = 0;
+    const respondidas = contarRespondidas();
+    const total = examenData ? examenData.preguntas.length : 0;
+    document.getElementById('respondidas').textContent = respondidas;
+    document.getElementById('progressBar').style.width = total ? Math.round(respondidas / total * 100) + '%' : '0%';
+    // Update nav dots
+    if (!examenData) return;
     examenData.preguntas.forEach((item, i) => {
+      const dot = document.getElementById(`dot_${i}`);
+      if (!dot) return;
+      let respondida = false;
       if (item.tipo === 'pares') {
-        const totalPares = (item.pares || []).length;
-        const connected = Object.keys(item._conexiones || {}).length;
-        if (connected === totalPares) answered++;
+        respondida = Object.keys(item._conexiones || {}).length > 0;
       } else {
-        if (document.querySelector(`input[name="p${i}"]:checked`)) answered++;
+        const esMulti = Array.isArray(item.correcta);
+        respondida = esMulti ? (item._userAnswers || []).length > 0 : item._userAnswer !== undefined;
       }
+      dot.classList.toggle('respondida', respondida);
     });
-    document.getElementById('respondidas').textContent = answered;
-    document.getElementById('progressBar').style.width = Math.round(answered / examenData.preguntas.length * 100) + '%';
+    const navRes = document.getElementById('navRespondidas');
+    if (navRes) navRes.textContent = respondidas + ' respondidas';
   }
+
+  function cargarPreguntas() { /* replaced by mostrarPregunta */ }
 
   async function finalizar() {
     clearInterval(timer);
@@ -860,12 +1091,11 @@
       } else {
         const esMulti = Array.isArray(item.correcta);
         if (esMulti) {
-          const checked = Array.from(document.querySelectorAll(`input[name="p${idx}"]:checked`)).map(el=>parseInt(el.value)).sort();
-          const correct = (Array.isArray(item._shuffledCorrecta)?item._shuffledCorrecta:[]).sort();
-          acerto = checked.length===correct.length && checked.every((v,i)=>v===correct[i]);
+          const checked = (item._userAnswers || []).slice().sort();
+          const correct = (Array.isArray(item._shuffledCorrecta) ? item._shuffledCorrecta : []).slice().sort();
+          acerto = checked.length === correct.length && checked.every((v, i) => v === correct[i]);
         } else {
-          const sel = document.querySelector(`input[name="p${idx}"]:checked`);
-          acerto = sel && parseInt(sel.value) === item._shuffledCorrecta;
+          acerto = item._userAnswer !== undefined && item._userAnswer === item._shuffledCorrecta;
         }
       }
 
@@ -965,16 +1195,15 @@
         } else {
           const esMulti = Array.isArray(item.correcta);
           if (esMulti) {
-            const checked = Array.from(document.querySelectorAll(`input[name="p${idx}"]:checked`)).map(el=>parseInt(el.value));
+            const checked = item._userAnswers || [];
             respuestaUsuario = checked.map(i => item._shuffled[i]?.t || '?').join(', ') || 'Sin respuesta';
             respuestaCorrecta = item.correcta.map(i => item.opciones[i]).join(', ');
-            const correct = (Array.isArray(item._shuffledCorrecta)?item._shuffledCorrecta:[]).sort();
-            esCorrecta = checked.sort().length===correct.length && checked.every((v,i)=>v===correct[i]);
+            const correct = (Array.isArray(item._shuffledCorrecta) ? item._shuffledCorrecta : []).slice().sort();
+            esCorrecta = checked.slice().sort().length === correct.length && checked.slice().sort().every((v, i) => v === correct[i]);
           } else {
-            const sel = document.querySelector(`input[name="p${idx}"]:checked`);
-            respuestaUsuario = sel ? (item._shuffled[parseInt(sel.value)]?.t || '?') : 'Sin respuesta';
+            respuestaUsuario = item._userAnswer !== undefined ? (item._shuffled[item._userAnswer]?.t || '?') : 'Sin respuesta';
             respuestaCorrecta = item.opciones[item.correcta];
-            esCorrecta = sel && parseInt(sel.value) === item._shuffledCorrecta;
+            esCorrecta = item._userAnswer !== undefined && item._userAnswer === item._shuffledCorrecta;
           }
         }
 
