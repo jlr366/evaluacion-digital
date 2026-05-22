@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /admin.html
+Disallow: /examen.html
+
+Sitemap: https://evaluacion-digital.com/sitemap.xml
