@@ -240,26 +240,30 @@
       font-weight: 600;
       color: #f1f5f9;
       cursor: pointer;
-      border: 2px solid rgba(0,120,212,0.3);
-      background: rgba(0,120,212,0.08);
+      border: 2px solid rgba(148,163,184,0.25);
+      background: rgba(30,41,59,0.6);
       text-align: center;
-      transition: 0.15s;
+      transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
       user-select: none;
       min-height: 44px;
       display: flex;
       align-items: center;
       justify-content: center;
     }
-    .par-btn:hover { border-color: rgba(0,120,212,0.6); background: rgba(0,120,212,0.15); }
-    .par-btn.selected { border-color: #f59e0b; background: rgba(245,158,11,0.15); color: #fbbf24; box-shadow: 0 0 12px rgba(245,158,11,0.3); }
-    .par-btn.connected { border-color: rgba(0,188,242,0.5); background: rgba(0,188,242,0.1); }
-    .par-btn-der {
-      border-color: rgba(148,163,184,0.2);
-      background: rgba(30,41,59,0.6);
+    .par-btn:hover { border-color: rgba(148,163,184,0.5); background: rgba(30,41,59,0.9); }
+    .par-btn.selected {
+      border-color: #f59e0b !important;
+      background: rgba(245,158,11,0.15) !important;
+      color: #fbbf24 !important;
+      box-shadow: 0 0 14px rgba(245,158,11,0.35) !important;
     }
-    .par-btn-der:hover { border-color: rgba(0,120,212,0.5); background: rgba(0,120,212,0.1); }
-    .par-btn-der.connected { border-color: rgba(0,188,242,0.5); background: rgba(0,188,242,0.1); }
-    .pares-hint { font-size:0.78rem; color:#60a5fa; margin-bottom:10px; background:rgba(0,120,212,0.08); padding:6px 10px; border-radius:6px; display:inline-block; }
+    .pares-hint {
+      font-size:0.78rem; color:#94a3b8; margin-bottom:10px;
+      background:rgba(15,23,42,0.6); padding:8px 12px; border-radius:8px;
+      display:block; border: 1px solid rgba(148,163,184,0.1);
+      line-height: 1.6;
+    }
+    .pares-hint strong { color: #f1f5f9; }
     .pares-reset { margin-top:10px; padding:6px 14px; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); color:#f87171; border-radius:8px; font-size:0.8rem; cursor:pointer; font-weight:600; }
     .pares-reset:hover { background:rgba(239,68,68,0.2); }
   </style>
@@ -554,7 +558,11 @@
         div.innerHTML = `
           <div class="pregunta-num">${idx + 1}</div>
           <h3>${item.pregunta}</h3>
-          <p class="pares-hint">🔗 Clic en un elemento izquierdo, luego clic en su par de la derecha para conectarlos. Clic en una flecha para borrarla.</p>
+          <div class="pares-hint">
+            🔗 <strong>Cómo responder:</strong> Clic en un elemento de la izquierda → luego clic en su par de la derecha.<br>
+            🎨 <strong>Las respuestas asociadas comparten el mismo color</strong> (borde + flecha).<br>
+            ✏️ Para deshacer una conexión, clic sobre la flecha o sobre el elemento izquierdo ya conectado.
+          </div>
           <div class="pares-wrap" id="paresWrap_${idx}">
             <div class="pares-col-izq" id="colIzq_${idx}">${izqHtml}</div>
             <div class="pares-svg-area" id="svgArea_${idx}">
@@ -633,6 +641,18 @@
     updateProgress();
   }
 
+  // ── Color palette for pairs ──
+  const PARES_COLORS = [
+    { border: '#60a5fa', bg: 'rgba(96,165,250,0.12)', glow: 'rgba(96,165,250,0.3)'  },  // blue
+    { border: '#34d399', bg: 'rgba(52,211,153,0.12)', glow: 'rgba(52,211,153,0.3)'  },  // green
+    { border: '#f472b6', bg: 'rgba(244,114,182,0.12)', glow: 'rgba(244,114,182,0.3)' }, // pink
+    { border: '#fb923c', bg: 'rgba(251,146,60,0.12)', glow: 'rgba(251,146,60,0.3)'  },  // orange
+    { border: '#a78bfa', bg: 'rgba(167,139,250,0.12)', glow: 'rgba(167,139,250,0.3)' }, // purple
+    { border: '#facc15', bg: 'rgba(250,204,21,0.12)', glow: 'rgba(250,204,21,0.3)'  },  // yellow
+    { border: '#22d3ee', bg: 'rgba(34,211,238,0.12)', glow: 'rgba(34,211,238,0.3)'  },  // cyan
+    { border: '#f87171', bg: 'rgba(248,113,113,0.12)', glow: 'rgba(248,113,113,0.3)' }, // red
+  ];
+
   function redrawLines(pregIdx) {
     const item = examenData.preguntas[pregIdx];
     const svgEl = document.getElementById(`svgLines_${pregIdx}`);
@@ -642,27 +662,47 @@
     svgEl.innerHTML = '';
     const areaRect = svgArea.getBoundingClientRect();
 
-    // Update button styles
+    // Reset all button styles first
     const pares = item.pares || [];
     pares.forEach((_, pi) => {
       const btn = document.getElementById(`izq_${pregIdx}_${pi}`);
-      if (btn) btn.classList.toggle('connected', item._conexiones[pi] !== undefined);
+      if (btn) { btn.style.borderColor = ''; btn.style.background = ''; btn.style.boxShadow = ''; btn.style.color = ''; }
     });
     (item._derShuffled || []).forEach((_, di) => {
       const btn = document.getElementById(`der_${pregIdx}_${di}`);
-      const isConnected = Object.values(item._conexiones).includes(di);
-      if (btn) btn.classList.toggle('connected', isConnected);
+      if (btn) { btn.style.borderColor = ''; btn.style.background = ''; btn.style.boxShadow = ''; btn.style.color = ''; }
     });
 
-    // Draw lines
+    // Assign a color index per izqIdx (order of connection)
+    const colorMap = {}; // izqIdx → colorIdx
+    let colorIdx = 0;
+    Object.keys(item._conexiones).forEach(izqIdx => {
+      colorMap[izqIdx] = colorIdx % PARES_COLORS.length;
+      colorIdx++;
+    });
+
+    // Apply colors and draw lines
     Object.entries(item._conexiones).forEach(([izqIdx, derIdx]) => {
+      const ci = colorMap[izqIdx];
+      const col = PARES_COLORS[ci];
+
       const izqEl = document.getElementById(`izq_${pregIdx}_${izqIdx}`);
       const derEl = document.getElementById(`der_${pregIdx}_${derIdx}`);
       if (!izqEl || !derEl) return;
 
+      // Color the buttons
+      izqEl.style.borderColor = col.border;
+      izqEl.style.background = col.bg;
+      izqEl.style.boxShadow = `0 0 12px ${col.glow}`;
+      izqEl.style.color = '#f8fafc';
+      derEl.style.borderColor = col.border;
+      derEl.style.background = col.bg;
+      derEl.style.boxShadow = `0 0 12px ${col.glow}`;
+      derEl.style.color = '#f8fafc';
+
+      // Draw curved line
       const izqRect = izqEl.getBoundingClientRect();
       const derRect = derEl.getBoundingClientRect();
-
       const x1 = izqRect.right - areaRect.left;
       const y1 = izqRect.top + izqRect.height / 2 - areaRect.top;
       const x2 = derRect.left - areaRect.left;
@@ -671,7 +711,7 @@
 
       const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
       path.setAttribute('d', `M${x1},${y1} C${cx},${y1} ${cx},${y2} ${x2},${y2}`);
-      path.setAttribute('stroke', '#00bcf2');
+      path.setAttribute('stroke', col.border);
       path.setAttribute('stroke-width', '2.5');
       path.setAttribute('fill', 'none');
       path.setAttribute('stroke-linecap', 'round');
@@ -692,7 +732,7 @@
       const ay2 = y2 - aw * Math.sin(angle + 0.4);
       const arrow = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
       arrow.setAttribute('points', `${x2},${y2} ${ax1},${ay1} ${ax2},${ay2}`);
-      arrow.setAttribute('fill', '#00bcf2');
+      arrow.setAttribute('fill', col.border);
       arrow.style.cursor = 'pointer';
       arrow.style.pointerEvents = 'all';
       arrow.addEventListener('click', () => {
