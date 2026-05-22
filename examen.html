@@ -444,7 +444,14 @@
 
   function cargarPreguntas() {
     const container = document.getElementById('preguntasContainer');
+    if (!container) { console.error('preguntasContainer not found'); return; }
     container.innerHTML = '';
+
+    if (!examenData || !examenData.preguntas || examenData.preguntas.length === 0) {
+      container.innerHTML = '<div class="card" style="text-align:center;color:#f87171;">❌ Este examen no tiene preguntas.</div>';
+      return;
+    }
+
     examenData.preguntas.forEach((item, idx) => {
       const esMulti = Array.isArray(item.correcta);
       const inputType = esMulti ? 'checkbox' : 'radio';
@@ -457,8 +464,13 @@
       let optsHtml = esMulti ? '<p class="multi-hint">📌 Seleccione '+item.correcta.length+' respuestas</p>' : '';
       opts.forEach((o,i) => { optsHtml += `<div class="opcion"><label><input type="${inputType}" name="p${idx}" value="${i}" onchange="updateProgress()"><span>${o.t}</span></label></div>`; });
       const imgHtml = item.imagen ? `<img src="${item.imagen}" alt="Imagen">` : '';
-      container.innerHTML += `<div class="pregunta"><div class="pregunta-num">${idx+1}</div><h3>${item.pregunta}</h3>${imgHtml}${optsHtml}</div>`;
+
+      const div = document.createElement('div');
+      div.className = 'pregunta';
+      div.innerHTML = `<div class="pregunta-num">${idx+1}</div><h3>${item.pregunta}</h3>${imgHtml}${optsHtml}`;
+      container.appendChild(div);
     });
+
     // Apply anti-AI zero-width characters after rendering
     setTimeout(applyAntiAI, 100);
   }
