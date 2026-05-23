@@ -124,10 +124,10 @@
       <h2 style="font-size:1.2rem; color:#f8fafc; margin-bottom:8px;">Prueba el examen en vivo</h2>
       <p style="color:var(--text-muted); font-size:0.88rem; margin-bottom:20px; line-height:1.6;">
         Experimenta cómo se ve un examen real desde la perspectiva del estudiante.<br>
-        Incluye los 3 tipos de preguntas: opción única, múltiple y unión de pares.<br>
+        Incluye los 5 tipos de preguntas: opción única, múltiple, pares, imágenes y numérica.<br>
         <strong style="color:#60a5fa;">No requiere cuenta. No guarda ningún dato.</strong>
       </p>
-      <a href="examen.html?id=DEMO_EXAM_ID&preview=1" id="btnDemoExamen" class="btn btn-primary" style="display:inline-block;">
+      <a href="#" id="btnDemoExamen" class="btn btn-primary" style="display:inline-block;">
         👁️ Ver examen de demostración
       </a>
       <p style="color:#475569; font-size:0.75rem; margin-top:12px;">Solo lectura — ninguna respuesta se guarda</p>
@@ -219,7 +219,10 @@
 
       // Set button URL
       const btn = document.getElementById('btnDemoExamen');
-      if (btn) btn.href = 'examen.html?id=' + DEMO_DOC_ID + '&preview=1';
+      if (btn) {
+        btn.href = 'examen.html?id=' + DEMO_DOC_ID + '&preview=1';
+        btn.textContent = '👁️ Ver examen de demostración';
+      }
     } catch(e) {
       console.log('Demo exam setup:', e.message);
     }
