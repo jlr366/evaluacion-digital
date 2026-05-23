@@ -1383,13 +1383,41 @@
     if (!isPreview) enviarEmail(nota, correctas, aprobado);
   }
 
-  function generarPDF(nota, correctas, aprobado) {
+  // ── Helper: convert image URL to base64 for PDF ──
+  function imgToBase64(url) {
+    return new Promise((resolve) => {
+      try {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = function() {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.naturalWidth;
+          canvas.height = img.naturalHeight;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0);
+          resolve(canvas.toDataURL('image/png'));
+        };
+        img.onerror = () => resolve(null); // fail silently
+        img.src = url;
+      } catch(e) { resolve(null); }
+    });
+  }
+
+  async function generarPDF(nota, correctas, aprobado) {
     try {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF();
       const fecha = new Date().toLocaleString('es-ES');
       const nombre = currentUser ? currentUser.nombre : 'Estudiante';
       const status = aprobado ? 'APROBADO' : 'REPROBADO';
+
+      // Pre-load all question images as base64
+      const imgCache = {};
+      for (const item of examenData.preguntas) {
+        if (item.imagen && item.imagen.trim()) {
+          imgCache[item.imagen] = await imgToBase64(item.imagen);
+        }
+      }
 
       // Header
       const institucion = examenData.institucion || currentUser.institucion || 'Evaluacion Digital';
@@ -1489,6 +1517,17 @@
         doc.setTextColor(0, 0, 0);
         doc.text((idx+1) + '. ' + item.pregunta.substring(0, 95), 20, y);
         y += 5;
+
+        // Thumbnail if question has image
+        if (item.imagen && imgCache[item.imagen]) {
+          try {
+            const thumbH = 22;
+            const thumbW = 30;
+            if (y + thumbH > 265) { doc.addPage(); y = 20; }
+            doc.addImage(imgCache[item.imagen], 'PNG', 22, y, thumbW, thumbH);
+            y += thumbH + 3;
+          } catch(imgErr) { /* skip if image fails */ }
+        }
 
         // Result label: CORRECTA or INCORRECTA
         doc.setFontSize(9);
