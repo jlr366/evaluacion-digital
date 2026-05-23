@@ -134,6 +134,8 @@
         <button class="btn btn-blue" onclick="addPregunta('opcion')">⚪ Una sola respuesta</button>
         <button class="btn" style="background:rgba(16,185,129,0.2);border:1px solid rgba(16,185,129,0.4);color:#34d399;" onclick="addPregunta('multi')">☑️ Múltiple respuesta</button>
         <button class="btn" style="background:rgba(168,85,247,0.2);border:1px solid rgba(168,85,247,0.4);color:#c084fc;" onclick="addPregunta('pares')">🧩 Unión de pares</button>
+        <button class="btn" style="background:rgba(251,146,60,0.2);border:1px solid rgba(251,146,60,0.4);color:#fb923c;" onclick="addPregunta('imagen')">🖼️ Opciones con imagen</button>
+        <button class="btn" style="background:rgba(34,211,238,0.2);border:1px solid rgba(34,211,238,0.4);color:#22d3ee;" onclick="addPregunta('numerico')">🔢 Respuesta numérica</button>
       </div>
 
       <div style="margin-top:20px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
@@ -720,6 +722,10 @@
       preguntasTemp.push({ tipo: 'pares', pregunta: '', pares: [{ izq: '', der: '' }, { izq: '', der: '' }, { izq: '', der: '' }], puntos: 1 });
     } else if (tipo === 'multi') {
       preguntasTemp.push({ tipo: 'opcion', pregunta: '', opciones: ['', '', '', ''], correcta: [], imagen: '', puntos: 1 });
+    } else if (tipo === 'imagen') {
+      preguntasTemp.push({ tipo: 'imagen', pregunta: '', opciones: [{ texto: '', imagen: '' }, { texto: '', imagen: '' }, { texto: '', imagen: '' }, { texto: '', imagen: '' }], correcta: 0, puntos: 1 });
+    } else if (tipo === 'numerico') {
+      preguntasTemp.push({ tipo: 'numerico', pregunta: '', imagen: '', respuesta: '', tolerancia: 0, puntos: 1 });
     } else {
       preguntasTemp.push({ tipo: 'opcion', pregunta: '', opciones: ['', '', '', ''], correcta: 0, imagen: '', puntos: 1 });
     }
@@ -767,9 +773,88 @@
         return;
       }
 
+      // ── Imagen options ──
+      if (p.tipo === 'imagen') {
+        let imgOptsHtml = '';
+        (p.opciones || []).forEach((op, oi) => {
+          const isCorrect = p.correcta === oi;
+          const border = isCorrect ? 'border:2px solid #fbbf24;background:rgba(250,204,0,0.08);' : 'border:2px solid #334155;background:transparent;';
+          imgOptsHtml += `<div style="display:flex;flex-direction:column;gap:6px;padding:10px;border-radius:10px;${border}transition:0.2s;cursor:pointer;" onclick="setCorrecta(${idx},${oi},{checked:true,type:'radio'});renderPreguntas();">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <input type="radio" name="correcta${idx}" value="${oi}" ${isCorrect?'checked':''} onclick="setCorrecta(${idx},${oi},this);renderPreguntas();" style="width:18px;height:18px;accent-color:#fbbf24;cursor:pointer;">
+              <input type="text" value="${(op.texto||'').replace(/"/g,'&quot;')}" onchange="setOpcionImgTexto(${idx},${oi},this.value)" placeholder="Texto de la opción (opcional)" style="flex:1;padding:8px 10px;background:#1e293b;border:1px solid #334155;border-radius:8px;color:#f1f5f9;font-size:0.85rem;">
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <input type="text" value="${(op.imagen||'').replace(/"/g,'&quot;')}" onchange="setOpcionImgUrl(${idx},${oi},this.value)" placeholder="URL de imagen" style="flex:1;padding:8px 10px;background:#1e293b;border:1px solid #334155;border-radius:8px;color:#f1f5f9;font-size:0.82rem;">
+              <label style="cursor:pointer;background:#0078d4;color:white;padding:7px 12px;border-radius:8px;font-size:0.78rem;font-weight:700;white-space:nowrap;">
+                📁 Subir
+                <input type="file" accept="image/*" onchange="subirImagenOpcion(${idx},${oi},this.files[0])" style="display:none;">
+              </label>
+              ${op.imagen ? `<img src="${op.imagen}" style="height:50px;border-radius:6px;border:1px solid #334155;">` : ''}
+            </div>
+          </div>`;
+        });
+        const htmlImg = `
+          <div class="pregunta-editor">
+            <div class="num">${idx+1}</div>
+            <button class="del" onclick="removePregunta(${idx})">✕</button>
+            <div style="margin-left:36px;">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+                <span style="background:rgba(251,146,60,0.15);border:1px solid rgba(251,146,60,0.4);color:#fb923c;padding:5px 12px;border-radius:8px;font-size:0.78rem;font-weight:700;">🖼️ Opciones con imagen</span>
+                ${puntuacionPersonalizada ? `<label style="display:flex;align-items:center;gap:4px;font-size:0.8rem;color:#f59e0b;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);padding:5px 10px;border-radius:8px;">⭐ Puntos: <input type="number" value="${p.puntos||1}" min="1" max="100" onchange="setPreguntaPuntos(${idx},this.value)" style="width:50px;padding:3px 6px;background:#1e293b;border:1px solid #334155;border-radius:4px;color:#f1f5f9;font-size:0.85rem;"></label>` : ''}
+              </div>
+              <div class="form-group"><label>Pregunta / enunciado</label><textarea onchange="setPreguntaTexto(${idx},this.value)" style="min-height:50px;">${p.pregunta}</textarea></div>
+              <label style="font-size:0.72rem;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:#94a3b8;display:block;margin-bottom:8px;">Opciones — haz clic en la correcta ●</label>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">${imgOptsHtml}</div>
+              <p style="font-size:0.72rem;color:#64748b;margin-top:8px;">💡 Sube una imagen por opción. El texto es opcional.</p>
+            </div>
+          </div>`;
+        container.insertAdjacentHTML('beforeend', htmlImg);
+        return;
+      }
+
+      // ── Numérica ──
+      if (p.tipo === 'numerico') {
+        const htmlNum = `
+          <div class="pregunta-editor">
+            <div class="num">${idx+1}</div>
+            <button class="del" onclick="removePregunta(${idx})">✕</button>
+            <div style="margin-left:36px;">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+                <span style="background:rgba(34,211,238,0.15);border:1px solid rgba(34,211,238,0.4);color:#22d3ee;padding:5px 12px;border-radius:8px;font-size:0.78rem;font-weight:700;">🔢 Respuesta numérica</span>
+                ${puntuacionPersonalizada ? `<label style="display:flex;align-items:center;gap:4px;font-size:0.8rem;color:#f59e0b;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);padding:5px 10px;border-radius:8px;">⭐ Puntos: <input type="number" value="${p.puntos||1}" min="1" max="100" onchange="setPreguntaPuntos(${idx},this.value)" style="width:50px;padding:3px 6px;background:#1e293b;border:1px solid #334155;border-radius:4px;color:#f1f5f9;font-size:0.85rem;"></label>` : ''}
+              </div>
+              <div class="form-group"><label>Pregunta / enunciado</label><textarea onchange="setPreguntaTexto(${idx},this.value)" style="min-height:50px;">${p.pregunta}</textarea></div>
+              <div class="form-group">
+                <label>Imagen de la pregunta (opcional — ej: ecuación)</label>
+                <div style="display:flex;gap:8px;align-items:center;">
+                  <input type="text" value="${(p.imagen||'').replace(/"/g,'&quot;')}" onchange="setPreguntaImg(${idx},this.value)" placeholder="URL de imagen" style="flex:1;">
+                  <label style="cursor:pointer;background:#0078d4;color:white;padding:8px 14px;border-radius:8px;font-size:0.8rem;font-weight:700;white-space:nowrap;">
+                    📁 Buscar
+                    <input type="file" accept="image/*" onchange="subirImagenPregunta(${idx},this.files[0])" style="display:none;">
+                  </label>
+                </div>
+                ${p.imagen ? `<img src="${p.imagen}" style="max-width:200px;max-height:100px;border-radius:8px;margin-top:8px;border:1px solid #334155;">` : ''}
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Respuesta correcta (número)</label>
+                  <input type="text" value="${p.respuesta||''}" onchange="preguntasTemp[${idx}].respuesta=this.value" placeholder="Ej: 42 o 3.14 o 1/2" style="padding:10px 14px;background:#0f172a;border:1px solid #334155;border-radius:8px;color:#f1f5f9;font-size:0.9rem;width:100%;">
+                </div>
+                <div class="form-group">
+                  <label>Tolerancia (±)</label>
+                  <input type="number" value="${p.tolerancia||0}" min="0" step="0.01" onchange="preguntasTemp[${idx}].tolerancia=parseFloat(this.value)||0" placeholder="0" style="padding:10px 14px;background:#0f172a;border:1px solid #334155;border-radius:8px;color:#f1f5f9;font-size:0.9rem;width:100%;">
+                  <span style="font-size:0.72rem;color:#64748b;">Margen de error aceptado. Ej: tolerancia 0.5 acepta ±0.5</span>
+                </div>
+              </div>
+            </div>
+          </div>`;
+        container.insertAdjacentHTML('beforeend', htmlNum);
+        return;
+      }
+
       // ── Opción múltiple / única (original) ──
-      const isMulti = Array.isArray(p.correcta);
-      let optsHtml = '';
+      const isMulti = Array.isArray(p.correcta);      let optsHtml = '';
       p.opciones.forEach((op, oi) => {
         const checked = isMulti ? (p.correcta.includes(oi) ? 'checked' : '') : (p.correcta === oi ? 'checked' : '');
         const isCorrect = isMulti ? p.correcta.includes(oi) : p.correcta === oi;
@@ -835,6 +920,22 @@
   function setParDer(idx, pi, val) { preguntasTemp[idx].pares[pi].der = val; }
   function addPar(idx) { preguntasTemp[idx].pares.push({ izq: '', der: '' }); renderPreguntas(); }
   function removePar(idx, pi) { if (preguntasTemp[idx].pares.length > 2) { preguntasTemp[idx].pares.splice(pi, 1); renderPreguntas(); } }
+
+  function setOpcionImgTexto(idx, oi, val) { preguntasTemp[idx].opciones[oi].texto = val; }
+  function setOpcionImgUrl(idx, oi, val) { preguntasTemp[idx].opciones[oi].imagen = val; renderPreguntas(); }
+
+  async function subirImagenOpcion(idx, oi, file) {
+    if (!file) return;
+    const storageRef = firebase.storage().ref();
+    const nombre = 'examenes/' + Date.now() + '_op_' + file.name.replace(/[^a-zA-Z0-9._-]/g, '');
+    const ref = storageRef.child(nombre);
+    try {
+      const snapshot = await ref.put(file);
+      const url = await snapshot.ref.getDownloadURL();
+      preguntasTemp[idx].opciones[oi].imagen = url;
+      renderPreguntas();
+    } catch(e) { alert('Error subiendo imagen: ' + e.message); }
+  }
 
   function setPreguntaTexto(idx, val) { preguntasTemp[idx].pregunta = val; }
   function setPreguntaImg(idx, val) { preguntasTemp[idx].imagen = val; }
@@ -1239,6 +1340,12 @@
       preguntasTemp = (examen.preguntas || []).map(p => {
         if (p.tipo === 'pares') {
           return { tipo: 'pares', pregunta: p.pregunta || '', pares: p.pares || [{ izq: '', der: '' }, { izq: '', der: '' }], puntos: p.puntos || 1 };
+        }
+        if (p.tipo === 'imagen') {
+          return { tipo: 'imagen', pregunta: p.pregunta || '', opciones: p.opciones || [{ texto: '', imagen: '' }, { texto: '', imagen: '' }], correcta: p.correcta !== undefined ? p.correcta : 0, puntos: p.puntos || 1 };
+        }
+        if (p.tipo === 'numerico') {
+          return { tipo: 'numerico', pregunta: p.pregunta || '', imagen: p.imagen || '', respuesta: p.respuesta || '', tolerancia: p.tolerancia || 0, puntos: p.puntos || 1 };
         }
         return {
           tipo: 'opcion',

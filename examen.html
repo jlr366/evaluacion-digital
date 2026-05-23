@@ -343,7 +343,61 @@
       transform: scale(1.01);
     }
 
-    /* ── Flechas / Pares ── */
+    /* ── Image options ── */
+    .opciones-imagen {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-top: 8px;
+    }
+    .opcion-img {
+      border: 2px solid rgba(148,163,184,0.15);
+      border-radius: 12px;
+      padding: 10px;
+      cursor: pointer;
+      transition: 0.15s;
+      background: rgba(30,41,59,0.5);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      text-align: center;
+    }
+    .opcion-img:hover { border-color: rgba(0,120,212,0.4); background: rgba(0,120,212,0.08); }
+    .opcion-img.selected { border-color: #0078d4; background: rgba(0,120,212,0.15); box-shadow: 0 0 14px rgba(0,120,212,0.2); }
+    .opcion-img img { max-width: 100%; max-height: 120px; border-radius: 8px; object-fit: contain; }
+    .opcion-img span { font-size: 0.88rem; color: #cbd5e1; }
+
+    /* ── Numeric answer ── */
+    .numeric-input-wrap {
+      margin-top: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+    .numeric-input {
+      width: 200px;
+      padding: 16px 20px;
+      font-size: 1.4rem;
+      font-weight: 700;
+      text-align: center;
+      background: rgba(15,23,42,0.9);
+      border: 2px solid rgba(0,120,212,0.3);
+      border-radius: 14px;
+      color: #f1f5f9;
+      outline: none;
+      transition: 0.2s;
+      -webkit-user-select: text !important;
+      user-select: text !important;
+    }
+    .numeric-input:focus { border-color: #0078d4; box-shadow: 0 0 0 3px rgba(0,120,212,0.2); }
+    .numeric-hint { font-size: 0.78rem; color: #64748b; }
+
+    @media (max-width: 600px) {
+      .opciones-imagen { grid-template-columns: 1fr 1fr; }
+      .numeric-input { width: 160px; font-size: 1.2rem; }
+    }
     .pares-wrap {
       margin-top: 14px;
       display: flex;
@@ -760,6 +814,18 @@
         }
         item._derShuffled = derItems;
         item._conexiones = {};
+      } else if (item.tipo === 'imagen') {
+        // Shuffle image options
+        const opts = (item.opciones || []).map((o, i) => ({ ...o, i }));
+        for (let i = opts.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [opts[i], opts[j]] = [opts[j], opts[i]];
+        }
+        item._shuffledImg = opts;
+        item._shuffledCorrectaImg = opts.findIndex(o => o.i === item.correcta);
+        item._userAnswer = undefined;
+      } else if (item.tipo === 'numerico') {
+        item._userNumeric = '';
       } else {
         const opts = item.opciones.map((t, i) => ({ t, i }));
         for (let i = opts.length - 1; i > 0; i--) {
@@ -821,6 +887,30 @@
       setTimeout(() => {
         if (Object.keys(item._conexiones).length > 0) redrawLines(idx);
       }, 50);
+    } else if (item.tipo === 'imagen') {
+      const imgHtml = item.imagen ? `<img src="${item.imagen}" alt="Imagen" style="max-width:100%;border-radius:10px;margin-bottom:14px;">` : '';
+      let optsHtml = '<div class="opciones-imagen">';
+      (item._shuffledImg || []).forEach((o, si) => {
+        const sel = item._userAnswer === si ? 'selected' : '';
+        optsHtml += `<div class="opcion-img ${sel}" id="imgopt_${idx}_${si}" onclick="selectImgOpcion(${idx},${si})">
+          ${o.imagen ? `<img src="${o.imagen}" alt="${o.texto||'Opción'}">` : ''}
+          ${o.texto ? `<span>${o.texto}</span>` : ''}
+        </div>`;
+      });
+      optsHtml += '</div>';
+      div.innerHTML = `<div class="pregunta-num">${idx+1}</div><h3>${item.pregunta}</h3>${imgHtml}${optsHtml}`;
+    } else if (item.tipo === 'numerico') {
+      const imgHtml = item.imagen ? `<img src="${item.imagen}" alt="Imagen" style="max-width:100%;border-radius:10px;margin-bottom:14px;">` : '';
+      div.innerHTML = `<div class="pregunta-num">${idx+1}</div><h3>${item.pregunta}</h3>${imgHtml}
+        <div class="numeric-input-wrap">
+          <p class="numeric-hint">✏️ Escribe tu respuesta numérica (entero, decimal o fracción)</p>
+          <input class="numeric-input" type="text" inputmode="decimal" id="numInput_${idx}"
+            value="${item._userNumeric || ''}"
+            placeholder="0"
+            oninput="saveNumeric(${idx}, this.value)"
+            autocomplete="off" autocorrect="off" spellcheck="false">
+          <p class="numeric-hint">Ejemplos válidos: 42 · 3.14 · 1/2</p>
+        </div>`;
     } else {
       const esMulti = Array.isArray(item.correcta);
       const inputType = esMulti ? 'checkbox' : 'radio';
@@ -851,6 +941,8 @@
   function saveAnswer(idx) {
     const item = examenData.preguntas[idx];
     if (item.tipo === 'pares') return;
+    if (item.tipo === 'imagen') return; // handled by selectImgOpcion
+    if (item.tipo === 'numerico') return; // handled by saveNumeric
     const esMulti = Array.isArray(item.correcta);
     if (esMulti) {
       item._userAnswers = Array.from(document.querySelectorAll(`input[name="p${idx}"]:checked`)).map(el => parseInt(el.value));
@@ -858,6 +950,21 @@
       const sel = document.querySelector(`input[name="p${idx}"]:checked`);
       item._userAnswer = sel ? parseInt(sel.value) : undefined;
     }
+    updateProgress();
+  }
+
+  function selectImgOpcion(pregIdx, shuffledIdx) {
+    const item = examenData.preguntas[pregIdx];
+    item._userAnswer = shuffledIdx;
+    // Update visual
+    document.querySelectorAll(`[id^="imgopt_${pregIdx}_"]`).forEach(el => el.classList.remove('selected'));
+    const sel = document.getElementById(`imgopt_${pregIdx}_${shuffledIdx}`);
+    if (sel) sel.classList.add('selected');
+    updateProgress();
+  }
+
+  function saveNumeric(pregIdx, val) {
+    examenData.preguntas[pregIdx]._userNumeric = val;
     updateProgress();
   }
 
@@ -903,6 +1010,10 @@
     examenData.preguntas.forEach((item, i) => {
       if (item.tipo === 'pares') {
         if (Object.keys(item._conexiones || {}).length === (item.pares || []).length) count++;
+      } else if (item.tipo === 'imagen') {
+        if (item._userAnswer !== undefined) count++;
+      } else if (item.tipo === 'numerico') {
+        if (item._userNumeric !== undefined && item._userNumeric !== '') count++;
       } else {
         const esMulti = Array.isArray(item.correcta);
         if (esMulti) { if ((item._userAnswers || []).length > 0) count++; }
@@ -1224,6 +1335,21 @@
           if (derShuffledIdx === undefined) return false;
           return item._derShuffled[derShuffledIdx]?.origIdx === pi;
         });
+      } else if (item.tipo === 'imagen') {
+        acerto = item._userAnswer !== undefined && item._userAnswer === item._shuffledCorrectaImg;
+      } else if (item.tipo === 'numerico') {
+        const userVal = item._userNumeric || '';
+        // Parse fraction like 1/2
+        let userNum;
+        if (userVal.includes('/')) {
+          const parts = userVal.split('/');
+          userNum = parseFloat(parts[0]) / parseFloat(parts[1]);
+        } else {
+          userNum = parseFloat(userVal);
+        }
+        const correctNum = parseFloat(item.respuesta);
+        const tol = parseFloat(item.tolerancia) || 0;
+        acerto = !isNaN(userNum) && !isNaN(correctNum) && Math.abs(userNum - correctNum) <= tol;
       } else {
         const esMulti = Array.isArray(item.correcta);
         if (esMulti) {

@@ -151,11 +151,10 @@
       const ref = db.collection('examenes').doc(DEMO_DOC_ID);
       const snap = await ref.get();
 
-      if (!snap.exists) {
-        // Create demo exam
-        await ref.set({
+      // Always update demo exam with latest question types
+      await ref.set({
           titulo: 'Examen de Demostración',
-          subtitulo: 'Prueba los 3 tipos de preguntas',
+          subtitulo: 'Prueba los 5 tipos de preguntas',
           tiempoMinutos: 10,
           notaMinima: 70,
           notaMaxima: 100,
@@ -191,6 +190,26 @@
                 { izq: 'Amazon EC2', der: 'Cómputo' },
                 { izq: 'Amazon RDS', der: 'Base de datos' }
               ],
+              puntos: 1
+            },
+            {
+              tipo: 'imagen',
+              pregunta: '¿Cuál de estos íconos representa un servicio de base de datos?',
+              opciones: [
+                { texto: 'Almacenamiento', imagen: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/bc/Amazon-S3-Logo.svg/180px-Amazon-S3-Logo.svg.png' },
+                { texto: 'Base de datos', imagen: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Postgresql_elephant.svg/180px-Postgresql_elephant.svg.png' },
+                { texto: 'Cómputo', imagen: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/Amazon_Web_Services_Logo.svg/180px-Amazon_Web_Services_Logo.svg.png' },
+                { texto: 'Red', imagen: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Git_icon.svg/180px-Git_icon.svg.png' }
+              ],
+              correcta: 1,
+              puntos: 1
+            },
+            {
+              tipo: 'numerico',
+              pregunta: '¿Cuántos bits tiene un byte?',
+              imagen: '',
+              respuesta: '8',
+              tolerancia: 0,
               puntos: 1
             }
           ]
