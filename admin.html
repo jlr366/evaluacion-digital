@@ -90,8 +90,14 @@
         <div class="form-group"><label>Nota máxima (escala)</label><input type="number" id="exNotaMax" value="100" placeholder="7, 10, 20, 100..." /></div>
         <div class="form-group">
           <label>⏱️ Tiempo de reconexión permitido (minutos)</label>
-          <input type="number" id="exReconexion" value="60" min="0" max="9999" />
-          <span style="font-size:0.72rem;color:#64748b;">Pon 0 para no permitir reconexión · Máximo 120 min · Pon 9999 para acceso indefinido (modo prueba/práctica).</span>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+            <input type="number" id="exReconexion" value="60" min="0" max="9999" style="flex:1;" />
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.82rem;color:#94a3b8;white-space:nowrap;background:rgba(148,163,184,0.05);border:1px solid #334155;padding:8px 12px;border-radius:8px;">
+              <input type="checkbox" id="exReconexionIndefinida" onchange="toggleReconexionIndefinida()" style="width:15px;height:15px;accent-color:#10b981;">
+              ♾️ Indefinido
+            </label>
+          </div>
+          <span style="font-size:0.72rem;color:#64748b;">Pon 0 para no permitir reconexión · Marca "Indefinido" para acceso libre (modo práctica).</span>
         </div>
       </div>
       <div class="form-row">
@@ -685,6 +691,20 @@
   let preguntasTemp = [];
   let puntuacionPersonalizada = false;
 
+  function toggleReconexionIndefinida() {
+    const check = document.getElementById('exReconexionIndefinida');
+    const input = document.getElementById('exReconexion');
+    if (check.checked) {
+      input.value = 9999;
+      input.disabled = true;
+      input.style.opacity = '0.4';
+    } else {
+      input.value = 60;
+      input.disabled = false;
+      input.style.opacity = '1';
+    }
+  }
+
   function togglePuntuacion() {
     puntuacionPersonalizada = document.getElementById('exPuntuacion').value === 'personalizado';
     document.getElementById('puntosMaxContainer').style.display = puntuacionPersonalizada ? 'block' : 'none';
@@ -1186,6 +1206,9 @@
     document.getElementById('exNota').value = 70;
     document.getElementById('exNotaMax').value = 100;
     document.getElementById('exReconexion').value = 60;
+    document.getElementById('exReconexion').disabled = false;
+    document.getElementById('exReconexion').style.opacity = '1';
+    document.getElementById('exReconexionIndefinida').checked = false;
     preguntasTemp = [];
     renderPreguntas();
     document.getElementById('exMsg').innerHTML = '';
@@ -1206,6 +1229,11 @@
       document.getElementById('exNota').value = examen.notaMinima || 70;
       document.getElementById('exReconexion').value = examen.reconexionMinutos !== undefined ? examen.reconexionMinutos : 60;
       document.getElementById('exInstitucion').value = examen.institucion || '';
+      // Restore indefinido checkbox
+      const esIndefinido = examen.reconexionMinutos >= 9999;
+      document.getElementById('exReconexionIndefinida').checked = esIndefinido;
+      document.getElementById('exReconexion').disabled = esIndefinido;
+      document.getElementById('exReconexion').style.opacity = esIndefinido ? '0.4' : '1';
 
       // Load questions into editor
       preguntasTemp = (examen.preguntas || []).map(p => {
