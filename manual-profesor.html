@@ -116,10 +116,95 @@
   <a href="login.html" class="btn btn-primary">🚀 Ir al panel</a>
 </section>
 
+<!-- Demo discreto -->
+<section class="section" style="padding-bottom:60px;">
+  <div style="max-width:600px; margin:0 auto;">
+    <div class="card" style="border:1px solid rgba(0,188,242,0.2); text-align:center;">
+      <div style="font-size:2.5rem; margin-bottom:12px;">🧪</div>
+      <h2 style="font-size:1.2rem; color:#f8fafc; margin-bottom:8px;">Prueba el examen en vivo</h2>
+      <p style="color:var(--text-muted); font-size:0.88rem; margin-bottom:20px; line-height:1.6;">
+        Experimenta cómo se ve un examen real desde la perspectiva del estudiante.<br>
+        Incluye los 3 tipos de preguntas: opción única, múltiple y unión de pares.<br>
+        <strong style="color:#60a5fa;">No requiere cuenta. No guarda ningún dato.</strong>
+      </p>
+      <a href="examen.html?id=DEMO_EXAM_ID&preview=1" id="btnDemoExamen" class="btn btn-primary" style="display:inline-block;">
+        👁️ Ver examen de demostración
+      </a>
+      <p style="color:#475569; font-size:0.75rem; margin-top:12px;">Solo lectura — ninguna respuesta se guarda</p>
+    </div>
+  </div>
+</section>
+
 <footer class="footer">
   <p style="margin-bottom:8px;"><a href="index.html">Inicio</a> · <a href="manual.html">Cómo funciona</a> · <a href="precios.html">Planes</a> · <a href="login.html">Ingresar</a></p>
   <p>© 2025 Evaluación Digital — evaluacion-digital.com</p>
 </footer>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script>
+  // Load or create the demo exam and set the button URL
+  (async function() {
+    try {
+      const DEMO_DOC_ID = 'demo_examen_plataforma';
+      const ref = db.collection('examenes').doc(DEMO_DOC_ID);
+      const snap = await ref.get();
+
+      if (!snap.exists) {
+        // Create demo exam
+        await ref.set({
+          titulo: 'Examen de Demostración',
+          subtitulo: 'Prueba los 3 tipos de preguntas',
+          tiempoMinutos: 10,
+          notaMinima: 70,
+          notaMaxima: 100,
+          reconexionMinutos: 9999,
+          puntuacion: 'igual',
+          createdBy: 'demo_system',
+          createdByName: 'Evaluación Digital',
+          institucion: 'Evaluación Digital',
+          activo: true,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+          preguntas: [
+            {
+              tipo: 'opcion',
+              pregunta: '¿Cuál es el servicio de almacenamiento de objetos de AWS?',
+              opciones: ['Amazon S3', 'Amazon EC2', 'Amazon RDS', 'Amazon Lambda'],
+              correcta: 0,
+              imagen: '',
+              puntos: 1
+            },
+            {
+              tipo: 'opcion',
+              pregunta: '¿Cuáles de los siguientes son servicios de cómputo en AWS? (selecciona 2)',
+              opciones: ['Amazon EC2', 'Amazon S3', 'AWS Lambda', 'Amazon Glacier'],
+              correcta: [0, 2],
+              imagen: '',
+              puntos: 1
+            },
+            {
+              tipo: 'pares',
+              pregunta: 'Une cada servicio de AWS con su categoría correcta',
+              pares: [
+                { izq: 'Amazon S3', der: 'Almacenamiento' },
+                { izq: 'Amazon EC2', der: 'Cómputo' },
+                { izq: 'Amazon RDS', der: 'Base de datos' }
+              ],
+              puntos: 1
+            }
+          ]
+        });
+      }
+
+      // Set button URL
+      const btn = document.getElementById('btnDemoExamen');
+      if (btn) btn.href = 'examen.html?id=' + DEMO_DOC_ID + '&preview=1';
+    } catch(e) {
+      console.log('Demo exam setup:', e.message);
+    }
+  })();
+</script>
 
 </body>
 </html>

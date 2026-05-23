@@ -257,12 +257,11 @@ async function registrarSesion(userId, examenId, reconexionMinutos) {
         return { success: false, error: 'Este usuario ya tiene una sesión activa. El profesor no permite reconexión en este examen.' };
       }
 
-      if (edad < ventanaMs) {
-        // Within reconnect window — allow back in, update timestamp
+      // 9999 = indefinido (siempre puede reconectarse)
+      if (reconexionMinutos >= 9999 || edad < ventanaMs) {
         await snap.docs[0].ref.update({ timestamp: ahora });
         return { success: true, sesionId: snap.docs[0].id };
       } else {
-        // Expired window — delete old session
         await snap.docs[0].ref.delete();
       }
     }
