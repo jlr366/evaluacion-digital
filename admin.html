@@ -1039,10 +1039,28 @@
       return;
     }
 
-    // Validation: check all questions have at least 2 options with text
-    const opcionVacia = preguntasTemp.findIndex(p => p.tipo !== 'pares' && p.opciones.filter(o => o.trim()).length < 2);
+    // Validation: check all questions have at least 2 options with text (only for opcion type)
+    const opcionVacia = preguntasTemp.findIndex(p => p.tipo === 'opcion' && (p.opciones || []).filter(o => typeof o === 'string' && o.trim()).length < 2);
     if (opcionVacia >= 0) {
       const msg = 'La pregunta ' + (opcionVacia+1) + ' necesita al menos 2 opciones con texto.';
+      document.getElementById('exMsg').innerHTML = '<div class="msg msg-err">⚠️ ' + msg + '</div>';
+      alert('⚠️ ' + msg);
+      return;
+    }
+
+    // Validation: imagen questions need at least 2 options with image
+    const imagenVacia = preguntasTemp.findIndex(p => p.tipo === 'imagen' && (p.opciones || []).filter(o => o.imagen && o.imagen.trim()).length < 2);
+    if (imagenVacia >= 0) {
+      const msg = 'La pregunta ' + (imagenVacia+1) + ' (imágenes) necesita al menos 2 opciones con imagen.';
+      document.getElementById('exMsg').innerHTML = '<div class="msg msg-err">⚠️ ' + msg + '</div>';
+      alert('⚠️ ' + msg);
+      return;
+    }
+
+    // Validation: numerico questions need a correct answer
+    const numericoVacia = preguntasTemp.findIndex(p => p.tipo === 'numerico' && (!p.respuesta || !String(p.respuesta).trim()));
+    if (numericoVacia >= 0) {
+      const msg = 'La pregunta ' + (numericoVacia+1) + ' (numérica) necesita una respuesta correcta.';
       document.getElementById('exMsg').innerHTML = '<div class="msg msg-err">⚠️ ' + msg + '</div>';
       alert('⚠️ ' + msg);
       return;

@@ -144,12 +144,11 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <script src="firebase-config.js"></script>
 <script>
-  // Load or create the demo exam and set the button URL
-  (async function() {
+  // Wait for page to fully load before running demo setup
+  window.addEventListener('load', async function() {
     try {
       const DEMO_DOC_ID = 'demo_examen_plataforma';
       const ref = db.collection('examenes').doc(DEMO_DOC_ID);
-      const snap = await ref.get();
 
       // Always update demo exam with latest question types
       await ref.set({
@@ -164,7 +163,6 @@
           createdByName: 'Evaluación Digital',
           institucion: 'Evaluación Digital',
           activo: true,
-          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
           preguntas: [
             {
               tipo: 'opcion',
@@ -224,9 +222,11 @@
         btn.textContent = '👁️ Ver examen de demostración';
       }
     } catch(e) {
-      console.log('Demo exam setup:', e.message);
+      console.error('Demo exam setup error:', e);
+      const btn = document.getElementById('btnDemoExamen');
+      if (btn) btn.title = 'Error: ' + e.message;
     }
-  })();
+  });
 </script>
 
 </body>
