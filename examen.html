@@ -1417,7 +1417,7 @@
       doc.text('Institucion: ' + (examenData.institucion || currentUser.institucion || 'No especificada'), 20, 70);
       doc.text('Examen: ' + (examenData.titulo || 'Sin titulo'), 20, 76);
       doc.text('Fecha: ' + fecha, 20, 82);
-      doc.text('Nota: ' + nota + '/100 — ' + status, 20, 88);
+      doc.text('Nota: ' + nota + '/' + (examenData.notaMaxima || 100) + ' — ' + status, 20, 88);
       doc.text('Preguntas correctas: ' + correctas + ' de ' + examenData.preguntas.length, 20, 94);
 
       // Line
@@ -1454,6 +1454,22 @@
             return par.izq + ' → ' + der;
           }).join(' | ');
           respuestaCorrecta = pares.map(p => p.izq + ' → ' + p.der).join(' | ');
+        } else if (item.tipo === 'imagen') {
+          esCorrecta = item._userAnswer !== undefined && item._userAnswer === item._shuffledCorrectaImg;
+          const selOpt = item._shuffledImg ? item._shuffledImg[item._userAnswer] : null;
+          respuestaUsuario = selOpt ? (selOpt.texto || 'Opción ' + (item._userAnswer + 1)) : 'Sin respuesta';
+          const corrOpt = item.opciones ? item.opciones[item.correcta] : null;
+          respuestaCorrecta = corrOpt ? (corrOpt.texto || 'Opción ' + (item.correcta + 1)) : '?';
+        } else if (item.tipo === 'numerico') {
+          const userVal = item._userNumeric || '';
+          let userNum;
+          if (userVal.includes('/')) { const p = userVal.split('/'); userNum = parseFloat(p[0]) / parseFloat(p[1]); }
+          else { userNum = parseFloat(userVal); }
+          const correctNum = parseFloat(item.respuesta);
+          const tol = parseFloat(item.tolerancia) || 0;
+          esCorrecta = !isNaN(userNum) && !isNaN(correctNum) && Math.abs(userNum - correctNum) <= tol;
+          respuestaUsuario = userVal || 'Sin respuesta';
+          respuestaCorrecta = String(item.respuesta) + (tol > 0 ? ' (±' + tol + ')' : '');
         } else {
           const esMulti = Array.isArray(item.correcta);
           if (esMulti) {
@@ -1468,8 +1484,6 @@
             esCorrecta = item._userAnswer !== undefined && item._userAnswer === item._shuffledCorrecta;
           }
         }
-
-        // Question number and text
         doc.setFontSize(9);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(0, 0, 0);
