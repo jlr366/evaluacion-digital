@@ -173,23 +173,26 @@
     const password = document.getElementById('password').value;
 
     if (!username || !password) {
-      document.getElementById('msg').innerHTML = '<div class="msg msg-err" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#f87171;padding:10px;border-radius:8px;margin-bottom:14px;font-size:0.85rem;">⚠️ Ingrese usuario y contraseña</div>';
+      document.getElementById('msg').innerHTML = '<div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#f87171;padding:10px;border-radius:8px;margin-bottom:14px;font-size:0.85rem;">⚠️ Ingrese usuario y contraseña</div>';
       return;
     }
 
     document.getElementById('msg').innerHTML = '<div style="padding:10px;border-radius:8px;margin-bottom:14px;font-size:0.85rem;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3);color:#60a5fa;">⏳ Verificando...</div>';
 
-    const result = await loginGeneral(username, password);
-
-    if (result.success) {
-      sessionStorage.setItem('currentUser', JSON.stringify(result.user));
-      if (result.user.tipo === 'admin') {
-        window.location.href = 'admin.html';
+    try {
+      const result = await loginGeneral(username, password);
+      if (result.success) {
+        sessionStorage.setItem('currentUser', JSON.stringify(result.user));
+        if (result.user.tipo === 'admin') {
+          window.location.href = 'admin.html';
+        } else {
+          window.location.href = 'estudiante.html';
+        }
       } else {
-        window.location.href = 'estudiante.html';
+        document.getElementById('msg').innerHTML = '<div style="padding:10px;border-radius:8px;margin-bottom:14px;font-size:0.85rem;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#f87171;">❌ ' + result.error + '</div>';
       }
-    } else {
-      document.getElementById('msg').innerHTML = '<div style="padding:10px;border-radius:8px;margin-bottom:14px;font-size:0.85rem;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#f87171;">❌ ' + result.error + '</div>';
+    } catch(e) {
+      document.getElementById('msg').innerHTML = '<div style="padding:10px;border-radius:8px;margin-bottom:14px;font-size:0.85rem;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#f87171;">❌ Error técnico: ' + e.message + '</div>';
     }
   }
 
