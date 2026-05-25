@@ -1533,6 +1533,18 @@
       const examen = await getExamen(examenId);
       if (!examen) { alert('No se pudo cargar el examen'); return; }
 
+      // Check if this exam is already assigned to this professor
+      const yaAsignado = await db.collection('examenes')
+        .where('createdBy', '==', profesorId)
+        .where('titulo', '==', examen.titulo)
+        .get();
+
+      if (!yaAsignado.empty) {
+        document.getElementById('panelAsignar').innerHTML = '<div class="msg msg-err">⚠️ El examen "' + titulo + '" ya está asignado a <strong>' + profesorNombre + '</strong>. No se puede asignar dos veces.</div>';
+        setTimeout(() => { const el = document.getElementById('panelAsignar'); if (el) el.remove(); }, 3000);
+        return;
+      }
+
       const admins = await getAllAdmins();
       const profesor = admins.find(a => a.id === profesorId);
 
