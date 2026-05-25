@@ -260,7 +260,7 @@ a:hover { text-decoration: underline; }
 .hero h1 {
   font-size: 2.8rem;
   font-weight: 900;
-  color: #f8fafc;
+  color: var(--text);
   letter-spacing: -1px;
   margin-bottom: 16px;
   line-height: 1.2;
@@ -315,7 +315,7 @@ a:hover { text-decoration: underline; }
 .section-title h2 {
   font-size: 2rem;
   font-weight: 800;
-  color: #f8fafc;
+  color: var(--text);
   margin-bottom: 8px;
 }
 
@@ -338,7 +338,7 @@ a:hover { text-decoration: underline; }
 .card:hover { border-color: rgba(0,188,242,0.2); transform: translateY(-2px); box-shadow: var(--shadow); }
 
 .card .icon { font-size: 2.5rem; margin-bottom: 16px; }
-.card h3 { font-size: 1.1rem; font-weight: 700; color: #f8fafc; margin-bottom: 8px; }
+.card h3 { font-size: 1.1rem; font-weight: 700; color: var(--text); margin-bottom: 8px; }
 .card p { color: var(--text-muted); font-size: 0.9rem; }
 
 /* ── Pricing ── */
@@ -355,7 +355,7 @@ a:hover { text-decoration: underline; }
 .pricing-card.featured { border-color: var(--primary); }
 .pricing-card.featured::before { content: 'Popular'; position: absolute; top: 12px; right: -28px; background: var(--primary); color: white; padding: 4px 32px; font-size: 0.7rem; font-weight: 700; transform: rotate(45deg); }
 
-.pricing-card .price { font-size: 2.5rem; font-weight: 900; color: #f8fafc; margin: 16px 0; }
+.pricing-card .price { font-size: 2.5rem; font-weight: 900; color: var(--text); margin: 16px 0; }
 .pricing-card .price span { font-size: 0.9rem; color: var(--text-muted); font-weight: 400; }
 .pricing-card .features { list-style: none; margin: 20px 0; text-align: left; }
 .pricing-card .features li { padding: 8px 0; color: var(--text-muted); font-size: 0.88rem; border-bottom: 1px solid rgba(148,163,184,0.06); }
