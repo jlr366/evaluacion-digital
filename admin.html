@@ -340,6 +340,8 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script>emailjs.init('orZQk0WGfKhLwMQUX');</script>
 <script src="firebase-config.js"></script>
 
 <script>
@@ -1297,6 +1299,7 @@
             <button class="btn btn-sm btn-blue" onclick="navigator.clipboard.writeText('${url}');this.textContent='✓ Copiado'" title="Copiar URL">📋 URL</button>
             <button class="btn btn-sm btn-green" onclick="window.open('${url}&preview=1','_blank')" title="Vista previa sin login">👁️ Ver</button>
             <button class="btn btn-sm" style="background:#f59e0b;color:#000;" onclick="editarExamen('${ex.id}')" title="Editar">✏️ Editar</button>
+            <button class="btn btn-sm" style="background:#0ea5e9;color:#fff;" onclick="mostrarEnvioExamen('${ex.id}','${ex.titulo.replace(/'/g,'')}','${url}')" title="Enviar por correo">📨 Enviar</button>
             ${isSuperAdmin ? '<button class="btn btn-sm" style="background:#8b5cf6;color:#fff;" onclick="asignarExamenAProfesor(\''+ex.id+'\',\''+ex.titulo.replace(/'/g,'')+'\')" title="Asignar a profesor">👤 Asignar</button>' : ''}
             <button class="btn btn-sm btn-red" onclick="eliminarExamen('${ex.id}')" title="Eliminar">🗑️</button>
           </td>
@@ -1309,6 +1312,116 @@
   }
 
   async function eliminarExamen(id) { if (confirm('¿Eliminar este examen?')) { await deleteExamen(id); loadExamenes(); } }
+
+  // ── Enviar examen por correo ──
+  async function mostrarEnvioExamen(examenId, titulo, url) {
+    // Remove previous panel
+    const prev = document.getElementById('panelEnvio');
+    if (prev) { prev.remove(); return; }
+
+    const usuarios = await getUsers(adminFilter);
+    const cursos = [...new Set(usuarios.map(u => u.curso || 'Sin curso').filter(Boolean))].sort();
+
+    let cursosOpts = '<option value="">-- Seleccionar curso --</option>' + cursos.map(c => `<option value="${c}">${c}</option>`).join('');
+    let alumnosOpts = '<option value="">-- Seleccionar estudiante --</option>' + usuarios.filter(u => u.email).map(u => `<option value="${u.email}">${u.nombre} (${u.email})</option>`).join('');
+
+    const panel = document.createElement('div');
+    panel.id = 'panelEnvio';
+    panel.className = 'card';
+    panel.style.cssText = 'border:1px solid #0ea5e9;margin-top:12px;';
+    panel.innerHTML = `
+      <h2 style="color:#38bdf8;font-size:0.95rem;margin-bottom:14px;">📨 Enviar examen: <strong>${titulo}</strong></h2>
+      <div id="envioMsg"></div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px;">
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.85rem;color:#94a3b8;background:rgba(14,165,233,0.08);border:1px solid rgba(14,165,233,0.3);padding:8px 14px;border-radius:8px;">
+          <input type="radio" name="envioTipo" value="alumno" checked onchange="toggleEnvioTipo()" style="accent-color:#0ea5e9;"> 👤 Un estudiante
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.85rem;color:#94a3b8;background:rgba(14,165,233,0.08);border:1px solid rgba(14,165,233,0.3);padding:8px 14px;border-radius:8px;">
+          <input type="radio" name="envioTipo" value="curso" onchange="toggleEnvioTipo()" style="accent-color:#0ea5e9;"> 📚 Todo un curso
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.85rem;color:#94a3b8;background:rgba(14,165,233,0.08);border:1px solid rgba(14,165,233,0.3);padding:8px 14px;border-radius:8px;">
+          <input type="radio" name="envioTipo" value="todos" onchange="toggleEnvioTipo()" style="accent-color:#0ea5e9;"> 👥 Todos mis estudiantes
+        </label>
+      </div>
+      <div id="envioAlumnoWrap" class="form-group">
+        <label>Estudiante</label>
+        <select id="envioAlumno" style="width:100%;padding:10px 14px;background:#0f172a;border:1px solid #334155;border-radius:8px;color:#f1f5f9;font-size:0.9rem;">${alumnosOpts}</select>
+        <span style="font-size:0.72rem;color:#64748b;">Solo estudiantes con correo registrado</span>
+      </div>
+      <div id="envioCursoWrap" class="form-group hidden">
+        <label>Curso</label>
+        <select id="envioCurso" style="width:100%;padding:10px 14px;background:#0f172a;border:1px solid #334155;border-radius:8px;color:#f1f5f9;font-size:0.9rem;">${cursosOpts}</select>
+      </div>
+      <div class="form-group">
+        <label>Mensaje personalizado (opcional)</label>
+        <textarea id="envioMensaje" placeholder="Ej: Recuerda que el examen es el viernes. ¡Mucho éxito!" style="width:100%;padding:10px 14px;background:#0f172a;border:1px solid #334155;border-radius:8px;color:#f1f5f9;font-size:0.9rem;min-height:70px;resize:vertical;"></textarea>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-sm" style="background:#0ea5e9;color:#fff;" onclick="enviarExamenPorCorreo('${examenId}','${titulo.replace(/'/g,'')}','${url}')">📨 Enviar</button>
+        <button class="btn btn-sm btn-gray" onclick="document.getElementById('panelEnvio').remove()">Cancelar</button>
+      </div>`;
+
+    document.getElementById('listaExamenes').insertAdjacentElement('afterend', panel);
+    panel.scrollIntoView({ behavior: 'smooth' });
+  }
+
+  function toggleEnvioTipo() {
+    const tipo = document.querySelector('input[name="envioTipo"]:checked')?.value;
+    document.getElementById('envioAlumnoWrap').classList.toggle('hidden', tipo !== 'alumno');
+    document.getElementById('envioCursoWrap').classList.toggle('hidden', tipo !== 'curso');
+  }
+
+  async function enviarExamenPorCorreo(examenId, titulo, url) {
+    const tipo = document.querySelector('input[name="envioTipo"]:checked')?.value;
+    const mensaje = document.getElementById('envioMensaje').value.trim();
+    const msgEl = document.getElementById('envioMsg');
+    msgEl.innerHTML = '<div class="msg" style="background:rgba(14,165,233,0.1);border:1px solid rgba(14,165,233,0.3);color:#38bdf8;">⏳ Enviando...</div>';
+
+    const usuarios = await getUsers(adminFilter);
+    let destinatarios = [];
+
+    if (tipo === 'alumno') {
+      const email = document.getElementById('envioAlumno').value;
+      if (!email) { msgEl.innerHTML = '<div class="msg msg-err">⚠️ Selecciona un estudiante</div>'; return; }
+      const u = usuarios.find(u => u.email === email);
+      if (u) destinatarios.push(u);
+    } else if (tipo === 'curso') {
+      const curso = document.getElementById('envioCurso').value;
+      if (!curso) { msgEl.innerHTML = '<div class="msg msg-err">⚠️ Selecciona un curso</div>'; return; }
+      destinatarios = usuarios.filter(u => u.curso === curso && u.email);
+    } else {
+      destinatarios = usuarios.filter(u => u.email);
+    }
+
+    if (destinatarios.length === 0) {
+      msgEl.innerHTML = '<div class="msg msg-err">❌ No hay estudiantes con correo registrado en esta selección</div>';
+      return;
+    }
+
+    let enviados = 0, errores = 0;
+    for (const u of destinatarios) {
+      try {
+        await emailjs.send('service_i7gv5pq', 'template_gi85ryj', {
+          to_email: u.email,
+          email: u.email,
+          student_name: u.nombre || u.username,
+          exam_name: titulo,
+          date: new Date().toLocaleString('es-ES'),
+          score: 'Pendiente',
+          status: mensaje || 'Tu profesor te ha asignado este examen.',
+          correct: 'Accede aquí: ' + url,
+          total: url,
+          pdf_url: '🔗 Link del examen: ' + url
+        });
+        enviados++;
+      } catch(e) {
+        errores++;
+        console.error('Error enviando a', u.email, e);
+      }
+    }
+
+    msgEl.innerHTML = `<div class="msg msg-ok">✅ Enviado a ${enviados} estudiante(s)${errores > 0 ? ' · ' + errores + ' error(es)' : ''}</div>`;
+  }
 
   async function asignarExamenAProfesor(examenId, titulo) {
     const admins = await getAllAdmins();
