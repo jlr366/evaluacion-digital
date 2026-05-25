@@ -1766,7 +1766,7 @@
         status: aprobado ? 'APROBADO' : 'REPROBADO',
         correct: String(correctas),
         total: String(examenData.preguntas.length),
-        pdf_url: pdfUrl ? '📄 Descarga tu comprobante: ' + pdfUrl : 'El comprobante está disponible en la plataforma.'
+        pdf_url: pdfUrl ? '📄 Descarga tu comprobante PDF: ' + pdfUrl + ' — ⚠️ Este link estará disponible por 48 horas. Descárgalo antes de que expire.' : 'El comprobante está disponible en la plataforma.'
       }).then(function(response) {
         console.log('Email enviado OK:', response);
         // Update result screen to show email was sent with PDF
