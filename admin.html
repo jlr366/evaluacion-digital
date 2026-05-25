@@ -72,6 +72,29 @@
     body.light-mode .stat-card .num { color: #1e293b; }
     body.light-mode .stat-card .lbl { color: #64748b; }
     body.light-mode #darkToggle { color: #1e293b; background: rgba(30,41,59,0.08); border-color: rgba(30,41,59,0.15); }
+
+    /* Fix hardcoded white text in light mode */
+    body.light-mode strong,
+    body.light-mode span,
+    body.light-mode p,
+    body.light-mode h1, body.light-mode h2, body.light-mode h3,
+    body.light-mode td, body.light-mode th,
+    body.light-mode label { color: inherit; }
+
+    body.light-mode [style*="color:#f8fafc"] { color: #1e293b !important; }
+    body.light-mode [style*="color:#f1f5f9"] { color: #1e293b !important; }
+    body.light-mode [style*="color:#e2e8f0"] { color: #334155 !important; }
+    body.light-mode [style*="color:#cbd5e1"] { color: #475569 !important; }
+    body.light-mode [style*="color:#94a3b8"] { color: #64748b !important; }
+    body.light-mode [style*="color:#60a5fa"] { color: #0078d4 !important; }
+    body.light-mode [style*="color:#34d399"] { color: #059669 !important; }
+    body.light-mode [style*="color:#f87171"] { color: #dc2626 !important; }
+    body.light-mode [style*="background:#0f172a"] { background: #f8fafc !important; color: #1e293b !important; }
+    body.light-mode [style*="background:#1e293b"] { background: #f0f4f8 !important; }
+    body.light-mode [style*="background:#0a0e1a"] { background: #f0f4f8 !important; }
+    body.light-mode [style*="border:1px solid #334155"],
+    body.light-mode [style*="border: 1px solid #334155"] { border-color: #cbd5e1 !important; }
+    body.light-mode [style*="border-bottom:1px solid #1e293b"] { border-bottom-color: #e2e8f0 !important; }
   </style>
 </head>
 <body>
