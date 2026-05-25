@@ -133,11 +133,11 @@
     msgEl.innerHTML = '<div style="padding:10px;border-radius:8px;margin-bottom:14px;font-size:0.85rem;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3);color:#60a5fa;">⏳ Creando cuenta...</div>';
 
     try {
-      // Generate username from email
-      const username = email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '') + Math.floor(Math.random()*100);
+      // Use email as username directly (simpler, no random number)
+      const username = email.trim().toLowerCase();
 
       // Check if email already registered
-      const existing = await db.collection('admins').where('email', '==', email.toLowerCase()).get();
+      const existing = await db.collection('admins').where('username', '==', username).get();
       if (!existing.empty) { msgEl.innerHTML = '<div style="padding:10px;border-radius:8px;margin-bottom:14px;font-size:0.85rem;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#f87171;">❌ Este email ya está registrado</div>'; return; }
 
       // Create demo admin
@@ -145,14 +145,14 @@
         username: username,
         password: password,
         nombre: nombre.trim(),
-        email: email.toLowerCase(),
+        email: username,
         role: 'demo',
         institucion: '',
         demoExpiry: new Date(new Date().setHours(24,0,0,0)).toISOString(),
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       });
 
-      msgEl.innerHTML = '<div style="padding:10px;border-radius:8px;margin-bottom:14px;font-size:0.85rem;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);color:#34d399;">✅ Cuenta creada.<br>Tu usuario es: <strong style="font-size:1.1rem;">' + username + '</strong><br><span style="font-size:0.8rem;color:#94a3b8;">También puedes ingresar con tu correo electrónico.</span></div>';
+      msgEl.innerHTML = '<div style="padding:10px;border-radius:8px;margin-bottom:14px;font-size:0.85rem;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);color:#34d399;">✅ Cuenta creada.<br>Ingresa con tu <strong>correo electrónico</strong> y contraseña.</div>';
 
       // Auto login after 2 seconds
       setTimeout(async () => {
