@@ -1683,15 +1683,20 @@
 
     if (users.length === 0) { document.getElementById('listaUsuarios').innerHTML = '<p style="color:#64748b;font-style:italic;">No hay estudiantes</p>'; return; }
     const cursosDisponibles = cursos;
-    let html = '<table><thead><tr><th>Username</th><th>Nombre</th><th>Curso</th><th>Acciones</th></tr></thead><tbody>';
+    let html = '<table><thead><tr><th>Username</th><th>Nombre</th><th>Email</th><th>Curso</th><th>Acciones</th></tr></thead><tbody>';
     users.forEach(u => {
       let selectOpts = '<option value="">Sin curso</option>';
       cursosDisponibles.forEach(c => { selectOpts += `<option value="${c}" ${u.curso===c?'selected':''}>${c}</option>`; });
       html += `<tr>
         <td><strong>${u.username}</strong></td>
         <td>${u.nombre||'-'}</td>
+        <td style="color:#64748b;font-size:0.8rem;">${u.email||'<span style="color:#475569;font-style:italic;">Sin correo</span>'}</td>
         <td><select onchange="cambiarCursoUsr('${u.id}',this.value)" style="padding:4px 8px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#f1f5f9;font-size:0.8rem;">${selectOpts}</select></td>
-        <td style="display:flex;gap:4px;flex-wrap:wrap;"><button class="btn btn-sm btn-blue" onclick="cambiarClaveUsr('${u.id}','${u.username}')" title="Cambiar clave">🔑</button><button class="btn btn-sm btn-red" onclick="eliminarUsr('${u.id}')" title="Eliminar">🗑️</button></td>
+        <td style="display:flex;gap:4px;flex-wrap:wrap;">
+          <button class="btn btn-sm btn-blue" onclick="cambiarClaveUsr('${u.id}','${u.username}')" title="Cambiar clave">🔑</button>
+          <button class="btn btn-sm" style="background:#0ea5e9;color:#fff;" onclick="cambiarEmailUsr('${u.id}','${u.username}','${(u.email||'').replace(/'/g,'')}')" title="Editar correo">✉️</button>
+          <button class="btn btn-sm btn-red" onclick="eliminarUsr('${u.id}')" title="Eliminar">🗑️</button>
+        </td>
       </tr>`;
     });
     html += '</tbody></table>';
@@ -1699,6 +1704,16 @@
   }
 
   async function cambiarClaveUsr(id, name) { const p = prompt('Nueva contraseña para "'+name+'":'); if (p && p.length >= 4) { await updateUserPassword(id, p); alert('✅ Actualizada'); } }
+
+  async function cambiarEmailUsr(id, name, emailActual) {
+    const nuevoEmail = prompt('Correo electrónico para "' + name + '":\n(Dejar vacío para quitar el correo)', emailActual || '');
+    if (nuevoEmail === null) return; // cancelled
+    try {
+      await db.collection('usuarios').doc(id).update({ email: nuevoEmail.trim().toLowerCase() });
+      alert('✅ Correo actualizado');
+      loadEstudiantes();
+    } catch(e) { alert('Error: ' + e.message); }
+  }
 
   async function cambiarCursoUsr(id, curso) {
     try {
