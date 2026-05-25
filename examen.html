@@ -153,11 +153,26 @@
     .pregunta:hover { border-color: rgba(0,120,212,0.3); }
 
     @media (max-width: 768px) {
-      .exam-layout { grid-template-columns: 1fr; gap: 14px; }
-      .exam-sidebar { position: static; }
-      .sidebar-dots { grid-template-columns: repeat(8, 1fr); }
-      .exam-main-title { font-size: 1.2rem; }
-      .pregunta { padding: 20px 18px; }
+      .exam-layout { grid-template-columns: 1fr; gap: 10px; }
+      .exam-sidebar { position: static; padding: 12px; }
+      .sidebar-exam-name { font-size: 0.82rem; margin-bottom: 10px; padding-bottom: 8px; }
+      .sidebar-dots { grid-template-columns: repeat(8, 1fr); gap: 4px; }
+      .exam-main-title { font-size: 1.1rem; }
+      .exam-main-header { margin-bottom: 12px; padding-bottom: 10px; }
+      .pregunta { padding: 16px 14px; }
+      .pregunta h3 { font-size: 1rem; margin-bottom: 16px; }
+      .opcion { padding: 12px 14px; margin: 8px 0; }
+      .opcion label { font-size: 0.95rem; gap: 10px; }
+      .container { padding: 10px 12px; }
+    }
+
+    @media (max-width: 480px) {
+      .sidebar-dots { grid-template-columns: repeat(6, 1fr); }
+      .exam-main-title { font-size: 1rem; }
+      .pregunta h3 { font-size: 0.95rem; }
+      .opcion label { font-size: 0.9rem; }
+      .nota-badge { font-size: 1.3rem; padding: 8px 20px; }
+      .resultado h2 { font-size: 1.4rem; }
     }
 
     /* ── Sticky timer bar ── */
@@ -263,6 +278,10 @@
       backdrop-filter: blur(8px);
     }
 
+    @media (max-width: 480px) {
+      .card { padding: 20px 16px; }
+    }
+
     /* ── Form ── */
     .form-group { margin-bottom: 16px; }
     .form-group label { display: block; font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #94a3b8; margin-bottom: 6px; }
@@ -343,11 +362,19 @@
     .multi-hint { font-size: 0.75rem; color: #60a5fa; margin-bottom: 10px; font-weight: 600; background: rgba(0,120,212,0.08); padding: 6px 10px; border-radius: 6px; display: inline-block; }
 
     @media (max-width: 768px) {
-      .timer-bar { padding: 8px 14px; }
-      .timer-display { font-size: 1rem; padding: 5px 12px; }
+      .timer-bar { padding: 8px 12px; gap: 8px; }
+      .timer-bar .brand img { height: 22px; }
+      .timer-bar .brand span#timerExamTitle { display: none; }
+      .timer-display { font-size: 1rem; padding: 5px 10px; letter-spacing: 1px; }
       .progress-wrap { display: none; }
-      .exam-header { padding: 20px; margin-top: 60px; }
-      .exam-header h1 { font-size: 1.3rem; }
+      .exam-header { padding: 16px; margin-top: 56px; }
+      .exam-header h1 { font-size: 1.2rem; }
+    }
+
+    @media (max-width: 480px) {
+      .timer-bar .brand { display: none; }
+      .timer-bar { justify-content: center; gap: 12px; }
+      .timer-display { font-size: 1.1rem; }
     }
 
     /* ── Animations ── */
@@ -500,6 +527,15 @@
     .pares-reset { margin-top:10px; padding:6px 14px; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); color:#f87171; border-radius:8px; font-size:0.8rem; cursor:pointer; font-weight:600; }
     .pares-reset:hover { background:rgba(239,68,68,0.2); }
 
+    @media (max-width: 600px) {
+      .pares-svg-area { width: 60px; }
+      .par-btn { font-size: 0.78rem; padding: 8px 8px; min-height: 38px; }
+      .pares-hint { font-size: 0.72rem; }
+      .opciones-imagen { grid-template-columns: 1fr 1fr; gap: 8px; }
+      .opcion-img img { max-height: 90px; }
+      .numeric-input { width: 150px; font-size: 1.1rem; padding: 12px 16px; }
+    }
+
     /* ── Question navigation dots ── */
     .nav-dot {
       width: 100%;
@@ -628,15 +664,15 @@
         <!-- Navigation buttons -->
         <div style="display:flex;gap:12px;margin-top:28px;margin-bottom:40px;flex-wrap:wrap;">
           <button class="btn" id="btnAnterior" onclick="navPregunta(-1)"
-            style="background:rgba(30,41,59,0.8);border:1px solid #334155;color:#94a3b8;padding:13px 28px;font-size:1rem;">
+            style="background:rgba(30,41,59,0.8);border:1px solid #334155;color:#94a3b8;padding:13px 28px;font-size:1rem;flex:1;min-width:120px;">
             ← Anterior
           </button>
           <button class="btn btn-primary" id="btnSiguiente" onclick="navPregunta(1)"
-            style="padding:13px 28px;font-size:1rem;">
+            style="padding:13px 28px;font-size:1rem;flex:1;min-width:120px;">
             Siguiente →
           </button>
           <button class="btn btn-danger" id="btnFinalizar" onclick="confirmarFinalizar()"
-            style="padding:13px 28px;font-size:1rem;display:none;">
+            style="padding:13px 28px;font-size:1rem;display:none;flex:1;min-width:120px;">
             ✅ Finalizar examen
           </button>
         </div>
