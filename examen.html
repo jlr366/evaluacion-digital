@@ -651,6 +651,7 @@
 
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <script>emailjs.init('orZQk0WGfKhLwMQUX');</script>
@@ -1496,8 +1497,8 @@
       });
     }, 50);
 
-    // Send email (if email provided) — skip in preview
-    if (!isPreview) enviarEmail(nota, correctas, aprobado);
+    // Send email with PDF link — skip in preview
+    if (!isPreview) await enviarEmail(nota, correctas, aprobado);
   }
 
   // ── Helper: convert image URL to base64 for PDF ──
@@ -1694,14 +1695,31 @@
     }
   }
 
-  function enviarEmail(nota, correctas, aprobado) {
+  async function enviarEmail(nota, correctas, aprobado) {
     try {
       const emailDest = currentUser ? currentUser.email : '';
       if (!emailDest) {
         console.log('Sin email — no se envia correo');
         return;
       }
-      console.log('Enviando email a:', emailDest);
+
+      // ── Generate PDF and upload to Firebase Storage ──
+      let pdfUrl = null;
+      try {
+        const pdfBlob = await generarPDFBlob(nota, correctas, aprobado);
+        if (pdfBlob) {
+          const nombre = currentUser.nombre || currentUser.username || 'estudiante';
+          const fecha = Date.now();
+          const fileName = 'resultados/' + (currentUser.id || 'u') + '_' + fecha + '.pdf';
+          const storageRef = firebase.storage().ref().child(fileName);
+          const snapshot = await storageRef.put(pdfBlob, { contentType: 'application/pdf' });
+          pdfUrl = await snapshot.ref.getDownloadURL();
+        }
+      } catch(storageErr) {
+        console.warn('No se pudo subir PDF:', storageErr.message);
+      }
+
+      // ── Send email with PDF link ──
       emailjs.send('service_i7gv5pq', 'template_gi85ryj', {
         to_email: emailDest,
         email: emailDest,
@@ -1711,14 +1729,57 @@
         score: String(nota),
         status: aprobado ? 'APROBADO' : 'REPROBADO',
         correct: String(correctas),
-        total: String(examenData.preguntas.length)
+        total: String(examenData.preguntas.length),
+        pdf_url: pdfUrl ? '📄 Descarga tu comprobante: ' + pdfUrl : 'El comprobante está disponible en la plataforma.'
       }).then(function(response) {
         console.log('Email enviado OK:', response);
+        // Update result screen to show email was sent with PDF
+        const emailNote = document.querySelector('#secResultado p[style*="color:#64748b"]');
+        if (emailNote && pdfUrl) {
+          emailNote.innerHTML = '📧 Se envió un resumen con link al PDF a ' + emailDest;
+        }
       }).catch(function(err) {
         console.error('Error enviando email:', err);
       });
     } catch(e) {
       console.error('Error con EmailJS:', e);
+    }
+  }
+
+  // ── Generate PDF as Blob (for email upload) ──
+  async function generarPDFBlob(nota, correctas, aprobado) {
+    try {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      const fecha = new Date().toLocaleString('es-ES');
+      const nombre = currentUser ? currentUser.nombre : 'Estudiante';
+      const status = aprobado ? 'APROBADO' : 'REPROBADO';
+      const notaMaxima = examenData.notaMaxima || 100;
+      const institucion = examenData.institucion || (currentUser && currentUser.institucion) || 'Evaluacion Digital';
+
+      doc.setFontSize(16); doc.setFont('helvetica', 'bold');
+      doc.text(institucion, 105, 18, { align: 'center' });
+      doc.setFontSize(9); doc.setFont('helvetica', 'normal');
+      doc.text('Comprobante de evaluacion — ' + fecha, 105, 25, { align: 'center' });
+      doc.setDrawColor(0,120,212); doc.setLineWidth(0.5); doc.line(20,30,190,30);
+
+      doc.setFontSize(11); doc.setFont('helvetica', 'bold');
+      doc.text('RESULTADO DEL EXAMEN', 20, 40);
+      doc.setFontSize(10); doc.setFont('helvetica', 'normal');
+      doc.text('Estudiante: ' + nombre, 20, 50);
+      doc.text('Examen: ' + (examenData.titulo || ''), 20, 57);
+      doc.text('Fecha: ' + fecha, 20, 64);
+      doc.text('Nota: ' + nota + ' / ' + notaMaxima + ' — ' + status, 20, 71);
+      doc.text('Correctas: ' + correctas + ' de ' + examenData.preguntas.length, 20, 78);
+      doc.line(20,83,190,83);
+
+      doc.setFontSize(8); doc.setTextColor(128,128,128);
+      doc.text('Documento generado por Evaluacion Digital — evaluacion-digital.com', 105, 290, { align: 'center' });
+
+      return doc.output('blob');
+    } catch(e) {
+      console.error('Error generando PDF blob:', e);
+      return null;
     }
   }
 
