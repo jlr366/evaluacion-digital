@@ -11,6 +11,49 @@
     input, textarea, select, label, .opcion { -webkit-user-select: text !important; user-select: text !important; }
     input[type="radio"], input[type="checkbox"] { -webkit-appearance: auto !important; appearance: auto !important; pointer-events: auto !important; width: 18px; height: 18px; accent-color: #0078d4; cursor: pointer; flex-shrink: 0; }
 
+    /* ── Light mode ── */
+    body.light-mode { background: #f0f4f8 !important; color: #1e293b !important; }
+    body.light-mode::before { display: none; }
+    body.light-mode .timer-bar { background: rgba(240,244,248,0.97) !important; border-bottom-color: rgba(30,41,59,0.15) !important; }
+    body.light-mode .timer-bar .brand { color: #0078d4 !important; }
+    body.light-mode #timerExamTitle { color: #475569 !important; }
+    body.light-mode .exam-header { background: rgba(0,120,212,0.05) !important; border-color: rgba(0,120,212,0.15) !important; }
+    body.light-mode .exam-header h1 { color: #1e293b !important; }
+    body.light-mode .exam-badge { color: #0078d4 !important; }
+    body.light-mode .card { background: #ffffff !important; border-color: rgba(30,41,59,0.12) !important; color: #1e293b !important; }
+    body.light-mode .pregunta { background: #ffffff !important; border-color: rgba(0,120,212,0.15) !important; }
+    body.light-mode .pregunta h3 { color: #1e293b !important; }
+    body.light-mode .opcion { background: #f8fafc !important; border-color: rgba(30,41,59,0.1) !important; }
+    body.light-mode .opcion:hover { background: rgba(0,120,212,0.08) !important; border-color: rgba(0,120,212,0.3) !important; }
+    body.light-mode .opcion label { color: #334155 !important; }
+    body.light-mode .exam-sidebar { background: #ffffff !important; border-color: rgba(0,120,212,0.15) !important; }
+    body.light-mode .sidebar-exam-name { color: #1e293b !important; }
+    body.light-mode .exam-main-title { color: #1e293b !important; }
+    body.light-mode .exam-main-label { color: #0078d4 !important; }
+    body.light-mode .form-group label { color: #475569 !important; }
+    body.light-mode .form-group input { background: #f8fafc !important; border-color: #cbd5e1 !important; color: #1e293b !important; }
+    body.light-mode h1, body.light-mode h2, body.light-mode h3 { color: #1e293b !important; }
+    body.light-mode p { color: #475569 !important; }
+    body.light-mode .multi-hint { color: #0078d4 !important; background: rgba(0,120,212,0.06) !important; }
+    body.light-mode .pares-hint { color: #475569 !important; background: rgba(30,41,59,0.04) !important; border-color: rgba(30,41,59,0.1) !important; }
+    body.light-mode .pares-hint strong { color: #1e293b !important; }
+    body.light-mode .par-btn { background: #f8fafc !important; border-color: rgba(30,41,59,0.2) !important; color: #334155 !important; }
+    body.light-mode .numeric-input { background: #f8fafc !important; border-color: rgba(0,120,212,0.3) !important; color: #1e293b !important; }
+    body.light-mode .numeric-hint { color: #64748b !important; }
+    body.light-mode .resultado.aprobado { background: rgba(5,150,105,0.06) !important; }
+    body.light-mode .resultado.reprobado { background: rgba(220,38,38,0.06) !important; }
+    body.light-mode .resultado h2 { color: inherit !important; }
+    body.light-mode [style*="color:#94a3b8"] { color: #64748b !important; }
+    body.light-mode [style*="color:#f1f5f9"] { color: #1e293b !important; }
+    body.light-mode [style*="color:#f8fafc"] { color: #1e293b !important; }
+    body.light-mode [style*="color:#cbd5e1"] { color: #475569 !important; }
+    body.light-mode [style*="color:#64748b"] { color: #64748b !important; }
+    body.light-mode [style*="color:#60a5fa"] { color: #0078d4 !important; }
+    body.light-mode .progress-bar { background: #e2e8f0 !important; }
+    body.light-mode .nav-dot { background: #f1f5f9 !important; border-color: #cbd5e1 !important; color: #64748b !important; }
+    body.light-mode .nav-dot.activa { background: rgba(0,120,212,0.15) !important; border-color: #0078d4 !important; color: #0078d4 !important; }
+    body.light-mode .nav-dot.respondida { background: rgba(5,150,105,0.12) !important; border-color: #059669 !important; color: #059669 !important; }
+
     /* ── Grid background ── */
     body::before {
       content: '';
@@ -514,6 +557,7 @@
     <div class="progress-label"><span id="respondidas">0</span> / <span id="totalPreg">0</span> respondidas</div>
     <div class="progress-bar"><div id="progressBar" class="progress-fill" style="width:0%"></div></div>
   </div>
+  <button onclick="toggleDarkMode()" id="darkToggle" title="Modo claro/oscuro" style="background:rgba(148,163,184,0.1);border:1px solid rgba(148,163,184,0.2);border-radius:8px;color:#f8fafc;cursor:pointer;font-size:0.9rem;padding:6px 9px;flex-shrink:0;">🌙</button>
 </div>
 
 <div class="container">
@@ -612,6 +656,21 @@
 <script>emailjs.init('orZQk0WGfKhLwMQUX');</script>
 <script src="firebase-config.js"></script>
 <script>
+  // ── Dark/Light mode ──
+  function toggleDarkMode() {
+    const isLight = document.body.classList.toggle('light-mode');
+    localStorage.setItem('colorMode', isLight ? 'light' : 'dark');
+    const btn = document.getElementById('darkToggle');
+    if (btn) btn.textContent = isLight ? '☀️' : '🌙';
+  }
+  (function() {
+    if (localStorage.getItem('colorMode') === 'light') {
+      document.body.classList.add('light-mode');
+      const btn = document.getElementById('darkToggle');
+      if (btn) btn.textContent = '☀️';
+    }
+  })();
+
   // ── Anti-copy & Anti-AI protections ──
 
   // Block right-click and context menu (mobile long-press too)
