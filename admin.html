@@ -240,6 +240,12 @@
 
     <div class="card">
       <h2>Mis exámenes</h2>
+      <div id="filtroProfesorWrap" style="display:none; margin-bottom:14px;">
+        <label style="font-size:0.72rem;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:#94a3b8;display:block;margin-bottom:6px;">🔍 Filtrar por profesor</label>
+        <select id="filtroProfesor" onchange="loadExamenes()" style="width:100%;max-width:400px;padding:9px 14px;background:#0f172a;border:1px solid #334155;border-radius:8px;color:#f1f5f9;font-size:0.9rem;">
+          <option value="">— Todos los profesores —</option>
+        </select>
+      </div>
       <div id="listaExamenes">Cargando...</div>
     </div>
   </div>
@@ -1281,7 +1287,31 @@
 
   // ── Load examenes ──
   async function loadExamenes() {
-    const examenes = await getExamenes(adminFilter);
+    // Show professor filter for superadmin
+    if (isSuperAdmin) {
+      const filtroWrap = document.getElementById('filtroProfesorWrap');
+      if (filtroWrap) filtroWrap.style.display = 'block';
+      const filtroSelect = document.getElementById('filtroProfesor');
+      if (filtroSelect && filtroSelect.options.length <= 1) {
+        // Populate professors dropdown once
+        const admins = await getAllAdmins();
+        const profesores = admins.filter(a => a.role === 'admin' || a.role === 'demo');
+        profesores.forEach(p => {
+          const opt = document.createElement('option');
+          opt.value = p.id;
+          opt.textContent = p.nombre + ' (@' + p.username + ')';
+          filtroSelect.appendChild(opt);
+        });
+      }
+    }
+
+    // Get filter value
+    const filtroProfesorId = isSuperAdmin && document.getElementById('filtroProfesor')
+      ? document.getElementById('filtroProfesor').value
+      : null;
+
+    const filterBy = filtroProfesorId || adminFilter;
+    const examenes = await getExamenes(filterBy);
     const baseUrl = window.location.origin + window.location.pathname.replace('admin.html', 'examen.html');
 
     let html = '';
