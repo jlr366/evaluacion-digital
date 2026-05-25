@@ -342,6 +342,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <script>emailjs.init('orZQk0WGfKhLwMQUX');</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="firebase-config.js"></script>
 
 <script>
@@ -1300,6 +1301,7 @@
             <button class="btn btn-sm btn-green" onclick="window.open('${url}&preview=1','_blank')" title="Vista previa sin login">👁️ Ver</button>
             <button class="btn btn-sm" style="background:#f59e0b;color:#000;" onclick="editarExamen('${ex.id}')" title="Editar">✏️ Editar</button>
             <button class="btn btn-sm" style="background:#0ea5e9;color:#fff;" onclick="mostrarEnvioExamen('${ex.id}','${ex.titulo.replace(/'/g,'')}','${url}')" title="Enviar por correo">📨 Enviar</button>
+            <button class="btn btn-sm" style="background:#1e293b;border:1px solid #334155;color:#94a3b8;" onclick="mostrarQR('${ex.id}','${ex.titulo.replace(/'/g,'')}','${url}')" title="Ver QR">📱 QR</button>
             ${isSuperAdmin ? '<button class="btn btn-sm" style="background:#8b5cf6;color:#fff;" onclick="asignarExamenAProfesor(\''+ex.id+'\',\''+ex.titulo.replace(/'/g,'')+'\')" title="Asignar a profesor">👤 Asignar</button>' : ''}
             <button class="btn btn-sm btn-red" onclick="eliminarExamen('${ex.id}')" title="Eliminar">🗑️</button>
           </td>
@@ -1312,6 +1314,58 @@
   }
 
   async function eliminarExamen(id) { if (confirm('¿Eliminar este examen?')) { await deleteExamen(id); loadExamenes(); } }
+
+  // ── QR Code ──
+  function mostrarQR(examenId, titulo, url) {
+    // Remove previous QR panel
+    const prev = document.getElementById('panelQR');
+    if (prev) { prev.remove(); return; }
+
+    const panel = document.createElement('div');
+    panel.id = 'panelQR';
+    panel.className = 'card';
+    panel.style.cssText = 'border:1px solid #334155;margin-top:12px;text-align:center;max-width:400px;';
+    panel.innerHTML = `
+      <h2 style="font-size:0.95rem;color:#60a5fa;margin-bottom:4px;">📱 QR — ${titulo}</h2>
+      <p style="font-size:0.75rem;color:#64748b;margin-bottom:14px;">Escanea para acceder al examen</p>
+      <div id="qrCanvas" style="display:inline-block;padding:16px;background:#fff;border-radius:12px;"></div>
+      <p style="font-size:0.72rem;color:#475569;margin-top:10px;word-break:break-all;">${url}</p>
+      <div style="display:flex;gap:8px;justify-content:center;margin-top:14px;">
+        <button class="btn btn-sm btn-blue" onclick="descargarQR()">⬇️ Descargar</button>
+        <button class="btn btn-sm btn-gray" onclick="document.getElementById('panelQR').remove()">Cerrar</button>
+      </div>`;
+
+    document.getElementById('listaExamenes').insertAdjacentElement('afterend', panel);
+    panel.scrollIntoView({ behavior: 'smooth' });
+
+    // Generate QR
+    setTimeout(() => {
+      new QRCode(document.getElementById('qrCanvas'), {
+        text: url,
+        width: 220,
+        height: 220,
+        colorDark: '#0f172a',
+        colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.H
+      });
+    }, 100);
+  }
+
+  function descargarQR() {
+    const canvas = document.querySelector('#qrCanvas canvas');
+    const img = document.querySelector('#qrCanvas img');
+    if (canvas) {
+      const link = document.createElement('a');
+      link.download = 'qr-examen.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    } else if (img) {
+      const link = document.createElement('a');
+      link.download = 'qr-examen.png';
+      link.href = img.src;
+      link.click();
+    }
+  }
 
   // ── Enviar examen por correo ──
   async function mostrarEnvioExamen(examenId, titulo, url) {
