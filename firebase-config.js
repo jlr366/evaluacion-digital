@@ -26,23 +26,26 @@ function sanitize(str, maxLen = 200) {
 // ── AUTH ──────────────────────────────────────────────────────────────────────
 
 async function loginGeneral(username, password, profId) {
-  // Check admins first — try by username, then by email
+  const inputLower = username.trim().toLowerCase();
+
+  // Check admins — search by username first
   let snap = await db.collection('admins')
-    .where('username', '==', username.trim().toLowerCase())
-    .where('password', '==', password)
+    .where('username', '==', inputLower)
     .get();
 
+  // If not found by username, try by email
   if (snap.empty) {
-    // Try login by email
     snap = await db.collection('admins')
-      .where('email', '==', username.trim().toLowerCase())
-      .where('password', '==', password)
+      .where('email', '==', inputLower)
       .get();
   }
 
   if (!snap.empty) {
-    const doc = snap.docs[0];
-    return { success: true, user: { id: doc.id, ...doc.data(), tipo: 'admin' } };
+    // Find matching password among results
+    const match = snap.docs.find(d => d.data().password === password);
+    if (match) {
+      return { success: true, user: { id: match.id, ...match.data(), tipo: 'admin' } };
+    }
   }
 
   // Check students - if profId provided, only search within that professor's students
