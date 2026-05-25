@@ -26,11 +26,19 @@ function sanitize(str, maxLen = 200) {
 // ── AUTH ──────────────────────────────────────────────────────────────────────
 
 async function loginGeneral(username, password, profId) {
-  // Check admins first
+  // Check admins first — try by username, then by email
   let snap = await db.collection('admins')
     .where('username', '==', username.trim().toLowerCase())
     .where('password', '==', password)
     .get();
+
+  if (snap.empty) {
+    // Try login by email
+    snap = await db.collection('admins')
+      .where('email', '==', username.trim().toLowerCase())
+      .where('password', '==', password)
+      .get();
+  }
 
   if (!snap.empty) {
     const doc = snap.docs[0];

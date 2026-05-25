@@ -55,7 +55,7 @@
 
     <div class="form-group">
       <label style="display:block; font-size:0.75rem; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; color:#94a3b8; margin-bottom:6px;">Usuario</label>
-      <input type="text" id="username" placeholder="Su nombre de usuario" autocomplete="off" style="width:100%; padding:12px 16px; background:#0f172a; border:1px solid #334155; border-radius:10px; color:#f1f5f9; font-size:0.95rem;" />
+      <input type="text" id="username" placeholder="Usuario o correo electrónico" autocomplete="off" style="width:100%; padding:12px 16px; background:#0f172a; border:1px solid #334155; border-radius:10px; color:#f1f5f9; font-size:0.95rem;" />
     </div>
     <div class="form-group">
       <label style="display:block; font-size:0.75rem; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; color:#94a3b8; margin-bottom:6px;">Contraseña</label>
@@ -152,7 +152,7 @@
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       });
 
-      msgEl.innerHTML = '<div style="padding:10px;border-radius:8px;margin-bottom:14px;font-size:0.85rem;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);color:#34d399;">✅ Cuenta creada. Tu usuario es: <strong>' + username + '</strong></div>';
+      msgEl.innerHTML = '<div style="padding:10px;border-radius:8px;margin-bottom:14px;font-size:0.85rem;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);color:#34d399;">✅ Cuenta creada.<br>Tu usuario es: <strong style="font-size:1.1rem;">' + username + '</strong><br><span style="font-size:0.8rem;color:#94a3b8;">También puedes ingresar con tu correo electrónico.</span></div>';
 
       // Auto login after 2 seconds
       setTimeout(async () => {
