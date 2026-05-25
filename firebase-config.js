@@ -33,19 +33,23 @@ async function loginGeneral(username, password, profId) {
     .where('username', '==', inputLower)
     .get();
 
+  console.log('Login attempt:', inputLower, '| By username found:', snap.docs.length);
+
   // If not found by username, try by email
   if (snap.empty) {
     snap = await db.collection('admins')
       .where('email', '==', inputLower)
       .get();
+    console.log('By email found:', snap.docs.length);
   }
 
   if (!snap.empty) {
-    // Find matching password among results
     const match = snap.docs.find(d => d.data().password === password);
+    console.log('Password match:', !!match, '| Stored passwords:', snap.docs.map(d => d.data().password));
     if (match) {
       return { success: true, user: { id: match.id, ...match.data(), tipo: 'admin' } };
     }
+    return { success: false, error: 'Contraseña incorrecta' };
   }
 
   // Check students - if profId provided, only search within that professor's students
