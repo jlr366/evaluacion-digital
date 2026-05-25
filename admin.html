@@ -1327,7 +1327,8 @@
     panel.style.cssText = 'border:1px solid #334155;margin-top:12px;text-align:center;max-width:400px;';
     panel.innerHTML = `
       <h2 style="font-size:0.95rem;color:#60a5fa;margin-bottom:4px;">📱 QR — ${titulo}</h2>
-      <p style="font-size:0.75rem;color:#64748b;margin-bottom:14px;">Escanea para acceder al examen</p>
+      <p style="font-size:0.75rem;color:#64748b;margin-bottom:${isDemo ? '8px' : '14px'};">Escanea para acceder al examen</p>
+      ${isDemo ? '<div style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);color:#fbbf24;padding:6px 12px;border-radius:8px;font-size:0.78rem;margin-bottom:10px;">🎯 Cuenta demo — QR funcional en modo prueba. <a href="precios.html" style="color:#60a5fa;">Actualiza tu plan →</a></div>' : ''}
       <div id="qrCanvas" style="display:inline-block;padding:16px;background:#fff;border-radius:12px;"></div>
       <p style="font-size:0.72rem;color:#475569;margin-top:10px;word-break:break-all;">${url}</p>
       <div style="display:flex;gap:8px;justify-content:center;margin-top:14px;">
@@ -1385,6 +1386,7 @@
     panel.style.cssText = 'border:1px solid #0ea5e9;margin-top:12px;';
     panel.innerHTML = `
       <h2 style="color:#38bdf8;font-size:0.95rem;margin-bottom:14px;">📨 Enviar examen: <strong>${titulo}</strong></h2>
+      ${isDemo ? '<div style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);color:#fbbf24;padding:8px 12px;border-radius:8px;font-size:0.8rem;margin-bottom:12px;">🎯 Cuenta demo — Los correos se envían en modo prueba. <a href="precios.html" style="color:#60a5fa;">Actualiza tu plan →</a></div>' : ''}
       <div id="envioMsg"></div>
       <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px;">
         <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.85rem;color:#94a3b8;background:rgba(14,165,233,0.08);border:1px solid rgba(14,165,233,0.3);padding:8px 14px;border-radius:8px;">
