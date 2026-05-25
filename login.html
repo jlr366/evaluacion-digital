@@ -134,11 +134,22 @@
     msgEl.innerHTML = '<div style="padding:10px;border-radius:8px;margin-bottom:14px;font-size:0.85rem;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3);color:#60a5fa;">⏳ Creando cuenta...</div>';
 
     try {
-      // Use email as username directly (simpler, no random number)
-      const username = email.trim().toLowerCase();
+      // Use name as username (lowercase, no spaces), add number if duplicate
+      let baseUsername = nombre.trim().toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/g, '');
+      if (!baseUsername) baseUsername = 'usuario';
+
+      // Check if username already exists, add number if so
+      let username = baseUsername;
+      let counter = 2;
+      while (true) {
+        const check = await db.collection('admins').where('username', '==', username).get();
+        if (check.empty) break;
+        username = baseUsername + counter;
+        counter++;
+      }
 
       // Check if email already registered
-      const existing = await db.collection('admins').where('username', '==', username).get();
+      const existing = await db.collection('admins').where('email', '==', email.toLowerCase()).get();
       if (!existing.empty) { msgEl.innerHTML = '<div style="padding:10px;border-radius:8px;margin-bottom:14px;font-size:0.85rem;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#f87171;">❌ Este email ya está registrado</div>'; return; }
 
       // Create demo admin
@@ -146,14 +157,14 @@
         username: username,
         password: password,
         nombre: nombre.trim(),
-        email: username,
+        email: email.toLowerCase(),
         role: 'demo',
         institucion: '',
         demoExpiry: new Date(new Date().setHours(24,0,0,0)).toISOString(),
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       });
 
-      msgEl.innerHTML = '<div style="padding:10px;border-radius:8px;margin-bottom:14px;font-size:0.85rem;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);color:#34d399;">✅ Cuenta creada.<br>Ingresa con tu <strong>correo electrónico</strong> y contraseña.</div>';
+      msgEl.innerHTML = '<div style="padding:10px;border-radius:8px;margin-bottom:14px;font-size:0.85rem;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);color:#34d399;">✅ Cuenta creada.<br>Tu usuario es: <strong style="font-size:1.1rem;">' + username + '</strong><br><span style="font-size:0.8rem;color:#94a3b8;">También puedes ingresar con tu correo: ' + email.toLowerCase() + '</span></div>';
 
       // Auto login after 2 seconds
       setTimeout(async () => {

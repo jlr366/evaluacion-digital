@@ -1940,12 +1940,12 @@
     if (demos.length === 0) {
       document.getElementById('listaDemos').innerHTML = '<p style="color:#64748b;font-style:italic;">No hay cuentas demo pendientes de activar.</p>';
     } else {
-      let dHtml = '<table><thead><tr><th>Nombre</th><th>Username</th><th>Institución</th><th>Acción</th></tr></thead><tbody>';
+      let dHtml = '<table><thead><tr><th>Nombre</th><th>Username</th><th>Email</th><th>Acción</th></tr></thead><tbody>';
       demos.forEach(d => {
         dHtml += `<tr>
           <td><strong>${d.nombre}</strong></td>
           <td>${d.username}</td>
-          <td>${d.institucion||'-'}</td>
+          <td style="color:#64748b;font-size:0.82rem;">${d.email||'-'}</td>
           <td style="display:flex;gap:6px;">
             <button class="btn btn-sm btn-green" onclick="activarDemo('${d.id}','${d.nombre.replace(/'/g,'')}')">✅ Activar</button>
             <button class="btn btn-sm btn-red" onclick="eliminarAdm('${d.id}')">🗑️</button>
