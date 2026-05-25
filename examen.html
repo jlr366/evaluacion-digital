@@ -481,6 +481,19 @@
     @keyframes slideInLeft  { from { opacity:0; transform:translateX(-30px); } to { opacity:1; transform:translateX(0); } }
     .slide-right { animation: slideInRight 0.25s ease both; }
     .slide-left  { animation: slideInLeft  0.25s ease both; }
+
+    /* ── Light mode for examen ── */
+    body.light-mode { background: #f0f4f8; color: #1e293b; }
+    body.light-mode body::before { background-image: linear-gradient(rgba(0,120,212,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,120,212,0.03) 1px, transparent 1px); }
+    body.light-mode .card { background: rgba(255,255,255,0.95); border-color: rgba(30,41,59,0.12); }
+    body.light-mode .card h2 { color: #1e293b; }
+    body.light-mode .pregunta { background: rgba(255,255,255,0.95); border-color: rgba(0,120,212,0.15); }
+    body.light-mode .opcion { background: rgba(240,244,248,0.8); border-color: rgba(30,41,59,0.1); }
+    body.light-mode .opcion label { color: #334155; }
+    body.light-mode .exam-sidebar { background: rgba(255,255,255,0.9); border-color: rgba(0,120,212,0.2); }
+    body.light-mode .timer-bar { background: rgba(240,244,248,0.97); border-bottom-color: rgba(0,120,212,0.2); }
+    body.light-mode .form-group input { background: #f8fafc; border-color: #cbd5e1; color: #1e293b; }
+    body.light-mode #darkToggle { color: #1e293b; background: rgba(30,41,59,0.08); border-color: rgba(30,41,59,0.15); }
   </style>
 </head>
 <body>
@@ -523,7 +536,10 @@
   <div id="secLogin">
     <div class="card" style="max-width:420px; margin:0 auto;">
       <div style="text-align:center; margin-bottom:16px;"><img src="logo_circular_transparente2.png" alt="Logo" style="height:120px; filter:drop-shadow(0 4px 20px rgba(0,188,242,0.7)) brightness(1.3);"></div>
-      <h2 style="text-align:center; font-size:1.1rem; color:#f8fafc; margin-bottom:16px;">Inicie sesión para comenzar</h2>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <h2 style="font-size:1.1rem; color:#f8fafc;">Inicie sesión para comenzar</h2>
+        <button id="darkToggle" onclick="toggleDarkMode()" title="Cambiar modo claro/oscuro" style="background:rgba(148,163,184,0.1);border:1px solid rgba(148,163,184,0.2);border-radius:8px;color:#f8fafc;cursor:pointer;font-size:1rem;padding:6px 9px;line-height:1;flex-shrink:0;">🌙</button>
+      </div>
       <div id="loginMsg"></div>
       <div class="form-group"><label>Usuario</label><input type="text" id="loginUser" placeholder="Su usuario" /></div>
       <div class="form-group"><label>Contraseña</label><input type="password" id="loginPass" placeholder="Su contraseña" /></div>
@@ -710,6 +726,27 @@
       tiempoRestante = (examenData.tiempoMinutos || 40) * 60;
       examenCargado = true;
 
+      // ── Check date range (show notice above login form) ──
+      const ahora = new Date();
+      if (examenData.fechaApertura) {
+        const apertura = new Date(examenData.fechaApertura);
+        if (ahora < apertura) {
+          const fechaStr = apertura.toLocaleString('es-ES', { dateStyle: 'long', timeStyle: 'short' });
+          document.getElementById('loginMsg').innerHTML = '<div class="msg msg-err" style="font-size:0.9rem;">🔒 Este examen aún no está disponible.<br><strong>Disponible desde: ' + fechaStr + '</strong></div>';
+          document.querySelector('#secLogin .card button').disabled = true;
+          document.querySelector('#secLogin .card button').style.opacity = '0.4';
+        }
+      }
+      if (examenData.fechaCierre) {
+        const cierre = new Date(examenData.fechaCierre);
+        if (ahora > cierre) {
+          const fechaStr = cierre.toLocaleString('es-ES', { dateStyle: 'long', timeStyle: 'short' });
+          document.getElementById('loginMsg').innerHTML = '<div class="msg msg-err" style="font-size:0.9rem;">🔒 Este examen ya no está disponible.<br><strong>Cerró el: ' + fechaStr + '</strong></div>';
+          document.querySelector('#secLogin .card button').disabled = true;
+          document.querySelector('#secLogin .card button').style.opacity = '0.4';
+        }
+      }
+
       // Preview mode: skip login, start directly
       if (isPreview) {
         // Show preview banner
@@ -761,6 +798,16 @@
           return;
         }
         currentSesionId = sesionCheck.sesionId;
+
+        // Check attempt limit
+        const intentosPermitidos = examenData.intentosPermitidos || 0;
+        if (intentosPermitidos > 0) {
+          const intentosPrevios = await getGradesByUserAndExamen(currentUser.id, examenId);
+          if (intentosPrevios.length >= intentosPermitidos) {
+            document.getElementById('loginMsg').innerHTML = '<div class="msg msg-err">🚫 Has alcanzado el límite de intentos para este examen (' + intentosPermitidos + ' intento' + (intentosPermitidos > 1 ? 's' : '') + ' permitido' + (intentosPermitidos > 1 ? 's' : '') + ').</div>';
+            return;
+          }
+        }
       }
 
       iniciarExamen();
@@ -1615,6 +1662,21 @@
       console.error('Error con EmailJS:', e);
     }
   }
+
+  // ── Dark/Light mode ──
+  function toggleDarkMode() {
+    const isLight = document.body.classList.toggle('light-mode');
+    localStorage.setItem('colorMode', isLight ? 'light' : 'dark');
+    const btn = document.getElementById('darkToggle');
+    if (btn) btn.textContent = isLight ? '☀️' : '🌙';
+  }
+  (function() {
+    if (localStorage.getItem('colorMode') === 'light') {
+      document.body.classList.add('light-mode');
+      const btn = document.getElementById('darkToggle');
+      if (btn) btn.textContent = '☀️';
+    }
+  })();
 </script>
 </body>
 </html>

@@ -53,6 +53,25 @@
     .pregunta-editor .del { position: absolute; top: 8px; right: 12px; background: #dc2626; color: white; border: none; width: 22px; height: 22px; border-radius: 6px; cursor: pointer; font-size: 0.75rem; }
     .hidden { display: none !important; }
     @media (max-width: 768px) { .form-row { grid-template-columns: 1fr; } .container { padding: 12px; } }
+
+    /* ── Light mode for admin ── */
+    body.light-mode { background: #f0f4f8; color: #1e293b; }
+    body.light-mode .card { background: #ffffff; border-color: rgba(30,41,59,0.12); }
+    body.light-mode .card h2 { color: #0078d4; }
+    body.light-mode .header h1 { color: #1e293b; }
+    body.light-mode .tab { background: #e2e8f0; color: #475569; border-color: #cbd5e1; }
+    body.light-mode .tab.active { background: #0078d4; color: white; }
+    body.light-mode .form-group input,
+    body.light-mode .form-group textarea,
+    body.light-mode .form-group select { background: #f8fafc; border-color: #cbd5e1; color: #1e293b; }
+    body.light-mode .pregunta-editor { background: #f8fafc; border-color: #cbd5e1; }
+    body.light-mode .url-box { background: #f8fafc; border-color: #cbd5e1; color: #0078d4; }
+    body.light-mode table th { background: #f0f4f8; color: #0078d4; }
+    body.light-mode table td { color: #334155; border-bottom-color: #e2e8f0; }
+    body.light-mode .stat-card { background: #f0f4f8; border-color: #cbd5e1; }
+    body.light-mode .stat-card .num { color: #1e293b; }
+    body.light-mode .stat-card .lbl { color: #64748b; }
+    body.light-mode #darkToggle { color: #1e293b; background: rgba(30,41,59,0.08); border-color: rgba(30,41,59,0.15); }
   </style>
 </head>
 <body>
@@ -62,7 +81,10 @@
       <h1>📋 Panel de Administración</h1>
       <span class="user-info" id="userInfo"></span>
     </div>
-    <button class="btn btn-gray" onclick="logout()">🚪 Salir</button>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <button id="darkToggle" onclick="toggleDarkMode()" title="Cambiar modo claro/oscuro" style="background:rgba(148,163,184,0.1);border:1px solid rgba(148,163,184,0.2);border-radius:8px;color:#f8fafc;cursor:pointer;font-size:1rem;padding:7px 10px;line-height:1;transition:0.2s;">🌙</button>
+      <button class="btn btn-gray" onclick="logout()">🚪 Salir</button>
+    </div>
   </div>
 
   <div class="tabs">
@@ -113,6 +135,32 @@
             <option value="personalizado">Asignar puntos por pregunta</option>
           </select>
         </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>🔁 Intentos permitidos</label>
+          <select id="exIntentos">
+            <option value="0">Ilimitado</option>
+            <option value="1">1 intento</option>
+            <option value="2">2 intentos</option>
+            <option value="3">3 intentos</option>
+            <option value="5">5 intentos</option>
+          </select>
+          <span style="font-size:0.72rem;color:#64748b;">Cuántas veces puede rendir este examen cada estudiante. 0 = ilimitado.</span>
+        </div>
+        <div class="form-group">
+          <label>📅 Fecha de apertura <span style="font-weight:400;color:#64748b;">(opcional)</span></label>
+          <input type="datetime-local" id="exFechaApertura" style="color-scheme:dark;" />
+          <span style="font-size:0.72rem;color:#64748b;">El examen no estará disponible antes de esta fecha.</span>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>📅 Fecha de cierre <span style="font-weight:400;color:#64748b;">(opcional)</span></label>
+          <input type="datetime-local" id="exFechaCierre" style="color-scheme:dark;" />
+          <span style="font-size:0.72rem;color:#64748b;">El examen no estará disponible después de esta fecha.</span>
+        </div>
+        <div class="form-group"></div>
       </div>
       <div id="puntosMaxContainer" style="display:none; margin-bottom:12px;">
         <div class="form-row">
@@ -1083,6 +1131,9 @@
       notaMaxima: notaMaxima,
       reconexionMinutos: parseInt(document.getElementById('exReconexion').value) || 0,
       puntuacion: document.getElementById('exPuntuacion').value || 'igual',
+      intentosPermitidos: parseInt(document.getElementById('exIntentos').value) || 0,
+      fechaApertura: document.getElementById('exFechaApertura').value || '',
+      fechaCierre: document.getElementById('exFechaCierre').value || '',
       preguntas: preguntasTemp,
       createdBy: currentUser.id,
       createdByName: currentUser.nombre,
@@ -1328,6 +1379,9 @@
     document.getElementById('exReconexion').disabled = false;
     document.getElementById('exReconexion').style.opacity = '1';
     document.getElementById('exReconexionIndefinida').checked = false;
+    document.getElementById('exIntentos').value = '0';
+    document.getElementById('exFechaApertura').value = '';
+    document.getElementById('exFechaCierre').value = '';
     preguntasTemp = [];
     renderPreguntas();
     document.getElementById('exMsg').innerHTML = '';
@@ -1353,6 +1407,10 @@
       document.getElementById('exReconexionIndefinida').checked = esIndefinido;
       document.getElementById('exReconexion').disabled = esIndefinido;
       document.getElementById('exReconexion').style.opacity = esIndefinido ? '0.4' : '1';
+      // Restore intentos and dates
+      document.getElementById('exIntentos').value = String(examen.intentosPermitidos || 0);
+      document.getElementById('exFechaApertura').value = examen.fechaApertura || '';
+      document.getElementById('exFechaCierre').value = examen.fechaCierre || '';
 
       // Load questions into editor
       preguntasTemp = (examen.preguntas || []).map(p => {
@@ -1638,7 +1696,7 @@
       porEstudiante[key].notas.push(n);
     });
 
-    let html = '<div style="margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap;"><button class="btn btn-sm btn-red" onclick="eliminarTodasNotas()">🗑️ Eliminar todas</button><button class="btn btn-sm btn-blue" onclick="exportarNotasPDF()">📄 Exportar PDF</button></div>';
+    let html = '<div style="margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap;"><button class="btn btn-sm btn-red" onclick="eliminarTodasNotas()">🗑️ Eliminar todas</button><button class="btn btn-sm btn-blue" onclick="exportarNotasPDF()">📄 Exportar PDF</button><button class="btn btn-sm" style="background:#059669;color:white;" onclick="exportarNotasCSV(null)">📥 Exportar CSV</button></div>';
     Object.keys(porEstudiante).forEach(key => {
       const est = porEstudiante[key];
       const promEst = Math.round(est.notas.reduce((s,n) => s + n.nota, 0) / est.notas.length);
@@ -1737,7 +1795,7 @@
         porEst[k].notas.push(n);
       });
 
-      let html = '';
+      let html = `<div style="margin-bottom:10px;"><button class="btn btn-sm" style="background:#059669;color:white;" onclick="exportarNotasCSV('${profId}')">📥 Exportar CSV</button></div>`;
       Object.values(porEst).forEach(est => {
         const promEst = Math.round(est.notas.reduce((s,n) => s + (n.nota||0), 0) / est.notas.length);
         const aprobEst = est.notas.filter(n => n.aprobado).length;
@@ -2006,6 +2064,71 @@
   }
 
   async function eliminarAdm(id) { if (confirm('¿Eliminar admin?')) { await deleteAdmin(id); loadAdmins(); } }
+
+  // ── Dark/Light mode ──
+  function toggleDarkMode() {
+    const isLight = document.body.classList.toggle('light-mode');
+    localStorage.setItem('colorMode', isLight ? 'light' : 'dark');
+    document.getElementById('darkToggle').textContent = isLight ? '☀️' : '🌙';
+  }
+  (function() {
+    if (localStorage.getItem('colorMode') === 'light') {
+      document.body.classList.add('light-mode');
+      const btn = document.getElementById('darkToggle');
+      if (btn) btn.textContent = '☀️';
+    }
+  })();
+
+  // ── Export CSV ──
+  async function exportarNotasCSV(filterProfId) {
+    let notas = [];
+    try {
+      let snap;
+      if (filterProfId) {
+        snap = await db.collection('notas').where('createdBy', '==', filterProfId).get();
+      } else {
+        snap = await db.collection('notas').get();
+      }
+      notas = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      if (!filterProfId && !isSuperAdmin) {
+        const misUsuarios = await getUsers(currentUser.id);
+        const misUserIds = misUsuarios.map(u => u.id);
+        notas = notas.filter(n => n.createdBy === currentUser.id || misUserIds.includes(n.userId));
+      }
+    } catch(e) { alert('Error: ' + e.message); return; }
+
+    if (notas.length === 0) { alert('No hay notas para exportar'); return; }
+
+    // Get student info for curso column
+    const usuarios = await getUsers(filterProfId || (isSuperAdmin ? null : currentUser.id));
+    const userMap = {};
+    usuarios.forEach(u => { userMap[u.id] = u; });
+
+    const header = ['Estudiante', 'Username', 'Examen', 'Nota', 'Estado', 'Fecha', 'Curso'];
+    const rows = notas.sort((a,b) => (b.fecha?.seconds||0) - (a.fecha?.seconds||0)).map(n => {
+      const usr = userMap[n.userId] || {};
+      return [
+        '"' + (n.nombre || n.username || '').replace(/"/g, '""') + '"',
+        '"' + (n.username || '').replace(/"/g, '""') + '"',
+        '"' + (n.examenTitulo || '').replace(/"/g, '""') + '"',
+        n.nota,
+        n.aprobado ? 'Aprobado' : 'Reprobado',
+        '"' + (n.fechaLocal || '').replace(/"/g, '""') + '"',
+        '"' + (usr.curso || n.curso || 'Sin curso').replace(/"/g, '""') + '"'
+      ].join(',');
+    });
+
+    const csv = [header.join(','), ...rows].join('\n');
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'Notas_' + new Date().toISOString().slice(0,10) + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
 
   // ── Init ──
   loadExamenes();

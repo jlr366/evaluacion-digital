@@ -81,10 +81,9 @@
       <a href="precios.html">Planes</a>
       <a href="juego.html">Juego RPG</a>
       <a href="login.html">Ingresar</a><a href="index.html#contacto">Contáctanos</a></nav>
+    <button class="dark-mode-toggle" id="darkToggle" onclick="toggleDarkMode()" title="Cambiar modo claro/oscuro">🌙</button>
   </div>
 </header>
-
-<!-- Hero -->
 <section class="hero" style="position:relative; overflow:hidden;">
   <div id="particles-hero"></div>
   <h1 data-aos="fade-down" data-aos-duration="800">Crea exámenes digitales<br><span>en minutos, no en horas.</span></h1>
@@ -166,9 +165,14 @@
       <p>Organiza estudiantes por curso o sección. Ve aprobados y reprobados por grupo.</p>
     </div>
     <div class="card" data-aos="zoom-in" data-aos-delay="560">
-      <div class="icon">👥</div>
-      <h3>Control de acceso</h3>
-      <p>Solo los estudiantes que tú crees pueden acceder. Cada uno con su usuario y contraseña.</p>
+      <div class="icon">🔁</div>
+      <h3>Límite de intentos</h3>
+      <p>Configura cuántas veces puede rendir cada estudiante. Ilimitado, 1, 2, 3 o 5 intentos por examen.</p>
+    </div>
+    <div class="card" data-aos="zoom-in" data-aos-delay="620">
+      <div class="icon">📅</div>
+      <h3>Fechas de apertura y cierre</h3>
+      <p>Define cuándo abre y cuándo cierra el examen. Fuera del rango, los estudiantes ven un mensaje claro.</p>
     </div>
     <div class="card" data-aos="zoom-in" data-aos-delay="640">
       <div class="icon">📱</div>
@@ -298,6 +302,20 @@
     }
   })();
   emailjs.init('orZQk0WGfKhLwMQUX');
+
+  // ── Dark/Light mode ──
+  function toggleDarkMode() {
+    const isLight = document.body.classList.toggle('light-mode');
+    localStorage.setItem('colorMode', isLight ? 'light' : 'dark');
+    document.getElementById('darkToggle').textContent = isLight ? '☀️' : '🌙';
+  }
+  (function() {
+    if (localStorage.getItem('colorMode') === 'light') {
+      document.body.classList.add('light-mode');
+      const btn = document.getElementById('darkToggle');
+      if (btn) btn.textContent = '☀️';
+    }
+  })();
 
   async function enviarContacto() {
     const nombre = document.getElementById('contactNombre').value.trim();

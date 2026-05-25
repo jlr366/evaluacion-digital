@@ -18,6 +18,7 @@
       <a href="precios.html">Planes</a>
       <a href="juego.html">Juego RPG</a>
       <a href="login.html">Ingresar</a><a href="index.html#contacto">Contáctanos</a></nav>
+    <button class="dark-mode-toggle" id="darkToggle" onclick="toggleDarkMode()" title="Cambiar modo claro/oscuro">🌙</button>
   </div>
 </header>
 
@@ -84,6 +85,10 @@
         <li>PDF del curso completo con todas las notas</li>
         <li>Puntuación personalizada por pregunta</li>
         <li>Escala de notas configurable (7, 10, 20, 100...)</li>
+        <li>Exportar notas a CSV</li>
+        <li>Límite de intentos configurable</li>
+        <li>Fecha de apertura y cierre del examen</li>
+        <li>Modo oscuro/claro</li>
       </ul>
       <a href="index.html#contacto" class="btn btn-primary" style="width:100%;">Contactar</a>
     </div>
@@ -150,6 +155,20 @@
   <p>© 2025 Evaluación Digital — evaluacion-digital.com</p>
 </footer>
 
+<script>
+  function toggleDarkMode() {
+    const isLight = document.body.classList.toggle('light-mode');
+    localStorage.setItem('colorMode', isLight ? 'light' : 'dark');
+    document.getElementById('darkToggle').textContent = isLight ? '☀️' : '🌙';
+  }
+  (function() {
+    if (localStorage.getItem('colorMode') === 'light') {
+      document.body.classList.add('light-mode');
+      const btn = document.getElementById('darkToggle');
+      if (btn) btn.textContent = '☀️';
+    }
+  })();
+</script>
 </body>
 </html>
 

@@ -147,6 +147,9 @@ async function createExamen(data) {
     notaMaxima: data.notaMaxima || 100,
     reconexionMinutos: data.reconexionMinutos !== undefined ? data.reconexionMinutos : 60,
     puntuacion: data.puntuacion || 'igual',
+    intentosPermitidos: data.intentosPermitidos !== undefined ? data.intentosPermitidos : 0,
+    fechaApertura: data.fechaApertura || '',
+    fechaCierre: data.fechaCierre || '',
     preguntas: data.preguntas || [],
     createdBy: data.createdBy || '',
     createdByName: data.createdByName || '',
@@ -297,6 +300,19 @@ async function getGradesByUser(userId) {
     return snap.docs.map(d => ({ id: d.id, ...d.data() }));
   } catch (error) {
     console.error('getGradesByUser error:', error);
+    return [];
+  }
+}
+
+async function getGradesByUserAndExamen(userId, examenId) {
+  try {
+    const snap = await db.collection('notas')
+      .where('userId', '==', userId)
+      .where('examenId', '==', examenId)
+      .get();
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  } catch (error) {
+    console.error('getGradesByUserAndExamen error:', error);
     return [];
   }
 }

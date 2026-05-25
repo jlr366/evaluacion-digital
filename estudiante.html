@@ -25,13 +25,27 @@
     .stat-card { background: #0f172a; border: 1px solid #334155; border-radius: 10px; padding: 14px; text-align: center; }
     .stat-card .num { font-size: 1.8rem; font-weight: 800; color: #f8fafc; }
     .stat-card .lbl { font-size: 0.7rem; text-transform: uppercase; color: #64748b; margin-top: 4px; }
+
+    /* ── Light mode ── */
+    body.light-mode { background: #f0f4f8; color: #1e293b; }
+    body.light-mode .card { background: #ffffff; border-color: rgba(30,41,59,0.12); }
+    body.light-mode .card h2 { color: #0078d4; }
+    body.light-mode .header h1 { color: #1e293b; }
+    body.light-mode table th { background: #f0f4f8; color: #0078d4; }
+    body.light-mode table td { color: #334155; border-bottom-color: #e2e8f0; }
+    body.light-mode .stat-card { background: #f0f4f8; border-color: #cbd5e1; }
+    body.light-mode .stat-card .num { color: #1e293b; }
+    body.light-mode #darkToggle { color: #1e293b; background: rgba(30,41,59,0.08); border-color: rgba(30,41,59,0.15); }
   </style>
 </head>
 <body>
 <div class="container">
   <div class="header">
     <h1>📊 Mis Resultados</h1>
-    <button class="btn btn-gray" onclick="sessionStorage.removeItem('currentUser'); window.location.href='index.html';">🚪 Salir</button>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <button id="darkToggle" onclick="toggleDarkMode()" title="Cambiar modo claro/oscuro" style="background:rgba(148,163,184,0.1);border:1px solid rgba(148,163,184,0.2);border-radius:8px;color:#f8fafc;cursor:pointer;font-size:1rem;padding:7px 10px;line-height:1;">🌙</button>
+      <button class="btn btn-gray" onclick="sessionStorage.removeItem('currentUser'); window.location.href='index.html';">🚪 Salir</button>
+    </div>
   </div>
 
   <div id="welcome" class="card" style="text-align:center;">
@@ -79,6 +93,21 @@
     });
     html += '</tbody></table>';
     document.getElementById('notasTable').innerHTML = html;
+  })();
+
+  // ── Dark/Light mode ──
+  function toggleDarkMode() {
+    const isLight = document.body.classList.toggle('light-mode');
+    localStorage.setItem('colorMode', isLight ? 'light' : 'dark');
+    const btn = document.getElementById('darkToggle');
+    if (btn) btn.textContent = isLight ? '☀️' : '🌙';
+  }
+  (function() {
+    if (localStorage.getItem('colorMode') === 'light') {
+      document.body.classList.add('light-mode');
+      const btn = document.getElementById('darkToggle');
+      if (btn) btn.textContent = '☀️';
+    }
   })();
 </script>
 </body>

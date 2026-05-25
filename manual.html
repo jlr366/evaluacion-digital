@@ -18,6 +18,7 @@
       <a href="precios.html">Planes</a>
       <a href="juego.html">Juego RPG</a>
       <a href="login.html">Ingresar</a><a href="index.html#contacto">Contáctanos</a></nav>
+    <button class="dark-mode-toggle" id="darkToggle" onclick="toggleDarkMode()" title="Cambiar modo claro/oscuro">🌙</button>
   </div>
 </header>
 
@@ -48,6 +49,20 @@
   <p>© 2025 Evaluación Digital — evaluacion-digital.com</p>
 </footer>
 
+<script>
+  function toggleDarkMode() {
+    const isLight = document.body.classList.toggle('light-mode');
+    localStorage.setItem('colorMode', isLight ? 'light' : 'dark');
+    document.getElementById('darkToggle').textContent = isLight ? '☀️' : '🌙';
+  }
+  (function() {
+    if (localStorage.getItem('colorMode') === 'light') {
+      document.body.classList.add('light-mode');
+      const btn = document.getElementById('darkToggle');
+      if (btn) btn.textContent = '☀️';
+    }
+  })();
+</script>
 </body>
 </html>
 
