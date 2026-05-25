@@ -138,15 +138,14 @@
       let baseUsername = nombre.trim().toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/g, '');
       if (!baseUsername) baseUsername = 'usuario';
 
-      // Check if username already exists, add number if so
-      let username = baseUsername;
-      let counter = 2;
-      while (true) {
-        const check = await db.collection('admins').where('username', '==', username).get();
-        if (check.empty) break;
-        username = baseUsername + counter;
-        counter++;
+      // Check if username already exists — if so, show error asking for different name
+      const checkUser = await db.collection('admins').where('username', '==', baseUsername).get();
+      if (!checkUser.empty) {
+        msgEl.innerHTML = '<div style="padding:10px;border-radius:8px;margin-bottom:14px;font-size:0.85rem;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#f87171;">❌ El nombre <strong>' + baseUsername + '</strong> ya está en uso. Por favor usa un nombre diferente o agrega tu apellido.</div>';
+        return;
       }
+
+      const username = baseUsername;
 
       // Check if email already registered
       const existing = await db.collection('admins').where('email', '==', email.toLowerCase()).get();
