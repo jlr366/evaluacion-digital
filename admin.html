@@ -1516,7 +1516,9 @@
           exam_name: titulo,
           date: new Date().toLocaleString('es-ES'),
           message: mensaje || 'Tu profesor te ha asignado este examen. ¡Mucho éxito!',
-          exam_url: url
+          exam_url: url,
+          username: u.username,
+          password: u.password || '(consulta a tu profesor)'
         });
         enviados++;
       } catch(e) {
