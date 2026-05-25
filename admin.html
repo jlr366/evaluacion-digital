@@ -1510,17 +1510,13 @@
     let enviados = 0, errores = 0;
     for (const u of destinatarios) {
       try {
-        await emailjs.send('service_i7gv5pq', 'template_gi85ryj', {
+        await emailjs.send('service_i7gv5pq', 'template_4zpt2yc', {
           to_email: u.email,
-          email: u.email,
           student_name: u.nombre || u.username,
           exam_name: titulo,
           date: new Date().toLocaleString('es-ES'),
-          score: 'Pendiente',
-          status: mensaje || 'Tu profesor te ha asignado este examen.',
-          correct: 'Accede aquí: ' + url,
-          total: url,
-          pdf_url: '🔗 Link del examen: ' + url
+          message: mensaje || 'Tu profesor te ha asignado este examen. ¡Mucho éxito!',
+          exam_url: url
         });
         enviados++;
       } catch(e) {
