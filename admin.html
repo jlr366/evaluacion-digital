@@ -311,7 +311,14 @@
       <div class="card" style="margin-bottom:16px;">
         <h2>👨‍🏫 Profesores registrados</h2>
         <p style="color:#64748b;font-size:0.82rem;margin-bottom:12px;">Haz clic en un profesor para ver sus exámenes, estudiantes y notas.</p>
-        <button class="btn btn-sm" style="background:#059669;color:white;" onclick="exportarBackupTotal()">📦 Exportar backup total</button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn btn-sm" style="background:#059669;color:white;" onclick="exportarBackupTotal()">📦 Exportar backup total</button>
+          <label style="cursor:pointer;" class="btn btn-sm" style="background:#0078d4;color:white;">
+            📂 Importar backup
+            <input type="file" accept=".json" onchange="importarBackup(this.files[0])" style="display:none;">
+          </label>
+        </div>
+        <div id="importBackupMsg" style="margin-top:10px;"></div>
       </div>
       <div id="listaProfesoresDetalle">Cargando...</div>
     </div>
@@ -645,7 +652,93 @@
     }
   }
 
-  async function eliminarAdminConfirm(id, nombre) {
+  async function importarBackup(file) {
+    if (!file) return;
+    const msgEl = document.getElementById('importBackupMsg');
+    msgEl.innerHTML = '<div class="msg" style="background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3);color:#60a5fa;">⏳ Leyendo archivo...</div>';
+
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+      try {
+        const backup = JSON.parse(e.target.result);
+
+        // Validate structure
+        if (!backup.version) {
+          msgEl.innerHTML = '<div class="msg msg-err">❌ Archivo no válido. Debe ser un backup generado por esta plataforma.</div>';
+          return;
+        }
+
+        const resumen = [];
+        if (backup.examenes) resumen.push(backup.examenes.length + ' exámenes');
+        if (backup.usuarios) resumen.push(backup.usuarios.length + ' estudiantes');
+        if (backup.notas) resumen.push(backup.notas.length + ' notas');
+        if (backup.admins) resumen.push(backup.admins.length + ' admins');
+
+        const confirmar = confirm(
+          '📂 Backup del ' + (backup.fecha || 'fecha desconocida') +
+          (backup.profesor ? '\nProfesor: ' + backup.profesor : ' (backup total)') +
+          '\n\nContenido: ' + resumen.join(', ') +
+          '\n\n⚠️ Los registros existentes con el mismo ID se actualizarán. Los nuevos se agregarán.' +
+          '\n\n¿Deseas continuar?'
+        );
+        if (!confirmar) { msgEl.innerHTML = ''; return; }
+
+        msgEl.innerHTML = '<div class="msg" style="background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3);color:#60a5fa;">⏳ Restaurando datos...</div>';
+
+        let importados = 0;
+
+        // Restore admins (only in total backup)
+        if (backup.admins) {
+          for (const a of backup.admins) {
+            if (a.id && a.role !== 'superadmin') { // never overwrite superadmin
+              const { id, ...data } = a;
+              await db.collection('admins').doc(id).set(data, { merge: true });
+              importados++;
+            }
+          }
+        }
+
+        // Restore exams
+        if (backup.examenes) {
+          for (const ex of backup.examenes) {
+            if (ex.id) {
+              const { id, ...data } = ex;
+              await db.collection('examenes').doc(id).set(data, { merge: true });
+              importados++;
+            }
+          }
+        }
+
+        // Restore students
+        if (backup.usuarios) {
+          for (const u of backup.usuarios) {
+            if (u.id) {
+              const { id, ...data } = u;
+              await db.collection('usuarios').doc(id).set(data, { merge: true });
+              importados++;
+            }
+          }
+        }
+
+        // Restore grades
+        if (backup.notas) {
+          for (const n of backup.notas) {
+            if (n.id) {
+              const { id, ...data } = n;
+              await db.collection('notas').doc(id).set(data, { merge: true });
+              importados++;
+            }
+          }
+        }
+
+        msgEl.innerHTML = '<div class="msg msg-ok">✅ Backup restaurado correctamente. ' + importados + ' registros importados.</div>';
+        loadProfesoresDetalle();
+      } catch(e) {
+        msgEl.innerHTML = '<div class="msg msg-err">❌ Error al importar: ' + e.message + '</div>';
+      }
+    };
+    reader.readAsText(file, 'UTF-8');
+  }
     if (!confirm('¿Eliminar al profesor "' + nombre + '"?\n\nSe eliminarán también:\n• Todos sus exámenes\n• Todos sus estudiantes\n• Todas sus notas\n\nEsta acción no se puede deshacer.')) return;
     try {
       // Delete exams
