@@ -581,9 +581,48 @@
   }
 
   async function eliminarAdminConfirm(id, nombre) {
-    if (confirm('¿Eliminar al profesor "' + nombre + '"? Se eliminarán también sus datos.')) {
+    if (!confirm('¿Eliminar al profesor "' + nombre + '"?\n\nSe eliminarán también:\n• Todos sus exámenes\n• Todos sus estudiantes\n• Todas sus notas\n\nEsta acción no se puede deshacer.')) return;
+    try {
+      // Delete exams
+      const exSnap = await db.collection('examenes').where('createdBy', '==', id).get();
+      for (const doc of exSnap.docs) await doc.ref.delete();
+
+      // Delete students
+      const usSnap = await db.collection('usuarios').where('createdBy', '==', id).get();
+      for (const doc of usSnap.docs) await doc.ref.delete();
+
+      // Delete grades
+      const noSnap = await db.collection('notas').where('createdBy', '==', id).get();
+      for (const doc of noSnap.docs) await doc.ref.delete();
+
+      // Delete courses
+      try {
+        const curSnap = await db.collection('cursos').where('createdBy', '==', id).get();
+        for (const doc of curSnap.docs) await doc.ref.delete();
+      } catch(e) {}
+
+      // Delete active sessions
+      try {
+        const sesSnap = await db.collection('sesiones_activas').where('userId', '==', id).get();
+        for (const doc of sesSnap.docs) await doc.ref.delete();
+      } catch(e) {}
+
+      // Delete Storage PDFs (resultados/userId_*)
+      try {
+        const storageRef = firebase.storage().ref().child('resultados');
+        const list = await storageRef.listAll();
+        for (const item of list.items) {
+          if (item.name.startsWith(id + '_')) await item.delete();
+        }
+      } catch(e) { console.warn('Storage cleanup:', e.message); }
+
+      // Finally delete the admin
       await deleteAdmin(id);
+
+      alert('✅ Profesor "' + nombre + '" y todos sus datos eliminados correctamente.');
       loadProfesoresDetalle();
+    } catch(e) {
+      alert('Error al eliminar: ' + e.message);
     }
   }
 
