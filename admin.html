@@ -739,6 +739,8 @@
     };
     reader.readAsText(file, 'UTF-8');
   }
+
+  async function eliminarAdminConfirm(id, nombre) {
     if (!confirm('¿Eliminar al profesor "' + nombre + '"?\n\nSe eliminarán también:\n• Todos sus exámenes\n• Todos sus estudiantes\n• Todas sus notas\n\nEsta acción no se puede deshacer.')) return;
     try {
       // Delete exams
