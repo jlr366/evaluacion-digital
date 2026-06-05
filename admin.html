@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <link rel="icon" type="image/png" href="logo_circular_transparente2.png">
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Admin — Plataforma de Exámenes</title>
+  <title>Panel de Administración — Plataforma de Exámenes</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Segoe UI', system-ui, sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
@@ -115,7 +115,7 @@
     <div class="tab" onclick="showTab('usuarios')">👥 Usuarios</div>
     <div class="tab" onclick="showTab('cursos')">📚 Cursos</div>
     <div class="tab" onclick="showTab('notas')">📊 Notas</div>
-    <div class="tab hidden" id="tabAdmins" onclick="showTab('admins')">🔑 Admins</div>
+    <div class="tab hidden" id="tabAdmins" onclick="showTab('admins')">🔑 Profesores</div>
   </div>
 
   <!-- TAB: Exámenes -->
@@ -370,7 +370,7 @@
     <!-- Sub-tabs -->
     <div style="display:flex;gap:6px;margin-bottom:20px;flex-wrap:wrap;">
       <button class="btn btn-blue" id="subTabProfesores" onclick="showSubTab('profesores')" style="font-size:0.82rem;">👨‍🏫 Profesores</button>
-      <button class="btn btn-gray" id="subTabCrear" onclick="showSubTab('crear')" style="font-size:0.82rem;">➕ Crear admin</button>
+      <button class="btn btn-gray" id="subTabCrear" onclick="showSubTab('crear')" style="font-size:0.82rem;">➕ Crear profesor</button>
       <button class="btn btn-gray" id="subTabExternos" onclick="showSubTab('externos')" style="font-size:0.82rem;">📎 Exámenes externos</button>
       <button class="btn btn-gray" id="subTabDemos" onclick="showSubTab('demos')" style="font-size:0.82rem;">🎯 Demos pendientes</button>
     </div>
@@ -395,7 +395,7 @@
     <!-- SUB: Crear admin -->
     <div id="subSecCrear" class="hidden">
       <div class="card">
-        <h2>➕ Crear administrador / profesor</h2>
+        <h2>➕ Crear profesor</h2>
         <div id="admMsg"></div>
         <div class="form-row">
           <div class="form-group"><label>Username</label><input type="text" id="admUsername" placeholder="profesor1" /></div>
@@ -406,7 +406,7 @@
           <div class="form-group"><label>Contraseña</label><input type="text" id="admPassword" placeholder="clave123" /></div>
         </div>
         <div class="form-group"><label>Rol</label>
-          <select id="admRole"><option value="admin">Profesor / Admin (solo ve lo suyo)</option><option value="superadmin">Super Admin (ve todo)</option></select>
+          <select id="admRole"><option value="admin">Profesor (solo ve lo suyo)</option><option value="superadmin">Superadmin (ve todo)</option></select>
         </div>
         <button class="btn btn-blue" onclick="crearAdmin()">+ Crear</button>
       </div>
@@ -2150,7 +2150,7 @@
   async function asignarExamenAProfesor(examenId, titulo) {
     const admins = await getAllAdmins();
     const profesores = admins.filter(a => a.role === 'admin');
-    if (profesores.length === 0) { alert('No hay profesores creados. Crea uno primero en la pestaña Admins.'); return; }
+    if (profesores.length === 0) { alert('No hay profesores creados. Crea uno primero en la pestaña Profesores.'); return; }
 
     // Show assignment panel inline
     let html = '<div class="card" id="panelAsignar" style="border:1px solid #8b5cf6; margin-top:12px;">';
@@ -2828,7 +2828,7 @@
     const r = document.getElementById('admRole').value;
     if (!u||!n||!p) { document.getElementById('admMsg').innerHTML = '<div class="msg msg-err">⚠️ Complete todos</div>'; return; }
     const res = await createAdmin(u, p, n, r, inst);
-    if (res.success) { document.getElementById('admMsg').innerHTML = '<div class="msg msg-ok">✅ Admin creado</div>'; document.getElementById('admUsername').value=''; document.getElementById('admNombre').value=''; document.getElementById('admInstitucion').value=''; document.getElementById('admPassword').value=''; loadAdmins(); }
+    if (res.success) { document.getElementById('admMsg').innerHTML = '<div class="msg msg-ok">✅ Profesor creado</div>'; document.getElementById('admUsername').value=''; document.getElementById('admNombre').value=''; document.getElementById('admInstitucion').value=''; document.getElementById('admPassword').value=''; loadAdmins(); }
     else { document.getElementById('admMsg').innerHTML = '<div class="msg msg-err">❌ '+res.error+'</div>'; }
   }
 
