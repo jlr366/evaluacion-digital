@@ -185,6 +185,75 @@
         </div>
         <div class="form-group"></div>
       </div>
+
+      <!-- ── Multimedia ── -->
+      <div style="background:#0a0e1a;border:1px solid rgba(0,188,242,0.15);border-radius:12px;padding:18px;margin-bottom:16px;">
+        <h3 style="color:#00bcf2;font-size:0.85rem;margin-bottom:14px;">🎨 Multimedia del resultado <span style="color:#64748b;font-weight:400;">(opcional)</span></h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label>🖼️ Imagen al aprobar</label>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <input type="text" id="exImgAprobado" placeholder="URL o sube desde tu PC" style="flex:1;" />
+              <label style="cursor:pointer;background:#059669;color:white;padding:8px 12px;border-radius:8px;font-size:0.78rem;font-weight:700;white-space:nowrap;">
+                📁 Subir
+                <input type="file" accept="image/*" onchange="subirMediaExamen('exImgAprobado','imgAprobado',this.files[0],'statusImgAprob')" style="display:none;">
+              </label>
+            </div>
+            <span id="statusImgAprob" style="font-size:0.72rem;color:#64748b;margin-top:3px;display:block;"></span>
+            <div id="prevImgAprobado" style="margin-top:6px;"></div>
+          </div>
+          <div class="form-group">
+            <label>🖼️ Imagen al reprobar</label>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <input type="text" id="exImgReprobado" placeholder="URL o sube desde tu PC" style="flex:1;" />
+              <label style="cursor:pointer;background:#dc2626;color:white;padding:8px 12px;border-radius:8px;font-size:0.78rem;font-weight:700;white-space:nowrap;">
+                📁 Subir
+                <input type="file" accept="image/*" onchange="subirMediaExamen('exImgReprobado','imgReprobado',this.files[0],'statusImgReprob')" style="display:none;">
+              </label>
+            </div>
+            <span id="statusImgReprob" style="font-size:0.72rem;color:#64748b;margin-top:3px;display:block;"></span>
+            <div id="prevImgReprobado" style="margin-top:6px;"></div>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>🎵 Música durante el examen</label>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <input type="text" id="exAudioExamen" placeholder="URL o sube un archivo de audio" style="flex:1;" />
+              <label style="cursor:pointer;background:#0078d4;color:white;padding:8px 12px;border-radius:8px;font-size:0.78rem;font-weight:700;white-space:nowrap;">
+                📁 Subir
+                <input type="file" accept="audio/*" onchange="subirMediaExamen('exAudioExamen','audioExamen',this.files[0],'statusAudioEx')" style="display:none;">
+              </label>
+            </div>
+            <span id="statusAudioEx" style="font-size:0.72rem;color:#64748b;margin-top:3px;display:block;"></span>
+          </div>
+          <div class="form-group">
+            <label>🎵 Música al aprobar</label>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <input type="text" id="exAudioAprobado" placeholder="URL o sube un archivo de audio" style="flex:1;" />
+              <label style="cursor:pointer;background:#059669;color:white;padding:8px 12px;border-radius:8px;font-size:0.78rem;font-weight:700;white-space:nowrap;">
+                📁 Subir
+                <input type="file" accept="audio/*" onchange="subirMediaExamen('exAudioAprobado','audioAprobado',this.files[0],'statusAudioAprob')" style="display:none;">
+              </label>
+            </div>
+            <span id="statusAudioAprob" style="font-size:0.72rem;color:#64748b;margin-top:3px;display:block;"></span>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>🎵 Música al reprobar</label>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <input type="text" id="exAudioReprobado" placeholder="URL o sube un archivo de audio" style="flex:1;" />
+              <label style="cursor:pointer;background:#dc2626;color:white;padding:8px 12px;border-radius:8px;font-size:0.78rem;font-weight:700;white-space:nowrap;">
+                📁 Subir
+                <input type="file" accept="audio/*" onchange="subirMediaExamen('exAudioReprobado','audioReprobado',this.files[0],'statusAudioReprob')" style="display:none;">
+              </label>
+            </div>
+            <span id="statusAudioReprob" style="font-size:0.72rem;color:#64748b;margin-top:3px;display:block;"></span>
+          </div>
+          <div class="form-group"></div>
+        </div>
+      </div>
       <div id="puntosMaxContainer" style="display:none; margin-bottom:12px;">
         <div class="form-row">
           <div class="form-group">
@@ -1237,6 +1306,33 @@
       alert('Error subiendo imagen: ' + e.message);
     }
   }
+  // ── Subir multimedia del examen (imágenes/audios de resultado) ──
+  const mediaExamenTemp = {};
+
+  async function subirMediaExamen(inputId, campo, file, statusId) {
+    if (!file) return;
+    const statusEl = document.getElementById(statusId);
+    if (statusEl) statusEl.textContent = '⏳ Subiendo...';
+    try {
+      const ext = file.name.split('.').pop();
+      const nombre = 'examenes/media/' + campo + '_' + Date.now() + '.' + ext;
+      const ref = firebase.storage().ref().child(nombre);
+      const snapshot = await ref.put(file);
+      const url = await snapshot.ref.getDownloadURL();
+      document.getElementById(inputId).value = url;
+      mediaExamenTemp[campo] = url;
+      if (statusEl) statusEl.textContent = '✅ ' + file.name;
+      // Preview image
+      if (campo.startsWith('img')) {
+        const prevId = campo === 'imgAprobado' ? 'prevImgAprobado' : 'prevImgReprobado';
+        const prev = document.getElementById(prevId);
+        if (prev) prev.innerHTML = '<img src="' + url + '" style="max-width:160px;max-height:90px;border-radius:8px;border:1px solid #334155;margin-top:4px;">';
+      }
+    } catch(e) {
+      if (statusEl) statusEl.textContent = '❌ Error: ' + e.message;
+    }
+  }
+
   function setOpcion(idx, oi, val) { preguntasTemp[idx].opciones[oi] = val; }
   function addOpcion(idx) { preguntasTemp[idx].opciones.push(''); renderPreguntas(); }
   function removeOpcion(idx, oi) { preguntasTemp[idx].opciones.splice(oi, 1); if (Array.isArray(preguntasTemp[idx].correcta)) { preguntasTemp[idx].correcta = preguntasTemp[idx].correcta.filter(c => c !== oi).map(c => c > oi ? c-1 : c); } else if (preguntasTemp[idx].correcta >= oi) { preguntasTemp[idx].correcta = Math.max(0, preguntasTemp[idx].correcta - 1); } renderPreguntas(); }
@@ -1368,7 +1464,12 @@
       preguntas: preguntasTemp,
       createdBy: currentUser.id,
       createdByName: currentUser.nombre,
-      institucion: document.getElementById('exInstitucion').value.trim() || currentUser.institucion || ''
+      institucion: document.getElementById('exInstitucion').value.trim() || currentUser.institucion || '',
+      imgAprobado: document.getElementById('exImgAprobado').value.trim() || '',
+      imgReprobado: document.getElementById('exImgReprobado').value.trim() || '',
+      audioExamen: document.getElementById('exAudioExamen').value.trim() || '',
+      audioAprobado: document.getElementById('exAudioAprobado').value.trim() || '',
+      audioReprobado: document.getElementById('exAudioReprobado').value.trim() || ''
     };
 
     // If editing, update instead of create
@@ -2013,6 +2114,13 @@
     document.getElementById('exIntentos').value = '0';
     document.getElementById('exFechaApertura').value = '';
     document.getElementById('exFechaCierre').value = '';
+    document.getElementById('exImgAprobado').value = '';
+    document.getElementById('exImgReprobado').value = '';
+    document.getElementById('exAudioExamen').value = '';
+    document.getElementById('exAudioAprobado').value = '';
+    document.getElementById('exAudioReprobado').value = '';
+    document.getElementById('prevImgAprobado').innerHTML = '';
+    document.getElementById('prevImgReprobado').innerHTML = '';
     preguntasTemp = [];
     renderPreguntas();
     document.getElementById('exMsg').innerHTML = '';
@@ -2042,6 +2150,15 @@
       document.getElementById('exIntentos').value = String(examen.intentosPermitidos || 0);
       document.getElementById('exFechaApertura').value = examen.fechaApertura || '';
       document.getElementById('exFechaCierre').value = examen.fechaCierre || '';
+      // Restore multimedia
+      document.getElementById('exImgAprobado').value = examen.imgAprobado || '';
+      document.getElementById('exImgReprobado').value = examen.imgReprobado || '';
+      document.getElementById('exAudioExamen').value = examen.audioExamen || '';
+      document.getElementById('exAudioAprobado').value = examen.audioAprobado || '';
+      document.getElementById('exAudioReprobado').value = examen.audioReprobado || '';
+      // Preview images if existing
+      document.getElementById('prevImgAprobado').innerHTML = examen.imgAprobado ? '<img src="'+examen.imgAprobado+'" style="max-width:160px;max-height:90px;border-radius:8px;border:1px solid #334155;margin-top:4px;">' : '';
+      document.getElementById('prevImgReprobado').innerHTML = examen.imgReprobado ? '<img src="'+examen.imgReprobado+'" style="max-width:160px;max-height:90px;border-radius:8px;border:1px solid #334155;margin-top:4px;">' : '';
 
       // Load questions into editor
       preguntasTemp = (examen.preguntas || []).map(p => {

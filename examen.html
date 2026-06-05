@@ -927,6 +927,17 @@
     const sidebarName = document.getElementById('sidebarExamName');
     if (sidebarName) sidebarName.textContent = examenData.titulo || 'Examen';
 
+    // ── Música de fondo durante el examen ──
+    if (examenData.audioExamen) {
+      try {
+        const audio = new Audio(examenData.audioExamen);
+        audio.loop = true;
+        audio.volume = 0.3;
+        audio.play().catch(() => {});
+        window._audioExamen = audio;
+      } catch(e) {}
+    }
+
     // Pre-process all questions (shuffle options, init pares)
     prepararPreguntas();
     // Build nav dots
@@ -1520,7 +1531,32 @@
 
     document.getElementById('secExamen').classList.add('hidden');
     document.getElementById('secResultado').classList.remove('hidden');
-    document.getElementById('secResultado').innerHTML = `<div class="resultado ${aprobado?'aprobado':'reprobado'}"><h2>${aprobado?'🎉 ¡Aprobó!':'😔 Reprobó'}</h2><p style="color:#94a3b8;">Estudiante: <strong style="color:#f1f5f9;">${currentUser?currentUser.nombre:'—'}</strong></p><div class="nota-badge">${nota} / ${notaMaxima}</div><p style="color:#94a3b8;margin-top:8px;">Correctas: ${correctas} de ${examenData.preguntas.length} | Puntos: ${puntosObtenidos}/${puntosTotales}</p><div style="margin-top:20px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap;"><button id="btnDescargarPDF" class="btn btn-primary" style="padding:10px 20px;font-size:0.85rem;">📄 Descargar PDF</button></div><p style="color:#64748b;margin-top:12px;font-size:0.8rem;">${currentUser&&currentUser.email?'📧 Se envió un resumen a '+currentUser.email:''}  </p></div>`;
+
+    // ── Multimedia del resultado ──
+    const imgResultado = aprobado ? (examenData.imgAprobado || '') : (examenData.imgReprobado || '');
+    const imgHTML = imgResultado
+      ? `<img src="${imgResultado}" alt="${aprobado?'Aprobado':'Reprobado'}" style="width:100%;max-width:420px;border-radius:16px;margin:20px auto 8px;display:block;box-shadow:0 8px 30px rgba(0,0,0,0.4);">`
+      : '';
+
+    document.getElementById('secResultado').innerHTML = `<div class="resultado ${aprobado?'aprobado':'reprobado'}"><h2>${aprobado?'🎉 ¡Aprobó!':'😔 Reprobó'}</h2><p style="color:#94a3b8;">Estudiante: <strong style="color:#f1f5f9;">${currentUser?currentUser.nombre:'—'}</strong></p><div class="nota-badge">${nota} / ${notaMaxima}</div><p style="color:#94a3b8;margin-top:8px;">Correctas: ${correctas} de ${examenData.preguntas.length} | Puntos: ${puntosObtenidos}/${puntosTotales}</p>${imgHTML}<div style="margin-top:20px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap;"><button id="btnDescargarPDF" class="btn btn-primary" style="padding:10px 20px;font-size:0.85rem;">📄 Descargar PDF</button></div><p style="color:#64748b;margin-top:12px;font-size:0.8rem;">${currentUser&&currentUser.email?'📧 Se envió un resumen a '+currentUser.email:''}  </p></div>`;
+
+    // ── Audio del resultado ──
+    // Stop exam music if playing
+    try {
+      if (window._audioExamen) {
+        window._audioExamen.pause();
+        window._audioExamen.currentTime = 0;
+      }
+    } catch(e) {}
+    const audioUrl = aprobado ? (examenData.audioAprobado || '') : (examenData.audioReprobado || '');
+    if (audioUrl) {
+      try {
+        const audio = new Audio(audioUrl);
+        audio.volume = 0.6;
+        audio.play().catch(() => {});
+        window._audioResultado = audio;
+      } catch(e) {}
+    }
     // Attach async PDF handler after DOM is set
     setTimeout(() => {
       const btnPDF = document.getElementById('btnDescargarPDF');
