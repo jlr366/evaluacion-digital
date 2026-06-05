@@ -1866,10 +1866,75 @@
     document.getElementById('listaExamenes').innerHTML = html;
   }
 
+  function normalizeBase64Image(dataUrl) {
+    if (!dataUrl || typeof dataUrl !== 'string') return null;
+    const trimmed = dataUrl.trim();
+    if (trimmed.startsWith('data:image/')) return trimmed;
+    if (/^[A-Za-z0-9+/=\s]+$/.test(trimmed) && trimmed.length > 100) {
+      return 'data:image/png;base64,' + trimmed.replace(/\s+/g, '');
+    }
+    return null;
+  }
+
+  async function convertDataUrlToPng(dataUrl) {
+    if (!dataUrl || typeof dataUrl !== 'string') return null;
+    return await new Promise((resolve) => {
+      try {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.referrerPolicy = 'no-referrer';
+        img.onload = function() {
+          try {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.naturalWidth || img.width || 1;
+            canvas.height = img.naturalHeight || img.height || 1;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+            resolve(canvas.toDataURL('image/png'));
+          } catch (e) {
+            console.warn('convertDataUrlToPng failed:', e);
+            resolve(null);
+          }
+        };
+        img.onerror = function(e) {
+          console.warn('convertDataUrlToPng load failed:', e);
+          resolve(null);
+        };
+        img.src = dataUrl;
+      } catch (e) {
+        console.warn('convertDataUrlToPng unexpected error:', e);
+        resolve(null);
+      }
+    });
+  }
+
+  async function tryAddImage(doc, dataUrl, type, x, y, w, h) {
+    if (!dataUrl) return false;
+    try {
+      doc.addImage(dataUrl, type, x, y, w, h);
+      return true;
+    } catch (err) {
+      console.warn('jsPDF addImage failed for type', type, err);
+      const pngData = await convertDataUrlToPng(dataUrl);
+      if (pngData) {
+        try {
+          doc.addImage(pngData, 'PNG', x, y, w, h);
+          return true;
+        } catch (err2) {
+          console.error('jsPDF addImage fallback PNG failed:', err2);
+        }
+      }
+      return false;
+    }
+  }
+
   // Si la imagen ya es base64 la devuelve directo; si es URL intenta fetch+blob y fallback a canvas.
   async function urlToBase64(url) {
     if (!url) return null;
-    if (String(url).startsWith('data:')) return url;
+    url = String(url).trim();
+    const normalized = normalizeBase64Image(url);
+    if (normalized) return normalized;
+    if (url.startsWith('data:')) return url;
 
     // Try fetch -> blob -> FileReader first
     try {
@@ -1891,6 +1956,7 @@
       try {
         const img = new Image();
         img.crossOrigin = 'anonymous';
+        img.referrerPolicy = 'no-referrer';
         img.onload = function() {
           try {
             const canvas = document.createElement('canvas');
@@ -1927,6 +1993,7 @@
     }
     if (btn) { btn.disabled = true; btn.textContent = '⏳ Generando...'; }
 
+    console.log('imprimirExamenPDF start', { id, hasButton: !!btn });
     let toast = document.getElementById('toastImprimir');
     if (!toast) {
       toast = document.createElement('div');
@@ -1951,20 +2018,24 @@
       const imagenesCache = {};
       const todasImgs = [];
       for (const p of preguntas) {
-        if (p.imagen && p.imagen.startsWith('http')) todasImgs.push(p.imagen);
+        if (p.imagen) todasImgs.push(String(p.imagen).trim());
         if (Array.isArray(p.opciones)) {
           for (const op of p.opciones) {
-            if (op && typeof op === 'object' && op.imagen && op.imagen.startsWith('http')) todasImgs.push(op.imagen);
+            if (op && typeof op === 'object' && op.imagen) todasImgs.push(String(op.imagen).trim());
           }
         }
       }
       const uniqueImgs = [...new Set(todasImgs)];
+      console.log('Admin PDF image keys to preload', uniqueImgs);
       if (uniqueImgs.length > 0) {
         for (let ii = 0; ii < uniqueImgs.length; ii++) {
           setToast('🖼️ Cargando imágenes ' + (ii + 1) + ' / ' + uniqueImgs.length + '...');
-          imagenesCache[uniqueImgs[ii]] = await urlToBase64(uniqueImgs[ii]);
+          const imageKey = uniqueImgs[ii];
+          imagenesCache[imageKey] = await urlToBase64(imageKey);
+          console.log('Admin preload image', imageKey, imagenesCache[imageKey] ? 'ok' : 'failed');
         }
       }
+      console.log('Admin PDF imagenesCache', imagenesCache);
       setToast('📄 Generando PDF...');
       doc.setFillColor(15, 23, 42);
       doc.rect(0, 0, 210, 38, 'F');
@@ -2023,13 +2094,13 @@
         y += lineasPreg.length * 5 + 3;
 
         // Imagen de la pregunta
-        const imgPreg = p.imagen ? imagenesCache[p.imagen] : null;
+        const imgPreg = p.imagen ? imagenesCache[String(p.imagen).trim()] : null;
         if (imgPreg) {
           try {
             const imgW = 80, imgH = 45;
             if (y + imgH > 275) { doc.addPage(); y = 18; }
             const imgType = getImageTypeFromDataUrl(imgPreg);
-            doc.addImage(imgPreg, imgType, 24, y, imgW, imgH);
+            await tryAddImage(doc, imgPreg, imgType, 24, y, imgW, imgH);
             y += imgH + 4;
           } catch(e) { console.warn('PDF pregunta imagen insert failed:', e); }
         }
@@ -2060,12 +2131,12 @@
 
           // Imagen de la opción (tipo imagen)
           if (typeof op === 'object' && op.imagen) {
-            const imgOp = imagenesCache[op.imagen];
+            const imgOp = imagenesCache[String(op.imagen).trim()];
             if (imgOp) {
               try {
                 if (y + 35 > 275) { doc.addPage(); y = 18; }
                 const imgType = getImageTypeFromDataUrl(imgOp);
-                doc.addImage(imgOp, imgType, 28, y, 55, 33);
+                await tryAddImage(doc, imgOp, imgType, 28, y, 55, 33);
                 y += 37;
               } catch(e) { console.warn('PDF opcion imagen insert failed:', e); }
             }
