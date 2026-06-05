@@ -1574,23 +1574,53 @@
   }
 
   // ── Helper: convert image URL to base64 for PDF ──
-  function imgToBase64(url) {
-    return new Promise((resolve) => {
+  // Tries fetch+blob->FileReader first (better for CORS-handled endpoints),
+  // then falls back to Image+canvas. Returns null on failure.
+  async function imgToBase64(url) {
+    if (!url) return null;
+    try {
+      if (String(url).startsWith('data:')) return url; // already base64
+
+      // Try fetch -> blob -> FileReader (works when server allows CORS)
       try {
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-        img.onload = function() {
-          const canvas = document.createElement('canvas');
-          canvas.width = img.naturalWidth;
-          canvas.height = img.naturalHeight;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0);
-          resolve(canvas.toDataURL('image/png'));
-        };
-        img.onerror = () => resolve(null); // fail silently
-        img.src = url;
-      } catch(e) { resolve(null); }
-    });
+        const resp = await fetch(url);
+        if (resp && resp.ok) {
+          const blob = await resp.blob();
+          return await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.onerror = () => resolve(null);
+            reader.readAsDataURL(blob);
+          });
+        }
+      } catch (fetchErr) {
+        console.warn('imgToBase64 fetch failed for', url, fetchErr);
+      }
+
+      // Fallback: load image into canvas (may fail if cross-origin not allowed)
+      return await new Promise((resolve) => {
+        try {
+          const img = new Image();
+          img.crossOrigin = 'anonymous';
+          img.onload = function() {
+            try {
+              const canvas = document.createElement('canvas');
+              canvas.width = img.naturalWidth || img.width || 1;
+              canvas.height = img.naturalHeight || img.height || 1;
+              const ctx = canvas.getContext('2d');
+              ctx.drawImage(img, 0, 0);
+              resolve(canvas.toDataURL('image/png'));
+            } catch(e) { resolve(null); }
+          };
+          img.onerror = function() { resolve(null); };
+          // cache-buster to mitigate stale CORS cached responses
+          img.src = url + (url.indexOf('?') === -1 ? '?_=' + Date.now() : '&_=' + Date.now());
+        } catch(e) { resolve(null); }
+      });
+    } catch (e) {
+      console.error('imgToBase64 unexpected error:', e);
+      return null;
+    }
   }
 
   async function generarPDF(nota, correctas, aprobado) {
