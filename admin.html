@@ -460,6 +460,60 @@
   const isDemo = currentUser.role === 'demo';
   const adminFilter = isSuperAdmin ? null : currentUser.id;
 
+  function escapeHtmlAttr(value) {
+    if (value === undefined || value === null) return '';
+    return String(value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  document.getElementById('listaExamenes').addEventListener('click', async function(e) {
+    const btn = e.target.closest('button[data-action]');
+    if (!btn) return;
+
+    const action = btn.dataset.action;
+    const examId = btn.dataset.id;
+    const title = btn.dataset.title || '';
+    const url = btn.dataset.url || '';
+
+    if (action === 'copy-url') {
+      await navigator.clipboard.writeText(url);
+      btn.textContent = '✓ Copiado';
+      return;
+    }
+    if (action === 'preview') {
+      window.open(url + '&preview=1', '_blank');
+      return;
+    }
+    if (action === 'send') {
+      mostrarEnvioExamen(examId, title, url);
+      return;
+    }
+    if (action === 'qr') {
+      mostrarQR(examId, title, url);
+      return;
+    }
+    if (action === 'print') {
+      imprimirExamenPDF(examId, btn);
+      return;
+    }
+    if (action === 'delete') {
+      eliminarExamen(examId);
+      return;
+    }
+    if (action === 'edit') {
+      editarExamen(examId);
+      return;
+    }
+    if (action === 'assign') {
+      asignarExamenAProfesor(examId, title);
+      return;
+    }
+  });
+
   // ── Demo mode setup ──
   if (isDemo) {
     // Show demo banner
@@ -1219,13 +1273,18 @@
         (p.opciones || []).forEach((op, oi) => {
           const isCorrect = p.correcta === oi;
           const border = isCorrect ? 'border:2px solid #fbbf24;background:rgba(250,204,0,0.08);' : 'border:2px solid #334155;background:transparent;';
-          imgOptsHtml += `<div style="display:flex;flex-direction:column;gap:6px;padding:10px;border-radius:10px;${border}transition:0.2s;cursor:pointer;" onclick="setCorrecta(${idx},${oi},{checked:true,type:'radio'});renderPreguntas();">
+          imgOptsHtml += `<div style="display:flex;flex-direction:column;gap:6px;padding:10px;border-radius:10px;${border}transition:0.2s;">
             <div style="display:flex;align-items:center;gap:8px;">
-              <input type="radio" name="correcta${idx}" value="${oi}" ${isCorrect?'checked':''} onclick="setCorrecta(${idx},${oi},this);renderPreguntas();" style="width:18px;height:18px;accent-color:#fbbf24;cursor:pointer;">
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;flex:1;">
+                <input type="radio" name="correcta${idx}" value="${oi}" ${isCorrect?'checked':''} onclick="setCorrecta(${idx},${oi},this);renderPreguntas();" style="width:18px;height:18px;accent-color:#fbbf24;cursor:pointer;">
+                <span style="font-size:0.85rem;color:#f1f5f9;">Seleccionar como correcta</span>
+              </label>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
               <input type="text" value="${(op.texto||'').replace(/"/g,'&quot;')}" onchange="setOpcionImgTexto(${idx},${oi},this.value)" placeholder="Texto de la opción (opcional)" style="flex:1;padding:8px 10px;background:#1e293b;border:1px solid #334155;border-radius:8px;color:#f1f5f9;font-size:0.85rem;">
             </div>
             <div style="display:flex;gap:8px;align-items:center;">
-              <input type="text" value="${(op.imagen||'').replace(/"/g,'&quot;')}" onchange="setOpcionImgUrl(${idx},${oi},this.value)" placeholder="URL de imagen" style="flex:1;padding:8px 10px;background:#1e293b;border:1px solid #334155;border-radius:8px;color:#f1f5f9;font-size:0.82rem;">
+              <input type="text" value="${(op.imagen||'').replace(/"/g,'&quot;')}" onchange="setOpcionImgUrl(${idx},${oi},this.value)" placeholder="URL de imagen o sube desde tu PC" style="flex:1;padding:8px 10px;background:#1e293b;border:1px solid #334155;border-radius:8px;color:#f1f5f9;font-size:0.82rem;">
               <label style="cursor:pointer;background:#0078d4;color:white;padding:7px 12px;border-radius:8px;font-size:0.78rem;font-weight:700;white-space:nowrap;">
                 📁 Subir
                 <input type="file" accept="image/*" onchange="subirImagenOpcion(${idx},${oi},this.files[0])" style="display:none;">
@@ -1243,7 +1302,7 @@
                 <span style="background:rgba(251,146,60,0.15);border:1px solid rgba(251,146,60,0.4);color:#fb923c;padding:5px 12px;border-radius:8px;font-size:0.78rem;font-weight:700;">🖼️ Opciones con imagen</span>
                 ${puntuacionPersonalizada ? `<label style="display:flex;align-items:center;gap:4px;font-size:0.8rem;color:#f59e0b;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);padding:5px 10px;border-radius:8px;">⭐ Puntos: <input type="number" value="${p.puntos||1}" min="1" max="100" onchange="setPreguntaPuntos(${idx},this.value)" style="width:50px;padding:3px 6px;background:#1e293b;border:1px solid #334155;border-radius:4px;color:#f1f5f9;font-size:0.85rem;"></label>` : ''}
               </div>
-              <div class="form-group"><label>Pregunta / enunciado</label><textarea onchange="setPreguntaTexto(${idx},this.value)" style="min-height:50px;">${p.pregunta}</textarea></div>
+              <div class="form-group"><label>Pregunta / enunciado</label><textarea onchange="setPreguntaTexto(${idx},this.value)" style="min-height:50px;">${p.pregunta}</textarea><p style="font-size:0.75rem;color:#94a3b8;margin-top:6px;">Escribe la pregunta normalmente aquí. Las imágenes son solo para las opciones de respuesta.</p></div>
               <label style="font-size:0.72rem;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:#94a3b8;display:block;margin-bottom:8px;">Opciones — haz clic en la correcta ●</label>
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">${imgOptsHtml}</div>
               <p style="font-size:0.72rem;color:#64748b;margin-top:8px;">💡 Sube una imagen por opción. El texto es opcional.</p>
@@ -1759,21 +1818,26 @@
       html += '<table><thead><tr><th>Título</th><th>Preguntas</th><th>Tiempo</th>' + (isSuperAdmin ? '<th>Asignado a</th>' : '') + '<th>Acciones</th></tr></thead><tbody>';
       examenes.forEach(ex => {
         const url = baseUrl + '?id=' + ex.id;
+        const safeId = escapeHtmlAttr(ex.id);
+        const safeTitle = escapeHtmlAttr(ex.titulo || '');
+        const safeTitleDisplay = escapeHtmlAttr(ex.titulo || '');
+        const safeSubtitulo = escapeHtmlAttr(ex.subtitulo || '');
+        const safeUrl = escapeHtmlAttr(url);
         const asignado = (isSuperAdmin && ex.createdBy !== currentUser.id) ? '<span class="badge badge-purple">' + (ex.createdByName || 'Profesor') + '</span>' : (isSuperAdmin ? '<span class="badge badge-blue">Super Admin</span>' : '');
         html += `<tr>
-          <td><strong>${ex.titulo}</strong><br><span style="color:#64748b;font-size:0.75rem;">${ex.subtitulo||''}</span></td>
+          <td><strong>${safeTitleDisplay}</strong><br><span style="color:#64748b;font-size:0.75rem;">${safeSubtitulo}</span></td>
           <td>${(ex.preguntas||[]).length}</td>
           <td>${ex.tiempoMinutos} min</td>
           ${isSuperAdmin ? '<td>' + asignado + '</td>' : ''}
           <td style="display:flex; gap:4px; flex-wrap:wrap;">
-            <button class="btn btn-sm btn-blue" onclick="navigator.clipboard.writeText('${url}');this.textContent='✓ Copiado'" title="Copiar URL">📋 URL</button>
-            <button class="btn btn-sm btn-green" onclick="window.open('${url}&preview=1','_blank')" title="Vista previa sin login">👁️ Ver</button>
-            <button class="btn btn-sm" style="background:#f59e0b;color:#000;" onclick="editarExamen('${ex.id}')" title="Editar">✏️ Editar</button>
-            <button class="btn btn-sm" style="background:#0ea5e9;color:#fff;" onclick="mostrarEnvioExamen('${ex.id}','${ex.titulo.replace(/'/g,'')}','${url}')" title="Enviar por correo">📨 Enviar</button>
-            <button class="btn btn-sm" style="background:#1e293b;border:1px solid #334155;color:#94a3b8;" onclick="mostrarQR('${ex.id}','${ex.titulo.replace(/'/g,'')}','${url}')" title="Ver QR">📱 QR</button>
-            ${isSuperAdmin ? '<button class="btn btn-sm" style="background:#8b5cf6;color:#fff;" onclick="asignarExamenAProfesor(\''+ex.id+'\',\''+ex.titulo.replace(/'/g,'')+'\')" title="Asignar a profesor">👤 Asignar</button>' : ''}
-            <button class="btn btn-sm" style="background:#059669;color:#fff;" onclick="imprimirExamenPDF('${ex.id}')" title="Imprimir examen">🖨️ Imprimir</button>
-            <button class="btn btn-sm btn-red" onclick="eliminarExamen('${ex.id}')" title="Eliminar">🗑️</button>
+            <button type="button" class="btn btn-sm btn-blue" data-action="copy-url" data-url="${safeUrl}" title="Copiar URL">📋 URL</button>
+            <button type="button" class="btn btn-sm btn-green" data-action="preview" data-url="${safeUrl}" title="Vista previa sin login">👁️ Ver</button>
+            <button type="button" class="btn btn-sm" data-action="edit" data-id="${safeId}" title="Editar" style="background:#f59e0b;color:#000;">✏️ Editar</button>
+            <button type="button" class="btn btn-sm" data-action="send" data-id="${safeId}" data-title="${safeTitle}" data-url="${safeUrl}" title="Enviar por correo" style="background:#0ea5e9;color:#fff;">📨 Enviar</button>
+            <button type="button" class="btn btn-sm" data-action="qr" data-id="${safeId}" data-title="${safeTitle}" data-url="${safeUrl}" title="Ver QR" style="background:#1e293b;border:1px solid #334155;color:#94a3b8;">📱 QR</button>
+            ${isSuperAdmin ? '<button type="button" class="btn btn-sm" style="background:#8b5cf6;color:#fff;" data-action="assign" data-id="' + safeId + '" data-title="' + safeTitle + '" title="Asignar a profesor">👤 Asignar</button>' : ''}
+            <button type="button" class="btn btn-sm" data-action="print" data-id="${safeId}" title="Imprimir examen" style="background:#059669;color:#fff;">🖨️ Imprimir</button>
+            <button type="button" class="btn btn-sm btn-red" data-action="delete" data-id="${safeId}" title="Eliminar">🗑️</button>
           </td>
         </tr>`;
       });
@@ -1783,33 +1847,65 @@
     document.getElementById('listaExamenes').innerHTML = html;
   }
 
-  // Si la imagen ya es base64 la devuelve directo; si es URL intenta canvas
-  function urlToBase64(url) {
-    if (!url) return Promise.resolve(null);
-    if (url.startsWith('data:')) return Promise.resolve(url); // ya es base64
-    return new Promise((resolve) => {
+  // Si la imagen ya es base64 la devuelve directo; si es URL intenta fetch+blob y fallback a canvas.
+  async function urlToBase64(url) {
+    if (!url) return null;
+    if (String(url).startsWith('data:')) return url;
+
+    // Try fetch -> blob -> FileReader first
+    try {
+      const resp = await fetch(url);
+      if (resp && resp.ok) {
+        const blob = await resp.blob();
+        return await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result);
+          reader.onerror = () => resolve(null);
+          reader.readAsDataURL(blob);
+        });
+      }
+    } catch (fetchErr) {
+      console.warn('urlToBase64 fetch failed for', url, fetchErr);
+    }
+
+    return await new Promise((resolve) => {
       try {
         const img = new Image();
         img.crossOrigin = 'anonymous';
         img.onload = function() {
           try {
             const canvas = document.createElement('canvas');
-            canvas.width = img.naturalWidth || img.width;
-            canvas.height = img.naturalHeight || img.height;
+            canvas.width = img.naturalWidth || img.width || 1;
+            canvas.height = img.naturalHeight || img.height || 1;
             const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0);
-            resolve(canvas.toDataURL('image/jpeg', 0.85));
-          } catch(e) { resolve(null); }
+            resolve(canvas.toDataURL('image/png'));
+          } catch(e) {
+            console.warn('urlToBase64 canvas conversion failed for', url, e);
+            resolve(null);
+          }
         };
-        img.onerror = () => resolve(null);
-        img.src = url + (url.includes('?') ? '&' : '?') + '_nocache=' + Date.now();
-      } catch(e) { resolve(null); }
+        img.onerror = function() { resolve(null); };
+        img.src = url + (url.indexOf('?') === -1 ? '?_=' + Date.now() : '&_=' + Date.now());
+      } catch(e) {
+        resolve(null);
+      }
     });
   }
 
-  async function imprimirExamenPDF(id) {
+  function getImageTypeFromDataUrl(dataUrl) {
+    if (!dataUrl || typeof dataUrl !== 'string') return 'JPEG';
+    if (dataUrl.startsWith('data:image/png')) return 'PNG';
+    if (dataUrl.startsWith('data:image/gif')) return 'GIF';
+    if (dataUrl.startsWith('data:image/webp')) return 'WEBP';
+    return 'JPEG';
+  }
+
+  async function imprimirExamenPDF(id, btn = null) {
     // ── Indicador visual de progreso ──
-    const btn = event && event.currentTarget ? event.currentTarget : null;
+    if (!btn && typeof event !== 'undefined' && event && event.currentTarget) {
+      btn = event.currentTarget;
+    }
     if (btn) { btn.disabled = true; btn.textContent = '⏳ Generando...'; }
 
     let toast = document.getElementById('toastImprimir');
@@ -1913,9 +2009,10 @@
           try {
             const imgW = 80, imgH = 45;
             if (y + imgH > 275) { doc.addPage(); y = 18; }
-            doc.addImage(imgPreg, 'JPEG', 24, y, imgW, imgH);
+            const imgType = getImageTypeFromDataUrl(imgPreg);
+            doc.addImage(imgPreg, imgType, 24, y, imgW, imgH);
             y += imgH + 4;
-          } catch(e) { /* imagen no se pudo insertar */ }
+          } catch(e) { console.warn('PDF pregunta imagen insert failed:', e); }
         }
 
         // Opciones
@@ -1948,9 +2045,10 @@
             if (imgOp) {
               try {
                 if (y + 35 > 275) { doc.addPage(); y = 18; }
-                doc.addImage(imgOp, 'JPEG', 28, y, 55, 33);
+                const imgType = getImageTypeFromDataUrl(imgOp);
+                doc.addImage(imgOp, imgType, 28, y, 55, 33);
                 y += 37;
-              } catch(e) { /* imagen no se pudo insertar */ }
+              } catch(e) { console.warn('PDF opcion imagen insert failed:', e); }
             }
           }
         }
@@ -1989,7 +2087,7 @@
   function mostrarQR(examenId, titulo, url) {
     // Remove previous QR panel
     const prev = document.getElementById('panelQR');
-    if (prev) { prev.remove(); return; }
+    if (prev) { prev.remove(); }
 
     const panel = document.createElement('div');
     panel.id = 'panelQR';
@@ -2042,7 +2140,7 @@
   async function mostrarEnvioExamen(examenId, titulo, url) {
     // Remove previous panel
     const prev = document.getElementById('panelEnvio');
-    if (prev) { prev.remove(); return; }
+    if (prev) { prev.remove(); }
 
     const usuarios = await getUsers(adminFilter);
     const cursos = [...new Set(usuarios.map(u => u.curso || 'Sin curso').filter(Boolean))].sort();
@@ -2145,6 +2243,10 @@
     }
 
     msgEl.innerHTML = `<div class="msg msg-ok">✅ Enviado a ${enviados} estudiante(s)${errores > 0 ? ' · ' + errores + ' error(es)' : ''}</div>`;
+    setTimeout(() => {
+      const panel = document.getElementById('panelEnvio');
+      if (panel) panel.remove();
+    }, 2000);
   }
 
   async function asignarExamenAProfesor(examenId, titulo) {

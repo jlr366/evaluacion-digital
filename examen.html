@@ -1623,6 +1623,15 @@
     }
   }
 
+  function getImageTypeFromDataUrl(dataUrl) {
+    if (!dataUrl || typeof dataUrl !== 'string') return 'PNG';
+    if (dataUrl.startsWith('data:image/png')) return 'PNG';
+    if (dataUrl.startsWith('data:image/jpeg') || dataUrl.startsWith('data:image/jpg')) return 'JPEG';
+    if (dataUrl.startsWith('data:image/gif')) return 'GIF';
+    if (dataUrl.startsWith('data:image/webp')) return 'WEBP';
+    return 'PNG';
+  }
+
   async function generarPDF(nota, correctas, aprobado) {
     try {
       const { jsPDF } = window.jspdf;
@@ -1752,7 +1761,8 @@
             const thumbH = 22;
             const thumbW = 30;
             if (y + thumbH > 265) { doc.addPage(); y = 20; }
-            doc.addImage(imgCache[item.imagen], 'PNG', 22, y, thumbW, thumbH);
+            const imgType = getImageTypeFromDataUrl(imgCache[item.imagen]);
+            doc.addImage(imgCache[item.imagen], imgType, 22, y, thumbW, thumbH);
             y += thumbH + 3;
           } catch(imgErr) { /* skip if image fails */ }
         }
