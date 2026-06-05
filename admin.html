@@ -1566,55 +1566,73 @@
     document.getElementById('listaExamenes').innerHTML = html;
   }
 
-  // Convierte una URL de imagen a base64 para poder insertarla en jsPDF
-  async function urlToBase64(url) {
-    try {
-      // Para Firebase Storage añadimos el token de acceso usando fetch normal
-      const resp = await fetch(url);
-      if (!resp.ok) return null;
-      const blob = await resp.blob();
-      return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result);
-        reader.onerror = () => resolve(null);
-        reader.readAsDataURL(blob);
-      });
-    } catch(e) {
-      return null;
-    }
+  // Convierte imagen a base64 usando canvas (evita CORS con Firebase Storage)
+  function urlToBase64(url) {
+    return new Promise((resolve) => {
+      try {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = function() {
+          try {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.naturalWidth || img.width;
+            canvas.height = img.naturalHeight || img.height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+            resolve(canvas.toDataURL('image/jpeg', 0.85));
+          } catch(e) { resolve(null); }
+        };
+        img.onerror = () => resolve(null);
+        // Timestamp evita que el caché bloquee crossOrigin
+        img.src = url + (url.includes('?') ? '&' : '?') + '_nocache=' + Date.now();
+      } catch(e) { resolve(null); }
+    });
   }
 
   async function imprimirExamenPDF(id) {
+    // ── Indicador visual de progreso ──
+    const btn = event && event.currentTarget ? event.currentTarget : null;
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ Generando...'; }
+
+    let toast = document.getElementById('toastImprimir');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'toastImprimir';
+      toast.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:9999;background:#1e293b;border:1px solid #0078d4;color:#f1f5f9;padding:14px 20px;border-radius:12px;font-size:0.88rem;font-weight:600;box-shadow:0 8px 30px rgba(0,0,0,0.4);min-width:240px;display:none;';
+      document.body.appendChild(toast);
+    }
+    const setToast = (msg) => { toast.innerHTML = msg; toast.style.display = 'block'; };
+    const hideToast = () => { setTimeout(() => { toast.style.display = 'none'; }, 2000); };
+
     try {
+      setToast('⏳ Cargando examen...');
       const examen = await getExamen(id);
-      if (!examen) { alert('No se pudo cargar el examen'); return; }
+      if (!examen) { toast.style.display='none'; if(btn){btn.disabled=false;btn.textContent='🖨️ Imprimir';} alert('No se pudo cargar el examen'); return; }
 
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF();
       const fecha = new Date().toLocaleString('es-ES');
       const preguntas = examen.preguntas || [];
 
-      // ── Pre-cargar todas las imágenes como base64 ──
+      // ── Pre-cargar imágenes con progreso ──
       const imagenesCache = {};
+      const todasImgs = [];
       for (const p of preguntas) {
-        if (p.imagen && p.imagen.startsWith('http')) {
-          if (!imagenesCache[p.imagen]) {
-            imagenesCache[p.imagen] = await urlToBase64(p.imagen);
-          }
-        }
-        // Opciones con imagen
+        if (p.imagen && p.imagen.startsWith('http')) todasImgs.push(p.imagen);
         if (Array.isArray(p.opciones)) {
           for (const op of p.opciones) {
-            if (op && typeof op === 'object' && op.imagen && op.imagen.startsWith('http')) {
-              if (!imagenesCache[op.imagen]) {
-                imagenesCache[op.imagen] = await urlToBase64(op.imagen);
-              }
-            }
+            if (op && typeof op === 'object' && op.imagen && op.imagen.startsWith('http')) todasImgs.push(op.imagen);
           }
         }
       }
-
-      // ── Encabezado ──
+      const uniqueImgs = [...new Set(todasImgs)];
+      if (uniqueImgs.length > 0) {
+        for (let ii = 0; ii < uniqueImgs.length; ii++) {
+          setToast('🖼️ Cargando imágenes ' + (ii + 1) + ' / ' + uniqueImgs.length + '...');
+          imagenesCache[uniqueImgs[ii]] = await urlToBase64(uniqueImgs[ii]);
+        }
+      }
+      setToast('📄 Generando PDF...');
       doc.setFillColor(15, 23, 42);
       doc.rect(0, 0, 210, 38, 'F');
       doc.setFontSize(16);
@@ -1736,9 +1754,14 @@
         doc.text('Evaluación Digital  ·  Página ' + pg + ' de ' + pageCount, 105, 290, { align: 'center' });
       }
 
+      setToast('✅ ¡Listo! Descargando...');
       doc.save('Examen_' + examen.titulo.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 30) + '.pdf');
+      hideToast();
     } catch(e) {
+      if (toast) toast.style.display = 'none';
       alert('Error al generar PDF: ' + e.message);
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = '🖨️ Imprimir'; }
     }
   }
 
