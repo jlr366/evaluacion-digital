@@ -134,6 +134,7 @@
       <a href="#" id="btnDemoExamen" class="btn btn-primary" style="display:inline-block;" target="_blank">
         👁️ Ver examen de demostración
       </a>
+      <button id="btnDemoDownload" class="btn" style="display:inline-block;margin-left:8px;" onclick="generateDemoPDF()">⬇️ Descargar PDF de ejemplo</button>
       <p style="color:#475569; font-size:0.75rem; margin-top:12px;">Solo lectura — ninguna respuesta se guarda</p>
     </div>
   </div>
@@ -146,6 +147,8 @@
 
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<!-- jsPDF for client-side PDF generation -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="firebase-config.js"></script>
 <script>
   // Wait for page to fully load before running demo setup
@@ -154,8 +157,8 @@
       const DEMO_DOC_ID = 'demo_examen_plataforma';
       const ref = db.collection('examenes').doc(DEMO_DOC_ID);
 
-      // Always update demo exam with latest question types
-      await ref.set({
+        // Always update demo exam with latest question types
+        const demoExamData = {
           titulo: 'Examen de Demostración',
           subtitulo: 'Prueba los 5 tipos de preguntas',
           tiempoMinutos: 10,
@@ -217,7 +220,8 @@
               puntos: 1
             }
           ]
-        });
+        };
+      await ref.set(demoExamData);
 
       // Set button URL
       const btn = document.getElementById('btnDemoExamen');
@@ -225,6 +229,42 @@
         btn.href = 'examen.html?id=' + DEMO_DOC_ID + '&preview=1';
         btn.textContent = '👁️ Ver examen de demostración';
       }
+      // Attach download handler uses demoExamData
+      window.generateDemoPDF = function() {
+        try {
+          const { jsPDF } = window.jspdf;
+          const doc = new jsPDF();
+          const margin = 14;
+          let y = 20;
+          doc.setFontSize(16);
+          doc.text(demoExamData.titulo, margin, y);
+          y += 8;
+          doc.setFontSize(11);
+          doc.text(demoExamData.subtitulo, margin, y);
+          y += 10;
+          doc.setFontSize(10);
+          demoExamData.preguntas.forEach((p, i) => {
+            const text = (i+1) + '. ' + (p.pregunta || p.pregunta || '');
+            const lines = doc.splitTextToSize(text, 180);
+            if (y + lines.length * 6 > 280) { doc.addPage(); y = 20; }
+            doc.text(lines, margin, y);
+            y += lines.length * 6;
+            if (p.opciones && Array.isArray(p.opciones)) {
+              p.opciones.forEach((opt, oi) => {
+                const optText = '   ' + String.fromCharCode(97 + oi) + ') ' + (typeof opt === 'string' ? opt : (opt.texto || ''));
+                const olines = doc.splitTextToSize(optText, 170);
+                if (y + olines.length * 6 > 280) { doc.addPage(); y = 20; }
+                doc.text(olines, margin + 6, y);
+                y += olines.length * 6;
+              });
+            }
+            y += 4;
+          });
+          doc.save('ejemplo_examen.pdf');
+        } catch(err) {
+          alert('Error generando PDF: ' + err.message);
+        }
+      };
     } catch(e) {
       console.error('Demo exam setup error:', e);
       const btn = document.getElementById('btnDemoExamen');
