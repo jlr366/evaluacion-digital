@@ -1639,6 +1639,14 @@
         }
       }
 
+      // Debug: report which images failed to convert (temporary)
+      try {
+        const failed = Object.keys(imgCache).filter(k => !imgCache[k]);
+        if (failed.length) console.warn('PDF image conversion failed for:', failed);
+        else console.log('All question images converted to base64 for PDF.');
+        console.log('imgCache summary:', Object.keys(imgCache).map(k => ({ url: k, ok: !!imgCache[k] })));
+      } catch(e) { console.error('Error logging imgCache:', e); }
+
       // Header
       const institucion = examenData.institucion || currentUser.institucion || 'Evaluacion Digital';
       doc.setFontSize(18);
