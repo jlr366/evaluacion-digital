@@ -1555,6 +1555,7 @@
             <button class="btn btn-sm" style="background:#0ea5e9;color:#fff;" onclick="mostrarEnvioExamen('${ex.id}','${ex.titulo.replace(/'/g,'')}','${url}')" title="Enviar por correo">📨 Enviar</button>
             <button class="btn btn-sm" style="background:#1e293b;border:1px solid #334155;color:#94a3b8;" onclick="mostrarQR('${ex.id}','${ex.titulo.replace(/'/g,'')}','${url}')" title="Ver QR">📱 QR</button>
             ${isSuperAdmin ? '<button class="btn btn-sm" style="background:#8b5cf6;color:#fff;" onclick="asignarExamenAProfesor(\''+ex.id+'\',\''+ex.titulo.replace(/'/g,'')+'\')" title="Asignar a profesor">👤 Asignar</button>' : ''}
+            <button class="btn btn-sm" style="background:#059669;color:#fff;" onclick="imprimirExamenPDF('${ex.id}')" title="Imprimir examen">🖨️ Imprimir</button>
             <button class="btn btn-sm btn-red" onclick="eliminarExamen('${ex.id}')" title="Eliminar">🗑️</button>
           </td>
         </tr>`;
@@ -1563,6 +1564,120 @@
     }
 
     document.getElementById('listaExamenes').innerHTML = html;
+  }
+
+  async function imprimirExamenPDF(id) {
+    try {
+      const examen = await getExamen(id);
+      if (!examen) { alert('No se pudo cargar el examen'); return; }
+
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      const fecha = new Date().toLocaleString('es-ES');
+      const preguntas = examen.preguntas || [];
+
+      // ── Encabezado ──
+      doc.setFillColor(15, 23, 42);
+      doc.rect(0, 0, 210, 38, 'F');
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(248, 250, 252);
+      doc.text(examen.titulo, 105, 13, { align: 'center', maxWidth: 180 });
+      if (examen.subtitulo) {
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(148, 163, 184);
+        doc.text(examen.subtitulo, 105, 21, { align: 'center', maxWidth: 180 });
+      }
+      doc.setFontSize(8);
+      doc.setTextColor(100, 116, 139);
+      doc.text((examen.institucion || currentUser.nombre || '') + '   ·   ' + examen.tiempoMinutos + ' min   ·   ' + preguntas.length + ' preguntas   ·   ' + fecha, 105, 32, { align: 'center' });
+
+      // ── Línea de nombre/fecha del estudiante ──
+      doc.setTextColor(0, 0, 0);
+      doc.setDrawColor(180, 180, 180);
+      doc.setLineWidth(0.3);
+      let y = 48;
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      doc.text('Nombre: ____________________________________________', 14, y);
+      doc.text('Fecha: _______________', 140, y);
+      y += 10;
+      doc.line(14, y, 196, y);
+      y += 8;
+
+      // ── Preguntas ──
+      preguntas.forEach((p, i) => {
+        const texto = (i + 1) + '. ' + (p.pregunta || '');
+        const lineas = doc.splitTextToSize(texto, 175);
+        const altoPreg = lineas.length * 5 + 4;
+
+        // Opciones
+        const opciones = p.opciones || [];
+        const altoOpts = opciones.length * 6 + 4;
+
+        const altoTotal = altoPreg + altoOpts + 4;
+
+        if (y + altoTotal > 275) { doc.addPage(); y = 18; }
+
+        // Número de pregunta
+        doc.setFillColor(0, 120, 212);
+        doc.roundedRect(14, y - 4, 7, 6, 1, 1, 'F');
+        doc.setFontSize(6);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(255, 255, 255);
+        doc.text(String(i + 1), 17.5, y, { align: 'center' });
+
+        // Texto de pregunta
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(15, 23, 42);
+        const lineasSinNum = doc.splitTextToSize((p.pregunta || ''), 165);
+        doc.text(lineasSinNum, 24, y);
+        y += lineasSinNum.length * 5 + 3;
+
+        // Opciones
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8.5);
+        const letras = ['A', 'B', 'C', 'D', 'E', 'F'];
+        opciones.forEach((op, oi) => {
+          if (y > 275) { doc.addPage(); y = 18; }
+          doc.setTextColor(60, 60, 60);
+          // Círculo vacío para marcar
+          doc.setDrawColor(100, 116, 139);
+          doc.setLineWidth(0.3);
+          doc.circle(22, y - 1.5, 2.5);
+          doc.setFontSize(7);
+          doc.setTextColor(80, 80, 80);
+          doc.text(letras[oi] || String(oi + 1), 21.5, y - 0.5, { align: 'center' });
+          doc.setFontSize(8.5);
+          doc.setTextColor(30, 30, 30);
+          const lineasOp = doc.splitTextToSize(String(op), 155);
+          doc.text(lineasOp, 28, y);
+          y += lineasOp.length * 5 + 2;
+        });
+
+        y += 5;
+        if (y < 270) {
+          doc.setDrawColor(226, 232, 240);
+          doc.setLineWidth(0.2);
+          doc.line(14, y - 2, 196, y - 2);
+        }
+      });
+
+      // ── Pie de página ──
+      const pageCount = doc.internal.getNumberOfPages();
+      for (let pg = 1; pg <= pageCount; pg++) {
+        doc.setPage(pg);
+        doc.setFontSize(7);
+        doc.setTextColor(148, 163, 184);
+        doc.text('Evaluación Digital  ·  Página ' + pg + ' de ' + pageCount, 105, 290, { align: 'center' });
+      }
+
+      doc.save('Examen_' + examen.titulo.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 30) + '.pdf');
+    } catch(e) {
+      alert('Error al generar PDF: ' + e.message);
+    }
   }
 
   async function eliminarExamen(id) { if (confirm('¿Eliminar este examen?')) { await deleteExamen(id); loadExamenes(); } }
@@ -1928,11 +2043,13 @@
   async function loadEstudiantes() {
     const users = await getUsers(adminFilter);
 
-    // Get courses from both users and cursos collection
+    // Get courses: only this professor's courses
     const cursosDeUsuarios = [...new Set(users.map(u => u.curso).filter(Boolean).filter(c => c !== 'Sin curso'))];
     let cursosDeColeccion = [];
     try {
-      const snap = await db.collection('cursos').get();
+      let qCursos = db.collection('cursos');
+      if (!isSuperAdmin) qCursos = qCursos.where('createdBy', '==', currentUser.id);
+      const snap = await qCursos.get();
       cursosDeColeccion = snap.docs.map(d => d.data().nombre).filter(Boolean);
     } catch(e) {}
     const cursos = [...new Set([...cursosDeUsuarios, ...cursosDeColeccion])].sort();
@@ -1955,6 +2072,7 @@
         <td style="color:#64748b;font-size:0.8rem;">${u.email||'<span style="color:#475569;font-style:italic;">Sin correo</span>'}</td>
         <td><select onchange="cambiarCursoUsr('${u.id}',this.value)" style="padding:4px 8px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#f1f5f9;font-size:0.8rem;">${selectOpts}</select></td>
         <td style="display:flex;gap:4px;flex-wrap:wrap;">
+          <button class="btn btn-sm" style="background:#a855f7;color:#fff;" onclick="cambiarNombreUsr('${u.id}','${u.nombre.replace(/'/g,'').replace(/"/g,'')}','${u.username}')" title="Editar nombre">✏️</button>
           <button class="btn btn-sm btn-blue" onclick="cambiarClaveUsr('${u.id}','${u.username}')" title="Cambiar clave">🔑</button>
           <button class="btn btn-sm" style="background:#0ea5e9;color:#fff;" onclick="cambiarEmailUsr('${u.id}','${u.username}','${(u.email||'').replace(/'/g,'')}')" title="Editar correo">✉️</button>
           <button class="btn btn-sm btn-red" onclick="eliminarUsr('${u.id}')" title="Eliminar">🗑️</button>
@@ -1966,6 +2084,21 @@
   }
 
   async function cambiarClaveUsr(id, name) { const p = prompt('Nueva contraseña para "'+name+'":'); if (p && p.length >= 4) { await updateUserPassword(id, p); alert('✅ Actualizada'); } }
+
+  async function cambiarNombreUsr(id, nombreActual, username) {
+    const nuevoNombre = prompt('Editar nombre completo de "' + username + '":', nombreActual || '');
+    if (nuevoNombre === null) return;
+    const trimmed = nuevoNombre.trim();
+    if (!trimmed) { alert('⚠️ El nombre no puede estar vacío'); return; }
+    try {
+      await db.collection('usuarios').doc(id).update({ nombre: trimmed });
+      // Also update in notas so history stays consistent
+      const notasSnap = await db.collection('notas').where('userId', '==', id).get();
+      for (const doc of notasSnap.docs) await doc.ref.update({ nombre: trimmed });
+      alert('✅ Nombre actualizado');
+      loadEstudiantes();
+    } catch(e) { alert('Error: ' + e.message); }
+  }
 
   async function cambiarEmailUsr(id, name, emailActual) {
     const nuevoEmail = prompt('Correo electrónico para "' + name + '":\n(Dejar vacío para quitar el correo)', emailActual || '');
