@@ -1530,6 +1530,23 @@
     renderPreguntas();
   }
 
+  async function normalizePreguntasImagenes() {
+    for (const p of preguntasTemp) {
+      if (p.imagen && !p.imagen.trim().startsWith('data:') && /^https?:\/\//i.test(p.imagen.trim())) {
+        const b64 = await urlToBase64(p.imagen.trim());
+        if (b64) p.imagen = b64;
+      }
+      if (p.tipo === 'imagen' && Array.isArray(p.opciones)) {
+        for (const opt of p.opciones) {
+          if (opt && opt.imagen && !opt.imagen.trim().startsWith('data:') && /^https?:\/\//i.test(opt.imagen.trim())) {
+            const b64 = await urlToBase64(opt.imagen.trim());
+            if (b64) opt.imagen = b64;
+          }
+        }
+      }
+    }
+  }
+
   // ── Guardar examen ──
   async function guardarExamen() {
     const titulo = document.getElementById('exTitulo').value.trim();
@@ -1646,6 +1663,8 @@
       audioAprobado: document.getElementById('exAudioAprobado').value.trim() || '',
       audioReprobado: document.getElementById('exAudioReprobado').value.trim() || ''
     };
+
+    await normalizePreguntasImagenes();
 
     // If editing, update instead of create
     if (editandoExamenId) {

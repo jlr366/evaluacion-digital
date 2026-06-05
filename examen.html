@@ -1646,6 +1646,13 @@
         if (item.imagen && item.imagen.trim()) {
           imgCache[item.imagen] = await imgToBase64(item.imagen);
         }
+        if (item.tipo === 'imagen' && Array.isArray(item.opciones)) {
+          for (const opt of item.opciones) {
+            if (opt && opt.imagen && opt.imagen.trim()) {
+              imgCache[opt.imagen] = await imgToBase64(opt.imagen);
+            }
+          }
+        }
       }
 
       // Debug: report which images failed to convert (temporary)
@@ -1765,6 +1772,33 @@
             doc.addImage(imgCache[item.imagen], imgType, 22, y, thumbW, thumbH);
             y += thumbH + 3;
           } catch(imgErr) { /* skip if image fails */ }
+        }
+
+        // Option images for image-based questions
+        if (item.tipo === 'imagen' && Array.isArray(item.opciones)) {
+          try {
+            const imgs = item.opciones
+              .filter(opt => opt && opt.imagen && imgCache[opt.imagen])
+              .map(opt => ({ url: opt.imagen, data: imgCache[opt.imagen] }));
+            if (imgs.length > 0) {
+              const imgW = 36;
+              const imgH = 26;
+              const gap = 4;
+              let x = 22;
+              if (y + imgH > 265) { doc.addPage(); y = 20; }
+              for (let i = 0; i < imgs.length; i++) {
+                const imgType = getImageTypeFromDataUrl(imgs[i].data);
+                doc.addImage(imgs[i].data, imgType, x, y, imgW, imgH);
+                x += imgW + gap;
+                if (x + imgW > 188) {
+                  x = 22;
+                  y += imgH + gap;
+                  if (y + imgH > 265) { doc.addPage(); y = 20; }
+                }
+              }
+              y += imgH + 5;
+            }
+          } catch(imgErr) { /* skip if option image fails */ }
         }
 
         // Result label: CORRECTA or INCORRECTA
