@@ -16,6 +16,15 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
+const useEmulator = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+if (useEmulator) {
+  console.log('[Firebase] Local emulator mode: Firestore + Storage');
+  db.useEmulator('localhost', 8080);
+  if (firebase.storage && typeof firebase.storage === 'function') {
+    firebase.storage().useEmulator('localhost', 9199);
+  }
+}
+
 // ── Input sanitization ────────────────────────────────────────────────────────
 function sanitize(str, maxLen = 200) {
   if (typeof str !== 'string') return '';
