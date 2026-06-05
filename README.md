@@ -30,3 +30,11 @@ Este proyecto es una aplicación estática que usa Firebase como backend.
 - El backend local está representado por los emuladores de Firebase.
 - En producción real, el código sigue usando Firestore/Storage de `examen-aws`.
 - Si quieres probar el flujo completo de PDF e imágenes localmente, usa el servidor HTTP + emuladores.
+
+## Impresión de exámenes
+
+- La aplicación permite generar PDFs de los exámenes desde la interfaz (botón de imprimir/exportar).
+- Estos PDFs pueden usarse en los manuales del curso o en materiales promocionales (flyers, ofertas, etc.).
+- Para pruebas locales de generación de PDF con imágenes incluidas, asegúrate de ejecutar el servidor HTTP y los emuladores (véase la sección "Configuración local").
+
+Nota: la generación de PDF recupera imágenes desde Storage; si trabajas en local usa el emulador de Storage o configura CORS en tu bucket de Firebase cuando pruebes contra el entorno real.
