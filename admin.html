@@ -1566,6 +1566,24 @@
     document.getElementById('listaExamenes').innerHTML = html;
   }
 
+  // Convierte una URL de imagen a base64 para poder insertarla en jsPDF
+  async function urlToBase64(url) {
+    try {
+      // Para Firebase Storage añadimos el token de acceso usando fetch normal
+      const resp = await fetch(url);
+      if (!resp.ok) return null;
+      const blob = await resp.blob();
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.onerror = () => resolve(null);
+        reader.readAsDataURL(blob);
+      });
+    } catch(e) {
+      return null;
+    }
+  }
+
   async function imprimirExamenPDF(id) {
     try {
       const examen = await getExamen(id);
@@ -1575,6 +1593,26 @@
       const doc = new jsPDF();
       const fecha = new Date().toLocaleString('es-ES');
       const preguntas = examen.preguntas || [];
+
+      // ── Pre-cargar todas las imágenes como base64 ──
+      const imagenesCache = {};
+      for (const p of preguntas) {
+        if (p.imagen && p.imagen.startsWith('http')) {
+          if (!imagenesCache[p.imagen]) {
+            imagenesCache[p.imagen] = await urlToBase64(p.imagen);
+          }
+        }
+        // Opciones con imagen
+        if (Array.isArray(p.opciones)) {
+          for (const op of p.opciones) {
+            if (op && typeof op === 'object' && op.imagen && op.imagen.startsWith('http')) {
+              if (!imagenesCache[op.imagen]) {
+                imagenesCache[op.imagen] = await urlToBase64(op.imagen);
+              }
+            }
+          }
+        }
+      }
 
       // ── Encabezado ──
       doc.setFillColor(15, 23, 42);
@@ -1593,11 +1631,11 @@
       doc.setTextColor(100, 116, 139);
       doc.text((examen.institucion || currentUser.nombre || '') + '   ·   ' + examen.tiempoMinutos + ' min   ·   ' + preguntas.length + ' preguntas   ·   ' + fecha, 105, 32, { align: 'center' });
 
-      // ── Línea de nombre/fecha del estudiante ──
+      // ── Nombre y fecha del estudiante ──
+      let y = 48;
       doc.setTextColor(0, 0, 0);
       doc.setDrawColor(180, 180, 180);
       doc.setLineWidth(0.3);
-      let y = 48;
       doc.setFontSize(9);
       doc.setFont('helvetica', 'normal');
       doc.text('Nombre: ____________________________________________', 14, y);
@@ -1607,20 +1645,18 @@
       y += 8;
 
       // ── Preguntas ──
-      preguntas.forEach((p, i) => {
-        const texto = (i + 1) + '. ' + (p.pregunta || '');
-        const lineas = doc.splitTextToSize(texto, 175);
-        const altoPreg = lineas.length * 5 + 4;
+      const letras = ['A', 'B', 'C', 'D', 'E', 'F'];
 
-        // Opciones
+      for (let i = 0; i < preguntas.length; i++) {
+        const p = preguntas[i];
         const opciones = p.opciones || [];
-        const altoOpts = opciones.length * 6 + 4;
 
-        const altoTotal = altoPreg + altoOpts + 4;
+        // Estimar alto mínimo para no cortar pregunta
+        const lineasPreg = doc.splitTextToSize((p.pregunta || ''), 165);
+        const altoMin = lineasPreg.length * 5 + 8;
+        if (y + altoMin > 275) { doc.addPage(); y = 18; }
 
-        if (y + altoTotal > 275) { doc.addPage(); y = 18; }
-
-        // Número de pregunta
+        // Badge número de pregunta
         doc.setFillColor(0, 120, 212);
         doc.roundedRect(14, y - 4, 7, 6, 1, 1, 'F');
         doc.setFontSize(6);
@@ -1628,34 +1664,60 @@
         doc.setTextColor(255, 255, 255);
         doc.text(String(i + 1), 17.5, y, { align: 'center' });
 
-        // Texto de pregunta
+        // Texto pregunta
         doc.setFontSize(9);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(15, 23, 42);
-        const lineasSinNum = doc.splitTextToSize((p.pregunta || ''), 165);
-        doc.text(lineasSinNum, 24, y);
-        y += lineasSinNum.length * 5 + 3;
+        doc.text(lineasPreg, 24, y);
+        y += lineasPreg.length * 5 + 3;
+
+        // Imagen de la pregunta
+        const imgPreg = p.imagen ? imagenesCache[p.imagen] : null;
+        if (imgPreg) {
+          try {
+            const imgW = 80, imgH = 45;
+            if (y + imgH > 275) { doc.addPage(); y = 18; }
+            doc.addImage(imgPreg, 'JPEG', 24, y, imgW, imgH);
+            y += imgH + 4;
+          } catch(e) { /* imagen no se pudo insertar */ }
+        }
 
         // Opciones
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(8.5);
-        const letras = ['A', 'B', 'C', 'D', 'E', 'F'];
-        opciones.forEach((op, oi) => {
-          if (y > 275) { doc.addPage(); y = 18; }
-          doc.setTextColor(60, 60, 60);
-          // Círculo vacío para marcar
+
+        for (let oi = 0; oi < opciones.length; oi++) {
+          const op = opciones[oi];
+          if (y > 270) { doc.addPage(); y = 18; }
+
+          // Círculo para marcar
           doc.setDrawColor(100, 116, 139);
           doc.setLineWidth(0.3);
           doc.circle(22, y - 1.5, 2.5);
           doc.setFontSize(7);
           doc.setTextColor(80, 80, 80);
           doc.text(letras[oi] || String(oi + 1), 21.5, y - 0.5, { align: 'center' });
+
+          // Texto opción (puede ser string o {texto, imagen})
+          const opTexto = typeof op === 'string' ? op : (op.texto || '');
           doc.setFontSize(8.5);
           doc.setTextColor(30, 30, 30);
-          const lineasOp = doc.splitTextToSize(String(op), 155);
+          const lineasOp = doc.splitTextToSize(opTexto, 155);
           doc.text(lineasOp, 28, y);
           y += lineasOp.length * 5 + 2;
-        });
+
+          // Imagen de la opción (tipo imagen)
+          if (typeof op === 'object' && op.imagen) {
+            const imgOp = imagenesCache[op.imagen];
+            if (imgOp) {
+              try {
+                if (y + 35 > 275) { doc.addPage(); y = 18; }
+                doc.addImage(imgOp, 'JPEG', 28, y, 55, 33);
+                y += 37;
+              } catch(e) { /* imagen no se pudo insertar */ }
+            }
+          }
+        }
 
         y += 5;
         if (y < 270) {
@@ -1663,7 +1725,7 @@
           doc.setLineWidth(0.2);
           doc.line(14, y - 2, 196, y - 2);
         }
-      });
+      }
 
       // ── Pie de página ──
       const pageCount = doc.internal.getNumberOfPages();
