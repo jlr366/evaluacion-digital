@@ -553,6 +553,7 @@
             </div>
             <div style="display:flex;gap:6px;flex-wrap:wrap;">
               <button class="btn btn-sm btn-blue" onclick="toggleProfesorDetalle('${p.id}')">📊 Ver detalle</button>
+              <button class="btn btn-sm" style="background:#a855f7;color:white;" onclick="editarProfesor('${p.id}','${p.nombre.replace(/'/g,'')}','${(p.email||'').replace(/'/g,'')}','${(p.institucion||'').replace(/'/g,'')}')">✏️ Editar</button>
               <button class="btn btn-sm" style="background:#059669;color:white;" onclick="exportarBackupProfesor('${p.id}','${p.nombre.replace(/'/g,'')}')">📦 Backup</button>
               <button class="btn btn-sm" style="background:#059669;color:white;" onclick="imprimirProfesorPDF('${p.id}','${p.nombre.replace(/'/g,'')}','${p.institucion ? p.institucion.replace(/'/g,'') : ''}')">🖨️ PDF</button>
               <button class="btn btn-sm btn-red" onclick="eliminarAdminConfirm('${p.id}','${p.nombre.replace(/'/g,'')}')">🗑️</button>
@@ -564,6 +565,82 @@
         </div>`).join('');
     } catch(e) {
       container.innerHTML = '<div class="card"><p style="color:#f87171;">Error: ' + e.message + '</p></div>';
+    }
+  }
+
+  function editarProfesor(id, nombreActual, emailActual, institucionActual) {
+    // Remove any previous edit panel
+    const prev = document.getElementById('panelEditProfesor');
+    if (prev) { prev.remove(); if (prev.dataset.profId === id) return; }
+
+    const panel = document.createElement('div');
+    panel.id = 'panelEditProfesor';
+    panel.dataset.profId = id;
+    panel.className = 'card';
+    panel.style.cssText = 'border:1px solid #a855f7;margin-bottom:14px;';
+    panel.innerHTML = `
+      <h2 style="color:#c084fc;font-size:1rem;margin-bottom:16px;">✏️ Editar profesor</h2>
+      <div id="editProfMsg"></div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Nombre completo</label>
+          <input type="text" id="editProfNombre" value="${nombreActual}" placeholder="Nombre completo" />
+        </div>
+        <div class="form-group">
+          <label>Institución</label>
+          <input type="text" id="editProfInstitucion" value="${institucionActual}" placeholder="Universidad, Academia..." />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Correo electrónico</label>
+          <input type="email" id="editProfEmail" value="${emailActual}" placeholder="correo@ejemplo.com" />
+        </div>
+        <div class="form-group">
+          <label>Nueva contraseña <span style="font-weight:400;color:#64748b;">(dejar vacío para no cambiar)</span></label>
+          <input type="text" id="editProfPassword" value="" placeholder="Nueva contraseña..." />
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
+        <button class="btn btn-sm" style="background:#a855f7;color:white;" onclick="guardarCambiosProfesor('${id}')">💾 Guardar cambios</button>
+        <button class="btn btn-sm btn-gray" onclick="document.getElementById('panelEditProfesor').remove()">Cancelar</button>
+      </div>`;
+
+    // Insert the panel before the professor's card
+    const profCard = document.querySelector(`[id="detalle_${id}"]`)?.closest('.card');
+    if (profCard) {
+      profCard.insertAdjacentElement('beforebegin', panel);
+    } else {
+      document.getElementById('listaProfesoresDetalle').insertAdjacentElement('afterbegin', panel);
+    }
+    panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  async function guardarCambiosProfesor(id) {
+    const nombre = document.getElementById('editProfNombre').value.trim();
+    const email  = document.getElementById('editProfEmail').value.trim().toLowerCase();
+    const inst   = document.getElementById('editProfInstitucion').value.trim();
+    const pass   = document.getElementById('editProfPassword').value.trim();
+    const msgEl  = document.getElementById('editProfMsg');
+
+    if (!nombre) { msgEl.innerHTML = '<div class="msg msg-err">⚠️ El nombre no puede estar vacío</div>'; return; }
+
+    try {
+      msgEl.innerHTML = '<div class="msg" style="background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3);color:#60a5fa;">⏳ Guardando...</div>';
+      const updates = { nombre, email, institucion: inst };
+      if (pass.length >= 4) updates.password = pass;
+      else if (pass.length > 0 && pass.length < 4) {
+        msgEl.innerHTML = '<div class="msg msg-err">⚠️ La contraseña debe tener al menos 4 caracteres</div>';
+        return;
+      }
+      await db.collection('admins').doc(id).update(updates);
+      msgEl.innerHTML = '<div class="msg msg-ok">✅ Cambios guardados correctamente</div>';
+      setTimeout(() => {
+        document.getElementById('panelEditProfesor')?.remove();
+        loadProfesoresDetalle();
+      }, 1200);
+    } catch(e) {
+      msgEl.innerHTML = '<div class="msg msg-err">❌ Error: ' + e.message + '</div>';
     }
   }
 
