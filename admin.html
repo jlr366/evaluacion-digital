@@ -336,6 +336,22 @@
       <div class="form-group"><label>Contraseña</label><input type="text" id="usrPassword" placeholder="123456" /></div>
       <button class="btn btn-blue" onclick="crearEstudiante()">+ Crear</button>
     </div>
+
+    <!-- Importación masiva -->
+    <div class="card">
+      <h2 style="cursor:pointer;user-select:none;" onclick="toggleImport()">📋 Importar lista de usuarios <span id="importToggleIcon">▼</span></h2>
+      <div id="importSection" style="display:none;margin-top:12px;">
+        <p style="font-size:0.8rem;color:#94a3b8;margin-bottom:8px;">Formato: <code>username,nombre completo,email,contraseña</code> — una línea por usuario.</p>
+        <div id="importMsg"></div>
+        <textarea id="importCSV" rows="12" style="width:100%;background:#0f172a;border:1px solid #334155;border-radius:8px;color:#e2e8f0;padding:10px;font-size:0.78rem;font-family:monospace;resize:vertical;" placeholder="bcornejo,Benjamin Cornejo,benjacornejo16@gmail.com,19842480"></textarea>
+        <div style="display:flex;gap:8px;margin-top:10px;align-items:center;">
+          <button class="btn btn-blue" onclick="importarUsuarios()">⬆ Importar usuarios</button>
+          <button class="btn" style="background:#1e293b;border:1px solid #334155;" onclick="cargarListaACL()">📄 Cargar lista ACL</button>
+          <span id="importProgress" style="font-size:0.8rem;color:#94a3b8;"></span>
+        </div>
+      </div>
+    </div>
+
     <div class="card">
       <h2>Estudiantes</h2>
       <div id="listaUsuarios">Cargando...</div>
@@ -2506,6 +2522,87 @@
   }
 
   // ── Estudiantes ──
+  function toggleImport() {
+    const sec = document.getElementById('importSection');
+    const ico = document.getElementById('importToggleIcon');
+    const open = sec.style.display === 'none';
+    sec.style.display = open ? 'block' : 'none';
+    ico.textContent = open ? '▲' : '▼';
+  }
+
+  function cargarListaACL() {
+    const lista = [
+      'bcornejo,Benjamin Cornejo,benjacornejo16@gmail.com,19842480',
+      'dperez,Diego Bernardo Pérez,diegoperezm92@gmail.com,18138040',
+      'gvalenzuela,Gustavo Valenzuela,gustavo.valenzuelamatus@externos-cl.cencosud.com,18170047',
+      'imoreira,Ignacio Moreira,imoreira@acl.tech,21318366',
+      'jgonzalez,Jonnatan David Gonzalez Reichmann,jgonzalezr@acl.tech,16692862',
+      'jsantibanez,Jose Patricio Santibañez Riquelme,Jsantibanez@acl.tech,19067812',
+      'llopez,Leonardo López Cisterna,llopez@acl.tech,9743430',
+      'lnunez,Leonardo Mauricio Nuñez Riveros,lnunez@acl.cl,11648075',
+      'nguzman,Nicolas Felipe Guzman Rebolledo,nguzman@acl.tech,15780309',
+      'vcortez,Valeria Paz Cortez Navarro,Vcortez@acl.tech,16192015',
+      'eolivera,Elizabeth Olivera Gutierrez,eolivera@acl.cl,33976538',
+      'fguerra,Francisco Javier Guerra Monsalves,fguerra@acl.cl,18407393',
+      'mbecerra,Matias Becerra,matiasbecerra08@gmail.com,19631835',
+      'fcalleja,Francisco Javier Calleja Zepeda,Fcalleja@acl.tech,16811150',
+      'fibargollin,Freddy Ibargollin Gavilan,fibargollin@acl.cl,28696813',
+      'mcontreras,Matias Alexis Contreras Mena,matias.acmena@gmail.com,18916259',
+      'mmachuca,Matias Ignacio Machuca Zapata,mmachuca@acl.cl,19604106',
+      'clafferte,Cristhian Alejandro Lafferte Aran,clafferte@acl.cl,15011546',
+      'ncornejo,Nicolás Ignacio Cornejo Cortes,nicolas.cornejo@cencosudscotiabakn.cl,16749345',
+    ].join('\n');
+    document.getElementById('importCSV').value = lista;
+    document.getElementById('importMsg').innerHTML = '<div class="msg msg-ok">✅ Lista ACL cargada — revisa y pulsa Importar.</div>';
+  }
+
+  async function importarUsuarios() {
+    const raw = document.getElementById('importCSV').value.trim();
+    if (!raw) { document.getElementById('importMsg').innerHTML = '<div class="msg msg-err">⚠️ El área está vacía.</div>'; return; }
+    const lines = raw.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+    const curso = document.getElementById('usrCursoSelect').value || 'Sin curso';
+    let ok = 0, skip = 0, errors = [];
+    const prog = document.getElementById('importProgress');
+    document.getElementById('importMsg').innerHTML = '';
+
+    for (let i = 0; i < lines.length; i++) {
+      const parts = lines[i].split(',');
+      if (parts.length < 4) { errors.push(`Línea ${i+1}: formato inválido`); continue; }
+      const [rawU, rawN, rawE, rawP] = parts;
+      const u = rawU.trim().toLowerCase();
+      const n = rawN.trim();
+      const e = rawE.trim();
+      const p = rawP.trim();
+      if (!u || !n || !p) { errors.push(`Línea ${i+1}: faltan campos`); continue; }
+      prog.textContent = `Creando ${i+1}/${lines.length}…`;
+      try {
+        const existing = await db.collection('usuarios')
+          .where('username', '==', u)
+          .where('createdBy', '==', currentUser.id)
+          .get();
+        if (!existing.empty) { skip++; continue; }
+        await db.collection('usuarios').add({
+          username: u,
+          password: p,
+          nombre: n,
+          email: e,
+          curso: curso,
+          createdBy: currentUser.id,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        ok++;
+      } catch(err) { errors.push(`${u}: ${err.message}`); }
+    }
+
+    prog.textContent = '';
+    let html = `<div class="msg msg-ok">✅ ${ok} usuario(s) creado(s)`;
+    if (skip) html += ` · ${skip} omitido(s) (ya existían)`;
+    html += '.</div>';
+    if (errors.length) html += `<div class="msg msg-err">⚠️ Errores:<br>${errors.join('<br>')}</div>`;
+    document.getElementById('importMsg').innerHTML = html;
+    if (ok > 0) loadEstudiantes();
+  }
+
   async function crearEstudiante() {
     const u = document.getElementById('usrUsername').value;
     const n = document.getElementById('usrNombre').value;
