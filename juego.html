@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <link rel="icon" type="image/png" href="logo_circular_transparente2.png">
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Juego RPG Educativo — Próximamente — Evaluación Digital</title>
+  <title>Juego RPG Educativo — Evaluación Digital</title>
   <link rel="stylesheet" href="css/styles.css" />
   <style>
     .coming-soon-wrap {
@@ -48,6 +48,25 @@
       font-size: 0.82rem;
       color: #c084fc;
     }
+    .game-frame-wrap {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto 40px;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid rgba(168,85,247,0.3);
+      box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+    }
+    .game-frame-wrap iframe {
+      width: 100%;
+      height: 85vh;
+      border: none;
+      display: block;
+    }
+    .game-header {
+      padding: 40px 24px 24px;
+      text-align: center;
+    }
   </style>
 </head>
 <body>
@@ -67,13 +86,11 @@
   </div>
 </header>
 
-<div class="coming-soon-wrap">
-  <div class="cs-badge">🚧 Próximamente</div>
-  <span class="cs-icon">🎮</span>
+<div class="game-header">
+  <div class="cs-badge">🎮 Ya disponible</div>
   <h1 class="cs-title">RPG <span>Educativo</span></h1>
-  <p class="cs-desc">Estamos construyendo un juego de rol donde los estudiantes aprenden combatiendo enemigos con conocimiento, explorando mapas interactivos y completando desafíos educativos.</p>
-
-  <div class="cs-features">
+  <p class="cs-desc">Aprende combatiendo enemigos con conocimiento, explorando mapas interactivos y completando desafíos educativos.</p>
+  <div class="cs-features" style="margin-bottom:24px;">
     <span class="cs-feat">🗺️ Mapa interactivo</span>
     <span class="cs-feat">⚔️ Combate con preguntas</span>
     <span class="cs-feat">🧠 Mini-juegos 8-bit</span>
@@ -83,11 +100,18 @@
     <span class="cs-feat">📖 Historia configurable</span>
     <span class="cs-feat">🎵 Música por escena</span>
   </div>
-
-  <div class="btns">
-    <a href="index.html#contacto" class="btn btn-primary">📩 Notificarme cuando esté listo</a>
-    <a href="index.html" class="btn btn-outline">← Volver al inicio</a>
+  <div class="btns" style="margin-bottom:32px;">
+    <a href="https://rpg-juego-production.up.railway.app/#/" target="_blank" class="btn btn-primary">🚀 Abrir juego en pantalla completa</a>
   </div>
+</div>
+
+<div class="game-frame-wrap">
+  <iframe
+    src="https://rpg-juego-production.up.railway.app/#/"
+    title="RPG Educativo"
+    allow="autoplay; fullscreen"
+    loading="lazy">
+  </iframe>
 </div>
 
 <footer class="footer">
