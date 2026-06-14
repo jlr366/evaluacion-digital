@@ -4,12 +4,14 @@
   <meta charset="UTF-8" />
   <link rel="icon" type="image/png" href="logo_circular_transparente2.png">
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Juego RPG Educativo en la Nube — Evaluación Digital</title>
+  <title>Juego RPG Educativo — Evaluación Digital</title>
   <link rel="stylesheet" href="css/styles.css" />
   <style>
     .rpg-hero {
       text-align: center;
-      padding: 56px 24px 32px;
+      padding: 56px 24px 40px;
+      max-width: 720px;
+      margin: 0 auto;
     }
     .rpg-badge {
       display: inline-flex;
@@ -26,9 +28,20 @@
       text-transform: uppercase;
       margin-bottom: 24px;
     }
-    .rpg-title { font-size: 2.6rem; font-weight: 900; color: #f8fafc; margin-bottom: 16px; line-height: 1.2; }
+    .rpg-title {
+      font-size: 2.6rem;
+      font-weight: 900;
+      color: #f8fafc;
+      margin-bottom: 16px;
+      line-height: 1.2;
+    }
     .rpg-title span { color: #c084fc; }
-    .rpg-subtitle { color: var(--text-muted); font-size: 1.1rem; max-width: 640px; margin: 0 auto 12px; line-height: 1.7; }
+    .rpg-subtitle {
+      color: var(--text-muted);
+      font-size: 1.05rem;
+      line-height: 1.7;
+      margin-bottom: 16px;
+    }
     .rpg-cloud-note {
       display: inline-flex;
       align-items: center;
@@ -38,17 +51,39 @@
       color: #38bdf8;
       border-radius: 12px;
       padding: 10px 20px;
-      font-size: 0.9rem;
-      margin: 16px auto 32px;
+      font-size: 0.88rem;
+      margin-bottom: 36px;
+    }
+    .rpg-access-btn {
+      display: inline-block;
+      background: linear-gradient(135deg, #7c3aed, #a855f7);
+      color: #fff;
+      font-size: 1.15rem;
+      font-weight: 800;
+      padding: 16px 44px;
+      border-radius: 50px;
+      text-decoration: none;
+      box-shadow: 0 4px 24px rgba(168,85,247,0.4);
+      transition: transform 0.2s, box-shadow 0.2s;
+      margin-bottom: 12px;
+    }
+    .rpg-access-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 32px rgba(168,85,247,0.55);
+    }
+    .rpg-access-hint {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      margin-bottom: 60px;
     }
 
-    /* Cards de características */
+    /* Grid de características */
     .rpg-cards {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
       gap: 16px;
       max-width: 1100px;
-      margin: 0 auto 40px;
+      margin: 0 auto 70px;
       padding: 0 24px;
     }
     .rpg-card {
@@ -58,48 +93,23 @@
       padding: 24px 20px;
       text-align: left;
     }
+    .rpg-card.hl {
+      border-color: rgba(0,188,242,0.35);
+      background: rgba(0,188,242,0.05);
+    }
     .rpg-card-icon { font-size: 2rem; margin-bottom: 10px; display: block; }
     .rpg-card h3 { font-size: 1rem; font-weight: 700; color: #f1f5f9; margin-bottom: 6px; }
+    .rpg-card.hl h3 { color: #38bdf8; }
     .rpg-card p { font-size: 0.875rem; color: var(--text-muted); line-height: 1.6; margin: 0; }
-    .rpg-card.highlight { border-color: rgba(0,188,242,0.4); background: rgba(0,188,242,0.06); }
-    .rpg-card.highlight h3 { color: #38bdf8; }
 
-    /* Botones de acción */
-    .rpg-actions {
+    .section-label {
       text-align: center;
-      margin-bottom: 40px;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-      justify-content: center;
-    }
-
-    /* Frame del juego */
-    .game-frame-wrap {
-      width: 100%;
-      max-width: 1200px;
-      margin: 0 auto 60px;
-      border-radius: 16px;
-      overflow: hidden;
-      border: 1px solid rgba(168,85,247,0.3);
-      box-shadow: 0 8px 40px rgba(0,0,0,0.5);
-      padding: 0 24px;
-      box-sizing: border-box;
-    }
-    .game-frame-wrap iframe {
-      width: 100%;
-      height: 88vh;
-      border: none;
-      display: block;
-      border-radius: 12px;
-    }
-    .game-frame-label {
-      text-align: center;
-      font-size: 0.78rem;
-      color: var(--text-muted);
-      margin-bottom: 10px;
-      letter-spacing: 1px;
+      color: #c084fc;
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 2px;
       text-transform: uppercase;
+      margin-bottom: 24px;
     }
   </style>
 </head>
@@ -107,7 +117,10 @@
 
 <header class="navbar">
   <div class="inner">
-    <div class="brand"><img src="logo_circular_transparente2.png" alt="Logo" style="height:56px; filter:drop-shadow(0 2px 12px rgba(0,188,242,0.6)) brightness(1.3);"> <span>Evaluación</span>Digital</div>
+    <div class="brand">
+      <img src="logo_circular_transparente2.png" alt="Logo" style="height:56px; filter:drop-shadow(0 2px 12px rgba(0,188,242,0.6)) brightness(1.3);">
+      <span>Evaluación</span>Digital
+    </div>
     <nav>
       <a href="index.html">Inicio</a>
       <a href="manual.html">Cómo funciona</a>
@@ -116,91 +129,87 @@
       <a href="login.html">Ingresar</a>
       <a href="index.html#contacto">Contáctanos</a>
     </nav>
-    <button class="dark-mode-toggle" id="darkToggle" onclick="toggleDarkMode()" title="Cambiar modo claro/oscuro">🌙</button>
+    <button class="dark-mode-toggle" id="darkToggle" onclick="toggleDarkMode()" title="Cambiar modo">🌙</button>
   </div>
 </header>
 
-<!-- Hero -->
+<!-- Hero centrado -->
 <div class="rpg-hero">
-  <div class="rpg-badge">🎮 En vivo · Cloud</div>
-  <h1 class="rpg-title">RPG Educativo<br><span>100% Programable por el Profesor</span></h1>
+  <div class="rpg-badge">🎮 Ya disponible · En la nube</div>
+  <h1 class="rpg-title">RPG Educativo<br><span>Programable por el Profesor</span></h1>
   <p class="rpg-subtitle">
-    Un juego de rol en la nube donde el profesor diseña la historia, los retos y los enemigos.
+    Un juego de rol alojado en la nube donde el profesor diseña la historia, los retos y los enemigos.
     Los estudiantes aprenden jugando — sin instalar nada, desde cualquier dispositivo.
   </p>
   <div class="rpg-cloud-note">
-    ☁️ Alojado en la nube · Se actualiza en tiempo real · Sin descargas
+    ☁️ Cloud · Actualización en tiempo real · Sin descargas
   </div>
+  <br>
+  <a href="https://rpg-juego-production.up.railway.app/#/" target="_blank" class="rpg-access-btn">
+    🚀 Acceder al juego
+  </a>
+  <p class="rpg-access-hint">Crea tu cuenta gratuita o inicia sesión directamente en el juego.</p>
 </div>
 
-<!-- Cards de características -->
+<!-- Características -->
+<p class="section-label">¿Qué incluye?</p>
 <div class="rpg-cards">
 
-  <div class="rpg-card highlight">
+  <div class="rpg-card hl">
     <span class="rpg-card-icon">✏️</span>
     <h3>El profesor define todo</h3>
-    <p>Historia, escenas, enemigos, preguntas, recompensas, música y mapas — todo configurable desde un panel de administración sin escribir código.</p>
+    <p>Historia, escenas, enemigos, preguntas, recompensas, música y mapas — configurable desde un panel sin escribir código.</p>
   </div>
 
-  <div class="rpg-card highlight">
+  <div class="rpg-card hl">
     <span class="rpg-card-icon">☁️</span>
     <h3>100% en la nube</h3>
-    <p>No requiere instalación. Los estudiantes entran desde el navegador en su celular, tablet o computador. El progreso se guarda automáticamente.</p>
+    <p>No requiere instalación. Los estudiantes entran desde el navegador en su celular, tablet o computador.</p>
   </div>
 
-  <div class="rpg-card highlight">
+  <div class="rpg-card hl">
     <span class="rpg-card-icon">🔄</span>
     <h3>Actualización instantánea</h3>
-    <p>Cualquier cambio que el profesor haga en el panel se refleja inmediatamente en el juego para todos los estudiantes conectados.</p>
+    <p>Cualquier cambio del profesor se refleja de inmediato para todos los estudiantes conectados.</p>
   </div>
 
   <div class="rpg-card">
     <span class="rpg-card-icon">⚔️</span>
     <h3>Combate con preguntas</h3>
-    <p>Los estudiantes enfrentan enemigos respondiendo preguntas. Cada acierto hace daño; cada fallo recibe daño. El conocimiento es el arma.</p>
+    <p>Los estudiantes enfrentan enemigos respondiendo preguntas. El conocimiento es el arma.</p>
   </div>
 
   <div class="rpg-card">
     <span class="rpg-card-icon">🗺️</span>
     <h3>Mapa interactivo</h3>
-    <p>Navega por escenas creadas por el profesor: aldeas, mazmorras, laboratorios o cualquier ambiente que se adapte a la materia.</p>
+    <p>Navega por escenas creadas por el profesor: aldeas, mazmorras, laboratorios o cualquier ambiente.</p>
   </div>
 
   <div class="rpg-card">
     <span class="rpg-card-icon">🧠</span>
     <h3>Mini-juegos educativos</h3>
-    <p>Buscaminas, circuitos, puzzles y más — cada mini-juego está integrado como reto dentro de la historia diseñada por el profesor.</p>
+    <p>Buscaminas, circuitos, puzzles — cada mini-juego es un reto dentro de la historia.</p>
   </div>
 
   <div class="rpg-card">
     <span class="rpg-card-icon">🛡️</span>
-    <h3>Sistema de equipo y recompensas</h3>
-    <p>Los estudiantes ganan armadura, armas y objetos al completar desafíos. El equipo aumenta sus estadísticas en combate.</p>
+    <h3>Sistema de equipo</h3>
+    <p>Los estudiantes ganan armadura y armas al completar desafíos, aumentando sus estadísticas.</p>
   </div>
 
   <div class="rpg-card">
     <span class="rpg-card-icon">👥</span>
     <h3>Multijugador en tiempo real</h3>
-    <p>Varios estudiantes pueden estar conectados al mismo tiempo. El profesor ve el progreso de cada uno desde su panel.</p>
+    <p>Varios estudiantes conectados al mismo tiempo. El profesor ve el progreso de cada uno.</p>
   </div>
 
   <div class="rpg-card">
     <span class="rpg-card-icon">🎵</span>
     <h3>Música y ambientación</h3>
-    <p>El profesor asigna música y efectos de sonido a cada escena para crear una experiencia inmersiva adaptada al tema de estudio.</p>
+    <p>El profesor asigna música y sonidos a cada escena para una experiencia inmersiva.</p>
   </div>
 
 </div>
-
-<!-- Botones -->
-<div class="rpg-actions">
-  <a href="https://rpg-juego-production.up.railway.app/#/" target="_blank" class="btn btn-primary" style="font-size:1.1rem; padding:16px 36px;">🚀 Acceder al juego</a>
-  <a href="index.html#contacto" class="btn btn-outline">📩 Solicitar demostración</a>
-</div>
-
-<p style="text-align:center; color:var(--text-muted); font-size:0.9rem; margin-bottom:60px;">
-  Al ingresar puedes crear tu cuenta gratuita o iniciar sesión si ya tienes una.
-</p>
 
 <footer class="footer">
   <p style="margin-bottom:8px;">
