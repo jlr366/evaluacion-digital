@@ -1825,8 +1825,10 @@
         doc.setFontSize(9);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(0, 0, 0);
-        doc.text((idx+1) + '. ' + item.pregunta.substring(0, 95), 20, y);
-        y += 5;
+        const lineasPregunta = doc.splitTextToSize((idx+1) + '. ' + (item.pregunta || ''), 170);
+        if (y + lineasPregunta.length * 5 > 265) { doc.addPage(); y = 20; }
+        doc.text(lineasPregunta, 20, y);
+        y += lineasPregunta.length * 5;
 
         // Thumbnail if question has image
         if (item.imagen && imgCache[String(item.imagen).trim()]) {
@@ -1885,14 +1887,18 @@
         doc.setFontSize(8);
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(60, 60, 60);
-        doc.text('   Tu respuesta: ' + respuestaUsuario.substring(0, 85), 20, y);
-        y += 4;
+        const lineasRespUser = doc.splitTextToSize('   Tu respuesta: ' + (respuestaUsuario || 'Sin respuesta'), 168);
+        if (y + lineasRespUser.length * 4 > 265) { doc.addPage(); y = 20; }
+        doc.text(lineasRespUser, 20, y);
+        y += lineasRespUser.length * 4;
 
         // If incorrect, show the correct answer
         if (!esCorrecta) {
           doc.setTextColor(0, 100, 0);
-          doc.text('   Respuesta correcta: ' + respuestaCorrecta.substring(0, 85), 20, y);
-          y += 4;
+          const lineasRespCorr = doc.splitTextToSize('   Respuesta correcta: ' + (respuestaCorrecta || ''), 168);
+          if (y + lineasRespCorr.length * 4 > 265) { doc.addPage(); y = 20; }
+          doc.text(lineasRespCorr, 20, y);
+          y += lineasRespCorr.length * 4;
         }
 
         // Separator
