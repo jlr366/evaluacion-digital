@@ -1695,7 +1695,7 @@
     return 'PNG';
   }
 
-  async function generarPDF(nota, correctas, aprobado) {
+  async function generarPDF(nota, correctas, aprobado, returnBlob = false) {
     try {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF();
@@ -1916,10 +1916,14 @@
       doc.setTextColor(128, 128, 128);
       doc.text('Documento generado automáticamente por Evaluación Digital — ' + fecha, 105, 290, { align: 'center' });
 
-      // Download
+      // Download or return blob
+      if (returnBlob) {
+        return doc.output('blob');
+      }
       doc.save('Examen_' + nombre.replace(/\s/g, '_') + '_' + nota + '.pdf');
     } catch(e) {
       console.error('Error generando PDF:', e);
+      if (returnBlob) return null;
     }
   }
 
@@ -1976,39 +1980,7 @@
 
   // ── Generate PDF as Blob (for email upload) ──
   async function generarPDFBlob(nota, correctas, aprobado) {
-    try {
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF();
-      const fecha = new Date().toLocaleString('es-ES');
-      const nombre = currentUser ? currentUser.nombre : 'Estudiante';
-      const status = aprobado ? 'APROBADO' : 'REPROBADO';
-      const notaMaxima = examenData.notaMaxima || 100;
-      const institucion = examenData.institucion || (currentUser && currentUser.institucion) || 'Evaluacion Digital';
-
-      doc.setFontSize(16); doc.setFont('helvetica', 'bold');
-      doc.text(institucion, 105, 18, { align: 'center' });
-      doc.setFontSize(9); doc.setFont('helvetica', 'normal');
-      doc.text('Comprobante de evaluacion — ' + fecha, 105, 25, { align: 'center' });
-      doc.setDrawColor(0,120,212); doc.setLineWidth(0.5); doc.line(20,30,190,30);
-
-      doc.setFontSize(11); doc.setFont('helvetica', 'bold');
-      doc.text('RESULTADO DEL EXAMEN', 20, 40);
-      doc.setFontSize(10); doc.setFont('helvetica', 'normal');
-      doc.text('Estudiante: ' + nombre, 20, 50);
-      doc.text('Examen: ' + (examenData.titulo || ''), 20, 57);
-      doc.text('Fecha: ' + fecha, 20, 64);
-      doc.text('Nota: ' + nota + ' / ' + notaMaxima + ' — ' + status, 20, 71);
-      doc.text('Correctas: ' + correctas + ' de ' + examenData.preguntas.length, 20, 78);
-      doc.line(20,83,190,83);
-
-      doc.setFontSize(8); doc.setTextColor(128,128,128);
-      doc.text('Documento generado por Evaluacion Digital — evaluacion-digital.com', 105, 290, { align: 'center' });
-
-      return doc.output('blob');
-    } catch(e) {
-      console.error('Error generando PDF blob:', e);
-      return null;
-    }
+    return generarPDF(nota, correctas, aprobado, true);
   }
 
   // ── Dark/Light mode ──
