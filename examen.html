@@ -1538,7 +1538,12 @@
       ? `<img src="${imgResultado}" alt="${aprobado?'Aprobado':'Reprobado'}" style="width:100%;max-width:420px;border-radius:16px;margin:20px auto 8px;display:block;box-shadow:0 8px 30px rgba(0,0,0,0.4);">`
       : '';
 
-    document.getElementById('secResultado').innerHTML = `<div class="resultado ${aprobado?'aprobado':'reprobado'}"><h2>${aprobado?'🎉 ¡Aprobó!':'😔 Reprobó'}</h2><p style="color:#94a3b8;">Estudiante: <strong style="color:#f1f5f9;">${currentUser?currentUser.nombre:'—'}</strong></p><div class="nota-badge">${nota} / ${notaMaxima}</div><p style="color:#94a3b8;margin-top:8px;">Correctas: ${correctas} de ${examenData.preguntas.length} | Puntos: ${puntosObtenidos}/${puntosTotales}</p>${imgHTML}<div style="margin-top:20px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap;"><button id="btnDescargarPDF" class="btn btn-primary" style="padding:10px 20px;font-size:0.85rem;">📄 Descargar PDF</button></div><p style="color:#64748b;margin-top:12px;font-size:0.8rem;">${currentUser&&currentUser.email?'📧 Se envió un resumen a '+currentUser.email:''}  </p></div>`;
+    const permiteDescarga = examenData.permitirDescarga !== false;
+    const btnDescargaHTML = permiteDescarga
+      ? `<button id="btnDescargarPDF" class="btn btn-primary" style="padding:10px 20px;font-size:0.85rem;">📄 Descargar PDF</button>`
+      : '';
+
+    document.getElementById('secResultado').innerHTML = `<div class="resultado ${aprobado?'aprobado':'reprobado'}"><h2>${aprobado?'🎉 ¡Aprobó!':'😔 Reprobó'}</h2><p style="color:#94a3b8;">Estudiante: <strong style="color:#f1f5f9;">${currentUser?currentUser.nombre:'—'}</strong></p><div class="nota-badge">${nota} / ${notaMaxima}</div><p style="color:#94a3b8;margin-top:8px;">Correctas: ${correctas} de ${examenData.preguntas.length} | Puntos: ${puntosObtenidos}/${puntosTotales}</p>${imgHTML}<div style="margin-top:20px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">${btnDescargaHTML}</div><p style="color:#64748b;margin-top:12px;font-size:0.8rem;">${currentUser&&currentUser.email?'📧 Se envió un resumen a '+currentUser.email:''}  </p></div>`;
 
     // ── Audio del resultado ──
     // Stop exam music if playing
