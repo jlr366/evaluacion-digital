@@ -1816,6 +1816,12 @@
 
   // ── Load examenes ──
   let adminsCache = null;
+  let ordenAsignadoDir = 0; // 0 = sin orden, 1 = ascendente, -1 = descendente
+
+  function ordenarPorAsignado() {
+    ordenAsignadoDir = ordenAsignadoDir === 1 ? -1 : 1;
+    loadExamenes();
+  }
 
   async function loadExamenes() {
     // Show professor filter for superadmin
@@ -1873,9 +1879,23 @@
     const adminsById = {};
     (adminsCache || []).forEach(a => { adminsById[a.id] = a; });
 
+    const nombreAsignadoDe = (ex) => {
+      if (ex.createdBy === currentUser.id) return 'Super Admin';
+      const prof = adminsById[ex.createdBy];
+      return (ex.createdByName || (prof && prof.nombre) || 'Profesor').toLowerCase();
+    };
+
+    if (isSuperAdmin && ordenAsignadoDir !== 0) {
+      examenes.sort((a, b) => nombreAsignadoDe(a).localeCompare(nombreAsignadoDe(b)) * ordenAsignadoDir);
+    }
+
     if (examenes.length > 0) {
+      const flechaAsignado = ordenAsignadoDir === 1 ? ' ▲' : ordenAsignadoDir === -1 ? ' ▼' : '';
+      const thAsignado = isSuperAdmin
+        ? '<th onclick="ordenarPorAsignado()" style="cursor:pointer;user-select:none;" title="Ordenar por profesor asignado">Asignado a' + flechaAsignado + '</th>'
+        : '';
       html += '<h3 style="color:#60a5fa;font-size:0.9rem;margin-bottom:10px;">📝 Exámenes</h3>';
-      html += '<table><thead><tr><th>Título</th><th>Preguntas</th><th>Tiempo</th>' + (isSuperAdmin ? '<th>Asignado a</th>' : '') + '<th>Acciones</th></tr></thead><tbody>';
+      html += '<table><thead><tr><th>Título</th><th>Preguntas</th><th>Tiempo</th>' + thAsignado + '<th>Acciones</th></tr></thead><tbody>';
       examenes.forEach(ex => {
         const url = baseUrl + '?id=' + ex.id;
         const safeId = escapeHtmlAttr(ex.id);
