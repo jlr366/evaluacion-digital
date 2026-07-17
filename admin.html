@@ -477,6 +477,8 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-functions-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
@@ -573,9 +575,8 @@
       // Delete demo exams
       const exSnap = await db.collection('examenes').where('createdBy', '==', currentUser.id).get();
       for (const doc of exSnap.docs) await doc.ref.delete();
-      // Delete demo students
-      const usSnap = await db.collection('usuarios').where('createdBy', '==', currentUser.id).get();
-      for (const doc of usSnap.docs) await doc.ref.delete();
+      // Delete demo students (via Cloud Function — usuarios ya no se escribe directo)
+      await limpiarEstudiantesDemo();
       // Delete demo grades
       const noSnap = await db.collection('notas').where('createdBy', '==', currentUser.id).get();
       for (const doc of noSnap.docs) await doc.ref.delete();
@@ -719,31 +720,24 @@
 
     if (!nombre) { msgEl.innerHTML = '<div class="msg msg-err">⚠️ El nombre no puede estar vacío</div>'; return; }
     if (!username) { msgEl.innerHTML = '<div class="msg msg-err">⚠️ El username no puede estar vacío</div>'; return; }
-
-    try {
-      msgEl.innerHTML = '<div class="msg" style="background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3);color:#60a5fa;">⏳ Guardando...</div>';
-      const existing = await db.collection('admins')
-        .where('username', '==', username)
-        .get();
-      if (!existing.empty && existing.docs.some(doc => doc.id !== id)) {
-        msgEl.innerHTML = '<div class="msg msg-err">❌ Ya existe otro profesor con ese username</div>';
-        return;
-      }
-      const updates = { nombre, username, email, institucion: inst };
-      if (pass.length >= 4) updates.password = pass;
-      else if (pass.length > 0 && pass.length < 4) {
-        msgEl.innerHTML = '<div class="msg msg-err">⚠️ La contraseña debe tener al menos 4 caracteres</div>';
-        return;
-      }
-      await db.collection('admins').doc(id).update(updates);
-      msgEl.innerHTML = '<div class="msg msg-ok">✅ Cambios guardados correctamente</div>';
-      setTimeout(() => {
-        document.getElementById('panelEditProfesor')?.remove();
-        loadProfesoresDetalle();
-      }, 1200);
-    } catch(e) {
-      msgEl.innerHTML = '<div class="msg msg-err">❌ Error: ' + e.message + '</div>';
+    if (pass.length > 0 && pass.length < 4) {
+      msgEl.innerHTML = '<div class="msg msg-err">⚠️ La contraseña debe tener al menos 4 caracteres</div>';
+      return;
     }
+
+    msgEl.innerHTML = '<div class="msg" style="background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3);color:#60a5fa;">⏳ Guardando...</div>';
+    const cambios = { nombre, username, email, institucion: inst };
+    if (pass.length >= 4) cambios.password = pass;
+    const res = await updateAdmin(id, cambios);
+    if (!res.success) {
+      msgEl.innerHTML = '<div class="msg msg-err">❌ ' + (res.error || 'Error al guardar') + '</div>';
+      return;
+    }
+    msgEl.innerHTML = '<div class="msg msg-ok">✅ Cambios guardados correctamente</div>';
+    setTimeout(() => {
+      document.getElementById('panelEditProfesor')?.remove();
+      loadProfesoresDetalle();
+    }, 1200);
   }
 
   async function toggleProfesorDetalle(profId) {
@@ -934,17 +928,12 @@
         msgEl.innerHTML = '<div class="msg" style="background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3);color:#60a5fa;">⏳ Restaurando datos...</div>';
 
         let importados = 0;
+        let omitidos = 0;
 
-        // Restore admins (only in total backup)
-        if (backup.admins) {
-          for (const a of backup.admins) {
-            if (a.id && a.role !== 'superadmin') { // never overwrite superadmin
-              const { id, ...data } = a;
-              await db.collection('admins').doc(id).set(data, { merge: true });
-              importados++;
-            }
-          }
-        }
+        // NOTA: la restauración de "admins" desde backup ya no está disponible
+        // — admins/usuarios solo se escriben vía Cloud Functions con contraseña
+        // hasheada, así que un set() directo desde un backup ya no aplica.
+        if (backup.admins && backup.admins.length) omitidos += backup.admins.length;
 
         // Restore exams
         if (backup.examenes) {
@@ -957,16 +946,9 @@
           }
         }
 
-        // Restore students
-        if (backup.usuarios) {
-          for (const u of backup.usuarios) {
-            if (u.id) {
-              const { id, ...data } = u;
-              await db.collection('usuarios').doc(id).set(data, { merge: true });
-              importados++;
-            }
-          }
-        }
+        // NOTA: igual que admins, "usuarios" (estudiantes) ya no se restaura
+        // desde backup por la misma razón (contraseñas hasheadas server-side).
+        if (backup.usuarios && backup.usuarios.length) omitidos += backup.usuarios.length;
 
         // Restore grades
         if (backup.notas) {
@@ -979,7 +961,9 @@
           }
         }
 
-        msgEl.innerHTML = '<div class="msg msg-ok">✅ Backup restaurado correctamente. ' + importados + ' registros importados.</div>';
+        let msgFinal = '✅ Backup restaurado correctamente. ' + importados + ' registros importados.';
+        if (omitidos > 0) msgFinal += ' ⚠️ ' + omitidos + ' registro(s) de profesores/estudiantes fueron omitidos (ya no se restauran desde backup).';
+        msgEl.innerHTML = '<div class="msg msg-ok">' + msgFinal + '</div>';
         loadProfesoresDetalle();
       } catch(e) {
         msgEl.innerHTML = '<div class="msg msg-err">❌ Error al importar: ' + e.message + '</div>';
@@ -995,9 +979,8 @@
       const exSnap = await db.collection('examenes').where('createdBy', '==', id).get();
       for (const doc of exSnap.docs) await doc.ref.delete();
 
-      // Delete students
-      const usSnap = await db.collection('usuarios').where('createdBy', '==', id).get();
-      for (const doc of usSnap.docs) await doc.ref.delete();
+      // Los estudiantes de este profesor se borran en cascada dentro de
+      // deleteAdmin() (Cloud Function eliminarProfesor), mas abajo.
 
       // Delete grades
       const noSnap = await db.collection('notas').where('createdBy', '==', id).get();
@@ -1024,8 +1007,9 @@
         }
       } catch(e) { console.warn('Storage cleanup:', e.message); }
 
-      // Finally delete the admin
-      await deleteAdmin(id);
+      // Finally delete the admin (esto tambien borra en cascada a sus estudiantes)
+      const res = await deleteAdmin(id);
+      if (!res.success) { alert('Error al eliminar: ' + (res.error || 'desconocido')); return; }
 
       alert('✅ Profesor "' + nombre + '" y todos sus datos eliminados correctamente.');
       loadProfesoresDetalle();
@@ -2397,7 +2381,7 @@
           message: mensaje || 'Tu profesor te ha asignado este examen. ¡Mucho éxito!',
           exam_url: url,
           username: u.username,
-          password: u.password || '(consulta a tu profesor)'
+          password: 'Solicítala a tu profesor si no la recuerdas'
         });
         enviados++;
       } catch(e) {
@@ -2638,21 +2622,10 @@
       if (!u || !n || !p) { errors.push(`Línea ${i+1}: faltan campos`); continue; }
       prog.textContent = `Creando ${i+1}/${lines.length}…`;
       try {
-        const existing = await db.collection('usuarios')
-          .where('username', '==', u)
-          .where('createdBy', '==', currentUser.id)
-          .get();
-        if (!existing.empty) { skip++; continue; }
-        await db.collection('usuarios').add({
-          username: u,
-          password: p,
-          nombre: n,
-          email: e,
-          curso: curso,
-          createdBy: currentUser.id,
-          createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        ok++;
+        const res = await createUser(u, p, n, e, curso);
+        if (res.success) { ok++; }
+        else if ((res.error || '').includes('Ya existe')) { skip++; }
+        else { errors.push(`${u}: ${res.error || 'error desconocido'}`); }
       } catch(err) { errors.push(`${u}: ${err.message}`); }
     }
 
@@ -2673,41 +2646,21 @@
     const p = document.getElementById('usrPassword').value;
     if (!u||!n||!p) { document.getElementById('usrMsg').innerHTML = '<div class="msg msg-err">⚠️ Complete username, nombre y contraseña</div>'; alert('⚠️ Complete username, nombre y contraseña'); return; }
 
-    try {
-      // Demo restrictions
-      if (isDemo) {
-        const misUsers = await getUsers(currentUser.id);
-        if (misUsers.length >= 2) {
-          document.getElementById('usrMsg').innerHTML = '<div class="msg msg-err">🎯 Cuenta demo: máximo 2 estudiantes. <a href="precios.html" style="color:#60a5fa;">Actualiza tu plan →</a></div>';
-          alert('🎯 Cuenta demo: solo puedes crear 2 estudiantes.\n\nActualiza tu plan para agregar más.');
-          return;
-        }
-      }
-
-      // Check username uniqueness only within this professor's students
-      const existing = await db.collection('usuarios')
-        .where('username', '==', u.trim().toLowerCase())
-        .where('createdBy', '==', currentUser.id)
-        .get();
-      if (!existing.empty) { document.getElementById('usrMsg').innerHTML = '<div class="msg msg-err">❌ Ya tienes un estudiante con ese username</div>'; return; }
-      await db.collection('usuarios').add({
-        username: u.trim().toLowerCase(),
-        password: p,
-        nombre: n.trim(),
-        email: e || '',
-        curso: c,
-        createdBy: currentUser.id,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
-      document.getElementById('usrMsg').innerHTML = '<div class="msg msg-ok">✅ Estudiante creado</div>';
-      document.getElementById('usrUsername').value='';
-      document.getElementById('usrNombre').value='';
-      document.getElementById('usrEmail').value='';
-      document.getElementById('usrPassword').value='';
-      loadEstudiantes();
-    } catch(err) {
-      document.getElementById('usrMsg').innerHTML = '<div class="msg msg-err">❌ '+err.message+'</div>';
+    const res = await createUser(u, p, n, e, c);
+    if (!res.success) {
+      const msg = (res.error || '').includes('demo') || (res.error || '').includes('máximo')
+        ? '🎯 ' + res.error
+        : '❌ ' + res.error;
+      document.getElementById('usrMsg').innerHTML = '<div class="msg msg-err">' + msg + '</div>';
+      if ((res.error || '').includes('demo')) alert('🎯 Cuenta demo: solo puedes crear 2 estudiantes.\n\nActualiza tu plan para agregar más.');
+      return;
     }
+    document.getElementById('usrMsg').innerHTML = '<div class="msg msg-ok">✅ Estudiante creado</div>';
+    document.getElementById('usrUsername').value='';
+    document.getElementById('usrNombre').value='';
+    document.getElementById('usrEmail').value='';
+    document.getElementById('usrPassword').value='';
+    loadEstudiantes();
   }
 
   async function loadEstudiantes() {
@@ -2753,40 +2706,46 @@
     document.getElementById('listaUsuarios').innerHTML = html;
   }
 
-  async function cambiarClaveUsr(id, name) { const p = prompt('Nueva contraseña para "'+name+'":'); if (p && p.length >= 4) { await updateUserPassword(id, p); alert('✅ Actualizada'); } }
+  async function cambiarClaveUsr(id, name) {
+    const p = prompt('Nueva contraseña para "'+name+'":');
+    if (!p) return;
+    if (p.length < 4) { alert('⚠️ La contraseña debe tener al menos 4 caracteres'); return; }
+    const res = await updateUserPassword(id, p);
+    if (!res.success) { alert('Error: ' + (res.error || 'desconocido')); return; }
+    alert('✅ Actualizada');
+  }
 
   async function cambiarNombreUsr(id, nombreActual, username) {
     const nuevoNombre = prompt('Editar nombre completo de "' + username + '":', nombreActual || '');
     if (nuevoNombre === null) return;
     const trimmed = nuevoNombre.trim();
     if (!trimmed) { alert('⚠️ El nombre no puede estar vacío'); return; }
-    try {
-      await db.collection('usuarios').doc(id).update({ nombre: trimmed });
-      // Also update in notas so history stays consistent
-      const notasSnap = await db.collection('notas').where('userId', '==', id).get();
-      for (const doc of notasSnap.docs) await doc.ref.update({ nombre: trimmed });
-      alert('✅ Nombre actualizado');
-      loadEstudiantes();
-    } catch(e) { alert('Error: ' + e.message); }
+    const res = await updateEstudiante(id, { nombre: trimmed });
+    if (!res.success) { alert('Error: ' + (res.error || 'desconocido')); return; }
+    alert('✅ Nombre actualizado');
+    loadEstudiantes();
   }
 
   async function cambiarEmailUsr(id, name, emailActual) {
     const nuevoEmail = prompt('Correo electrónico para "' + name + '":\n(Dejar vacío para quitar el correo)', emailActual || '');
     if (nuevoEmail === null) return; // cancelled
-    try {
-      await db.collection('usuarios').doc(id).update({ email: nuevoEmail.trim().toLowerCase() });
-      alert('✅ Correo actualizado');
-      loadEstudiantes();
-    } catch(e) { alert('Error: ' + e.message); }
+    const res = await updateEstudiante(id, { email: nuevoEmail.trim().toLowerCase() });
+    if (!res.success) { alert('Error: ' + (res.error || 'desconocido')); return; }
+    alert('✅ Correo actualizado');
+    loadEstudiantes();
   }
 
   async function cambiarCursoUsr(id, curso) {
-    try {
-      await db.collection('usuarios').doc(id).update({ curso: curso || 'Sin curso' });
-    } catch(e) { alert('Error: ' + e.message); }
+    const res = await updateEstudiante(id, { curso: curso || 'Sin curso' });
+    if (!res.success) alert('Error: ' + (res.error || 'desconocido'));
   }
 
-  async function eliminarUsr(id) { if (confirm('¿Eliminar?')) { await deleteUser(id); loadEstudiantes(); } }
+  async function eliminarUsr(id) {
+    if (!confirm('¿Eliminar?')) return;
+    const res = await deleteUser(id);
+    if (!res.success) { alert('Error: ' + (res.error || 'desconocido')); return; }
+    loadEstudiantes();
+  }
 
   // ── Cursos ──
   async function loadCursos() {
@@ -2875,7 +2834,7 @@
       const users = await getUsers(adminFilter);
       const delCurso = users.filter(u => u.curso === cursoName);
       for (const u of delCurso) {
-        await db.collection('usuarios').doc(u.id).update({ curso: 'Sin curso' });
+        await updateEstudiante(u.id, { curso: 'Sin curso' });
       }
       // Also delete from cursos collection
       try { await db.collection('cursos').doc(cursoName).delete(); } catch(e) {}
@@ -3249,11 +3208,10 @@
 
   async function activarDemo(id, nombre) {
     if (!confirm('¿Activar la cuenta de "' + nombre + '" como profesor regular?')) return;
-    try {
-      await db.collection('admins').doc(id).update({ role: 'admin' });
-      alert('✅ Cuenta de "' + nombre + '" activada como profesor.');
-      loadAdmins();
-    } catch(e) { alert('Error: ' + e.message); }
+    const res = await activarDemoProfesor(id);
+    if (!res.success) { alert('Error: ' + (res.error || 'desconocido')); return; }
+    alert('✅ Cuenta de "' + nombre + '" activada como profesor.');
+    loadAdmins();
   }
 
   async function asignarExamenExterno() {
@@ -3312,7 +3270,12 @@
     loadExamenes();
   }
 
-  async function eliminarAdm(id) { if (confirm('¿Eliminar admin?')) { await deleteAdmin(id); loadAdmins(); } }
+  async function eliminarAdm(id) {
+    if (!confirm('¿Eliminar admin?')) return;
+    const res = await deleteAdmin(id);
+    if (!res.success) { alert('Error: ' + (res.error || 'desconocido')); return; }
+    loadAdmins();
+  }
 
   // ── Dark/Light mode ──
   function toggleDarkMode() {

@@ -2,6 +2,13 @@
  * Firebase Configuration & Database Logic
  * Platform: Exam Management System
  * Collections: admins, usuarios, examenes, notas
+ *
+ * AUTH: el login/alta/edición/borrado de `admins` y `usuarios` pasa por
+ * Cloud Functions (ver /functions/index.js) — nunca se leen ni escriben
+ * contraseñas directo desde el navegador. Tras un login exitoso se hace
+ * signInWithCustomToken() para que `request.auth` quede disponible y las
+ * reglas de Firestore permitan las lecturas de listado (getAllAdmins,
+ * getUsers) que siguen siendo consultas directas a Firestore.
  */
 
 const firebaseConfig = {
@@ -15,14 +22,37 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
+const auth = firebase.auth();
+const functions = firebase.functions();
 
 const useEmulator = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 if (useEmulator) {
-  console.log('[Firebase] Local emulator mode: Firestore + Storage');
+  console.log('[Firebase] Local emulator mode: Firestore + Storage + Auth + Functions');
   db.useEmulator('localhost', 8080);
+  auth.useEmulator('http://localhost:9099');
+  functions.useEmulator('localhost', 5001);
   if (firebase.storage && typeof firebase.storage === 'function') {
     firebase.storage().useEmulator('localhost', 9199);
   }
+}
+
+// Espera a que Firebase Auth restaure la sesión (custom token) tras una
+// navegación de página completa (login.html -> admin.html, etc). Sin esto,
+// una lectura de `admins`/`usuarios` que dispare justo al cargar la página
+// puede llegar antes de que `request.auth` esté listo y fallar con
+// permission-denied de forma intermitente.
+async function waitForAuthReady() {
+  if (typeof auth.authStateReady === 'function') {
+    await auth.authStateReady();
+  } else {
+    await new Promise(resolve => {
+      const unsub = auth.onAuthStateChanged(() => { unsub(); resolve(); }, () => resolve());
+    });
+  }
+}
+
+function callFn(name, data) {
+  return functions.httpsCallable(name)(data || {});
 }
 
 // ── Input sanitization ────────────────────────────────────────────────────────
@@ -35,71 +65,65 @@ function sanitize(str, maxLen = 200) {
 // ── AUTH ──────────────────────────────────────────────────────────────────────
 
 async function loginGeneral(username, password, profId) {
-  const inputLower = username.trim().toLowerCase();
-
-  // Check admins — search by username first
-  let snap = await db.collection('admins')
-    .where('username', '==', inputLower)
-    .get();
-
-  // If not found by username, try by email
-  if (snap.empty) {
-    snap = await db.collection('admins')
-      .where('email', '==', inputLower)
-      .get();
-  }
-
-  if (!snap.empty) {
-    const match = snap.docs.find(d => d.data().password === password);
-    if (match) {
-      return { success: true, user: { id: match.id, ...match.data(), tipo: 'admin' } };
+  try {
+    const res = await callFn('login', { username, password, profId });
+    const result = res.data;
+    if (result.success) {
+      await auth.signInWithCustomToken(result.token);
     }
-    return { success: false, error: 'Usuario encontrado pero contraseña incorrecta' };
+    return result;
+  } catch (e) {
+    console.error('loginGeneral error:', e);
+    return { success: false, error: e.message || 'Error de conexión' };
   }
+}
 
-  // Check students - if profId provided, only search within that professor's students
-  if (profId) {
-    snap = await db.collection('usuarios')
-      .where('username', '==', username.trim().toLowerCase())
-      .where('password', '==', password)
-      .where('createdBy', '==', profId)
-      .get();
-  } else {
-    snap = await db.collection('usuarios')
-      .where('username', '==', username.trim().toLowerCase())
-      .where('password', '==', password)
-      .get();
+async function registrarProfesorDemo(nombre, email, password) {
+  try {
+    const res = await callFn('registrarProfesorDemo', { nombre, email, password });
+    const result = res.data;
+    if (result.success) {
+      await auth.signInWithCustomToken(result.token);
+    }
+    return result;
+  } catch (e) {
+    console.error('registrarProfesorDemo error:', e);
+    return { success: false, error: e.message || 'Error de conexión' };
   }
-
-  if (!snap.empty) {
-    const doc = snap.docs[0];
-    return { success: true, user: { id: doc.id, ...doc.data(), tipo: 'estudiante' } };
-  }
-
-  return { success: false, error: 'Usuario o contraseña incorrectos' };
 }
 
 // ── ADMINS ────────────────────────────────────────────────────────────────────
 
 async function createAdmin(username, password, nombre, role, institucion) {
-  const existing = await db.collection('admins')
-    .where('username', '==', username.trim().toLowerCase())
-    .get();
-  if (!existing.empty) return { success: false, error: 'El admin ya existe' };
+  try {
+    const res = await callFn('crearProfesor', { username, password, nombre, role, institucion });
+    return res.data;
+  } catch (e) {
+    return { success: false, error: e.message || 'Error de conexión' };
+  }
+}
 
-  const ref = await db.collection('admins').add({
-    username: username.trim().toLowerCase(),
-    password: password,
-    nombre: nombre.trim(),
-    role: role, // 'superadmin' or 'admin'
-    institucion: institucion || '',
-    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-  });
-  return { success: true, id: ref.id };
+async function updateAdmin(id, cambios) {
+  try {
+    const res = await callFn('actualizarProfesor', { id, ...cambios });
+    return res.data;
+  } catch (e) {
+    return { success: false, error: e.message || 'Error de conexión' };
+  }
+}
+
+async function activarDemoProfesor(id) {
+  try {
+    const res = await callFn('activarDemoProfesor', { id });
+    return res.data;
+  } catch (e) {
+    return { success: false, error: e.message || 'Error de conexión' };
+  }
 }
 
 async function getAllAdmins() {
   try {
+    await waitForAuthReady();
     const snap = await db.collection('admins').get();
     return snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a,b) => (a.nombre||'').localeCompare(b.nombre||''));
   } catch (error) {
@@ -109,30 +133,37 @@ async function getAllAdmins() {
 }
 
 async function deleteAdmin(id) {
-  await db.collection('admins').doc(id).delete();
-  return { success: true };
+  try {
+    const res = await callFn('eliminarProfesor', { id });
+    return res.data;
+  } catch (e) {
+    return { success: false, error: e.message || 'Error de conexión' };
+  }
 }
 
 // ── USUARIOS (students) ───────────────────────────────────────────────────────
 
-async function createUser(username, password, nombre, createdBy) {
-  const existing = await db.collection('usuarios')
-    .where('username', '==', username.trim().toLowerCase())
-    .get();
-  if (!existing.empty) return { success: false, error: 'El usuario ya existe' };
+async function createUser(username, password, nombre, email, curso) {
+  try {
+    const res = await callFn('crearEstudiante', { username, password, nombre, email, curso });
+    return res.data;
+  } catch (e) {
+    return { success: false, error: e.message || 'Error de conexión' };
+  }
+}
 
-  const ref = await db.collection('usuarios').add({
-    username: username.trim().toLowerCase(),
-    password: password,
-    nombre: nombre.trim(),
-    createdBy: createdBy || '',
-    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-  });
-  return { success: true, id: ref.id };
+async function updateEstudiante(id, cambios) {
+  try {
+    const res = await callFn('actualizarEstudiante', { id, ...cambios });
+    return res.data;
+  } catch (e) {
+    return { success: false, error: e.message || 'Error de conexión' };
+  }
 }
 
 async function getUsers(filterByAdmin) {
   try {
+    await waitForAuthReady();
     let snap;
     if (filterByAdmin) {
       snap = await db.collection('usuarios').where('createdBy', '==', filterByAdmin).get();
@@ -147,13 +178,31 @@ async function getUsers(filterByAdmin) {
 }
 
 async function deleteUser(id) {
-  await db.collection('usuarios').doc(id).delete();
-  return { success: true };
+  try {
+    const res = await callFn('eliminarEstudiante', { id });
+    return res.data;
+  } catch (e) {
+    return { success: false, error: e.message || 'Error de conexión' };
+  }
 }
 
 async function updateUserPassword(id, newPass) {
-  await db.collection('usuarios').doc(id).update({ password: newPass });
-  return { success: true };
+  try {
+    const res = await callFn('cambiarPasswordEstudiante', { id, newPassword: newPass });
+    return res.data;
+  } catch (e) {
+    return { success: false, error: e.message || 'Error de conexión' };
+  }
+}
+
+async function limpiarEstudiantesDemo() {
+  try {
+    const res = await callFn('limpiarEstudiantesDemo', {});
+    return res.data;
+  } catch (e) {
+    console.error('limpiarEstudiantesDemo error:', e);
+    return { success: false, error: e.message || 'Error de conexión' };
+  }
 }
 
 // ── EXAMENES ──────────────────────────────────────────────────────────────────

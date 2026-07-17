@@ -1,0 +1,18 @@
+{
+  "name": "functions",
+  "description": "Cloud Functions for examen-aws (auth bridge)",
+  "engines": {
+    "node": "20"
+  },
+  "main": "index.js",
+  "scripts": {
+    "serve": "firebase emulators:start --only functions,firestore,auth",
+    "deploy": "firebase deploy --only functions"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.6.0",
+    "firebase-functions": "^6.0.1",
+    "bcryptjs": "^2.4.3"
+  },
+  "private": true
+}

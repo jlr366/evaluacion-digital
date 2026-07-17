@@ -108,6 +108,8 @@
 
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-functions-compat.js"></script>
 <script src="firebase-config.js"></script>
 <script>
   document.getElementById('password').addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
@@ -134,45 +136,17 @@
     msgEl.innerHTML = '<div style="padding:10px;border-radius:8px;margin-bottom:14px;font-size:0.85rem;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3);color:#60a5fa;">⏳ Creando cuenta...</div>';
 
     try {
-      // Use name as username (lowercase, no spaces), add number if duplicate
-      let baseUsername = nombre.trim().toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/g, '');
-      if (!baseUsername) baseUsername = 'usuario';
-
-      // Check if username already exists — if so, show error asking for different name
-      const checkUser = await db.collection('admins').where('username', '==', baseUsername).get();
-      if (!checkUser.empty) {
-        msgEl.innerHTML = '<div style="padding:10px;border-radius:8px;margin-bottom:14px;font-size:0.85rem;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#f87171;">❌ El nombre <strong>' + baseUsername + '</strong> ya está en uso. Por favor usa un nombre diferente o agrega tu apellido.</div>';
+      const result = await registrarProfesorDemo(nombre, email, password);
+      if (!result.success) {
+        msgEl.innerHTML = '<div style="padding:10px;border-radius:8px;margin-bottom:14px;font-size:0.85rem;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#f87171;">❌ ' + result.error + '</div>';
         return;
       }
 
-      const username = baseUsername;
-
-      // Check if email already registered
-      const existing = await db.collection('admins').where('email', '==', email.toLowerCase()).get();
-      if (!existing.empty) { msgEl.innerHTML = '<div style="padding:10px;border-radius:8px;margin-bottom:14px;font-size:0.85rem;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#f87171;">❌ Este email ya está registrado</div>'; return; }
-
-      // Create demo admin
-      await db.collection('admins').add({
-        username: username,
-        password: password,
-        nombre: nombre.trim(),
-        email: email.toLowerCase(),
-        role: 'demo',
-        institucion: '',
-        demoExpiry: new Date(new Date().setHours(24,0,0,0)).toISOString(),
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
-
+      const username = result.user.username;
       msgEl.innerHTML = '<div style="padding:10px;border-radius:8px;margin-bottom:14px;font-size:0.85rem;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);color:#34d399;">✅ Cuenta creada.<br>Tu usuario es: <strong style="font-size:1.1rem;">' + username + '</strong><br><span style="font-size:0.8rem;color:#94a3b8;">También puedes ingresar con tu correo: ' + email.toLowerCase() + '</span></div>';
 
-      // Auto login after 2 seconds
-      setTimeout(async () => {
-        const result = await loginGeneral(username, password);
-        if (result.success) {
-          sessionStorage.setItem('currentUser', JSON.stringify(result.user));
-          window.location.href = 'admin.html';
-        }
-      }, 2000);
+      sessionStorage.setItem('currentUser', JSON.stringify(result.user));
+      setTimeout(() => { window.location.href = 'admin.html'; }, 2000);
 
     } catch(e) {
       msgEl.innerHTML = '<div style="padding:10px;border-radius:8px;margin-bottom:14px;font-size:0.85rem;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#f87171;">❌ Error: ' + e.message + '</div>';
