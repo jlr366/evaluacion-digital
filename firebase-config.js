@@ -174,6 +174,13 @@ async function createExamen(data) {
     createdBy: data.createdBy || '',
     createdByName: data.createdByName || '',
     institucion: data.institucion || '',
+    imgAprobado: data.imgAprobado || '',
+    imgReprobado: data.imgReprobado || '',
+    audioExamen: data.audioExamen || '',
+    audioAprobado: data.audioAprobado || '',
+    audioReprobado: data.audioReprobado || '',
+    permitirDescarga: data.permitirDescarga !== false,
+    accesoLibre: data.accesoLibre || false,
     activo: true,
     createdAt: firebase.firestore.FieldValue.serverTimestamp()
   });

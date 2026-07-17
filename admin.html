@@ -191,6 +191,17 @@
           </label>
         </div>
       </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>🔓 Acceso libre</label>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.82rem;color:#94a3b8;background:rgba(148,163,184,0.05);border:1px solid #334155;padding:8px 12px;border-radius:8px;">
+            <input type="checkbox" id="exAccesoLibre" style="width:15px;height:15px;accent-color:#10b981;">
+            Permitir que cualquiera entre solo con la URL, sin usuario ni contraseña
+          </label>
+          <span style="font-size:0.72rem;color:#64748b;">El estudiante solo ingresará su nombre. No necesita una cuenta creada previamente.</span>
+        </div>
+        <div class="form-group"></div>
+      </div>
 
       <!-- ── Multimedia ── -->
       <div style="background:#0a0e1a;border:1px solid rgba(0,188,242,0.15);border-radius:12px;padding:18px;margin-bottom:16px;">
@@ -1684,7 +1695,8 @@
       audioExamen: document.getElementById('exAudioExamen').value.trim() || '',
       audioAprobado: document.getElementById('exAudioAprobado').value.trim() || '',
       audioReprobado: document.getElementById('exAudioReprobado').value.trim() || '',
-      permitirDescarga: document.getElementById('exPermitirDescarga').checked
+      permitirDescarga: document.getElementById('exPermitirDescarga').checked,
+      accesoLibre: document.getElementById('exAccesoLibre').checked
     };
 
     await normalizePreguntasImagenes();
@@ -1867,7 +1879,7 @@
         const safeUrl = escapeHtmlAttr(url);
         const asignado = (isSuperAdmin && ex.createdBy !== currentUser.id) ? '<span class="badge badge-purple">' + (ex.createdByName || 'Profesor') + '</span>' : (isSuperAdmin ? '<span class="badge badge-blue">Super Admin</span>' : '');
         html += `<tr>
-          <td><strong>${safeTitleDisplay}</strong><br><span style="color:#64748b;font-size:0.75rem;">${safeSubtitulo}</span></td>
+          <td><strong>${safeTitleDisplay}</strong> ${ex.accesoLibre ? '<span class="badge" style="background:rgba(16,185,129,0.15);color:#10b981;border:1px solid rgba(16,185,129,0.3);">🔓 Libre</span>' : ''}<br><span style="color:#64748b;font-size:0.75rem;">${safeSubtitulo}</span></td>
           <td>${(ex.preguntas||[]).length}</td>
           <td>${ex.tiempoMinutos} min</td>
           ${isSuperAdmin ? '<td>' + asignado + '</td>' : ''}
@@ -2452,6 +2464,7 @@
     document.getElementById('exAudioAprobado').value = '';
     document.getElementById('exAudioReprobado').value = '';
     document.getElementById('exPermitirDescarga').checked = true;
+    document.getElementById('exAccesoLibre').checked = false;
     document.getElementById('prevImgAprobado').innerHTML = '';
     document.getElementById('prevImgReprobado').innerHTML = '';
     preguntasTemp = [];
@@ -2490,6 +2503,7 @@
       document.getElementById('exAudioAprobado').value = examen.audioAprobado || '';
       document.getElementById('exAudioReprobado').value = examen.audioReprobado || '';
       document.getElementById('exPermitirDescarga').checked = examen.permitirDescarga !== false;
+      document.getElementById('exAccesoLibre').checked = examen.accesoLibre === true;
       // Preview images if existing
       document.getElementById('prevImgAprobado').innerHTML = examen.imgAprobado ? '<img src="'+examen.imgAprobado+'" style="max-width:160px;max-height:90px;border-radius:8px;border:1px solid #334155;margin-top:4px;">' : '';
       document.getElementById('prevImgReprobado').innerHTML = examen.imgReprobado ? '<img src="'+examen.imgReprobado+'" style="max-width:160px;max-height:90px;border-radius:8px;border:1px solid #334155;margin-top:4px;">' : '';
