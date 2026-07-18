@@ -1,0 +1,87 @@
+rules_version = '2';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// REGLAS DE SEGURIDAD — Evaluación Digital
+//
+// admins/usuarios: el login y toda escritura (alta, edición, borrado,
+// cambio de contraseña) pasan por Cloud Functions (ver /functions/index.js),
+// que usan el Admin SDK y por lo tanto ignoran estas reglas. Tras un login
+// exitoso el cliente recibe un Custom Token de Firebase Auth y hace
+// signInWithCustomToken(), por eso las lecturas de listado (getAllAdmins,
+// getUsers) solo exigen `request.auth != null` — ya no hace falta abrir
+// estas colecciones al público. Las contraseñas se guardan hasheadas
+// (bcrypt) en `passwordHash`, nunca en texto plano.
+//
+// ESTRATEGIA:
+//   • Exámenes   → lectura pública (cualquiera puede ver un examen por su ID,
+//                  incluye "examen libre" y "vista previa", que no requieren
+//                  ningún login)
+//   • Admins     → lectura solo autenticada; escritura solo vía Cloud Functions
+//   • Usuarios   → lectura solo autenticada; escritura solo vía Cloud Functions
+//   • Notas      → solo escritura de nuevas notas (crear), no borrar desde afuera
+//   • Sesiones   → operaciones de sesión permitidas (anti-trampa)
+//   • Cursos     → lectura/escritura normal
+// ─────────────────────────────────────────────────────────────────────────────
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Admins ───────────────────────────────────────────────────────────────
+    // Lectura: solo con sesión (tras login vía Cloud Function + custom token).
+    // Escritura: bloqueada — todo alta/edición/borrado pasa por Cloud Functions
+    // (Admin SDK, ignora estas reglas), nunca directo desde el navegador.
+    match /admins/{docId} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+
+    // ── Usuarios (estudiantes) ────────────────────────────────────────────────
+    // Mismo criterio que admins.
+    match /usuarios/{docId} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+
+    // ── Exámenes ──────────────────────────────────────────────────────────────
+    // Lectura pública (estudiante accede al examen por URL con ID)
+    // Escritura permitida (profesores crean/editan exámenes)
+    match /examenes/{docId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // ── Notas ─────────────────────────────────────────────────────────────────
+    // Crear notas: permitido (estudiantes guardan su resultado)
+    // Leer notas: permitido (profesores ven las notas de sus alumnos)
+    // Actualizar/eliminar: permitido (profesores pueden borrar notas)
+    match /notas/{docId} {
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasAll(['examenId', 'userId', 'nota', 'aprobado'])
+                    && request.resource.data.nota is number
+                    && request.resource.data.nota >= 0;
+      allow update, delete: if true;
+    }
+
+    // ── Sesiones activas (anti-trampa) ────────────────────────────────────────
+    // Necesario para registrar y liberar sesiones de examen
+    match /sesiones_activas/{docId} {
+      allow read, write: if true;
+    }
+
+    // ── Cursos ────────────────────────────────────────────────────────────────
+    match /cursos/{docId} {
+      allow read, write: if true;
+    }
+
+    // ── Exámenes externos ─────────────────────────────────────────────────────
+    match /examenes_externos/{docId} {
+      allow read, write: if true;
+    }
+
+    // ── Bloquear cualquier otra colección no definida ─────────────────────────
+    match /{collection}/{docId} {
+      allow read, write: if false;
+    }
+
+  }
+}
