@@ -432,13 +432,19 @@ exports.iniciarPregunta = onCall(async (request) => {
   await assertOwnsPartida(auth, partidaDoc.data());
 
   const examenDoc = await db().collection('examenes').doc(partidaDoc.data().examenId).get();
-  const totalPreguntas = (examenDoc.data().preguntas || []).length;
+  const preguntas = examenDoc.data().preguntas || [];
+  const totalPreguntas = preguntas.length;
   if (index < 0 || index >= totalPreguntas) throw new HttpsError('invalid-argument', 'Índice de pregunta inválido.');
+
+  // Se publican los textos de las opciones (no cuál es la correcta) para
+  // que el celular del jugador pueda mostrarlas junto a las fichas de color.
+  const opcionesTexto = (preguntas[index].opciones || []).map(o => String(o || ''));
 
   await partidaRef.update({
     estado: 'pregunta',
     preguntaActual: index,
-    preguntaIniciadaEn: FieldValue.serverTimestamp()
+    preguntaIniciadaEn: FieldValue.serverTimestamp(),
+    opcionesActuales: opcionesTexto
   });
   return { success: true };
 });

@@ -21,10 +21,13 @@
 
   .fichas-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; width: 100%; max-width: 500px; }
   .ficha-btn {
-    border: none; border-radius: 16px; padding: 40px 14px; font-size: 2.2rem;
+    border: none; border-radius: 16px; padding: 24px 10px; min-height: 110px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
     color: #fff; box-shadow: 0 4px 16px rgba(0,0,0,0.3); cursor: pointer;
   }
   .ficha-btn:active { transform: scale(0.96); }
+  .ficha-icono { font-size: 2rem; line-height: 1; }
+  .ficha-texto { font-size: 0.95rem; font-weight: 700; text-align: center; word-break: break-word; }
   .ficha-rojo { background: linear-gradient(135deg, #e21b3c, #b3142f); }
   .ficha-azul { background: linear-gradient(135deg, #1368ce, #0d4a99); }
   .ficha-amarillo { background: linear-gradient(135deg, #d89e00, #b58200); }
@@ -67,10 +70,10 @@
   <div class="caja hidden" id="secPregunta">
     <h3 class="muted" style="margin-bottom:16px;">Elige tu respuesta</h3>
     <div class="fichas-grid" id="fichasJugador">
-      <button class="ficha-btn ficha-rojo" onclick="responder(0)">▲</button>
-      <button class="ficha-btn ficha-azul" onclick="responder(1)">◆</button>
-      <button class="ficha-btn ficha-amarillo" onclick="responder(2)">●</button>
-      <button class="ficha-btn ficha-verde" onclick="responder(3)">■</button>
+      <button class="ficha-btn ficha-rojo" onclick="responder(0)"><span class="ficha-icono">▲</span><span class="ficha-texto" id="fichaTexto0"></span></button>
+      <button class="ficha-btn ficha-azul" onclick="responder(1)"><span class="ficha-icono">◆</span><span class="ficha-texto" id="fichaTexto1"></span></button>
+      <button class="ficha-btn ficha-amarillo" onclick="responder(2)"><span class="ficha-icono">●</span><span class="ficha-texto" id="fichaTexto2"></span></button>
+      <button class="ficha-btn ficha-verde" onclick="responder(3)"><span class="ficha-icono">■</span><span class="ficha-texto" id="fichaTexto3"></span></button>
     </div>
   </div>
 
@@ -194,12 +197,28 @@
     } else if (partidaData.estado === 'pregunta') {
       const idx = partidaData.preguntaActual;
       const yaRespondida = yo && yo.respuestas && yo.respuestas[idx] !== undefined;
+      if (!yaRespondida) pintarFichas();
       mostrarCaja(yaRespondida ? 'secEnviado' : 'secPregunta');
     } else if (partidaData.estado === 'resultados') {
       pintarResultado();
     } else if (partidaData.estado === 'terminado') {
       pintarFinal();
     }
+  }
+
+  function pintarFichas() {
+    const opciones = partidaData.opcionesActuales || [];
+    const botones = document.querySelectorAll('#fichasJugador .ficha-btn');
+    botones.forEach((btn, i) => {
+      const texto = document.getElementById('fichaTexto' + i);
+      if (i < opciones.length) {
+        texto.textContent = opciones[i];
+        btn.style.display = '';
+      } else {
+        texto.textContent = '';
+        btn.style.display = 'none';
+      }
+    });
   }
 
   async function responder(opcionIndex) {
