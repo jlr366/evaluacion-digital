@@ -649,6 +649,7 @@
     }
     document.querySelectorAll('.btnTipoAvanzado').forEach(b => b.classList.toggle('hidden', vivo));
     document.getElementById('avisoTiposVivo').classList.toggle('hidden', !vivo);
+    renderPreguntas();
   }
 
   function showSubTab(sub) {
@@ -1437,10 +1438,10 @@
           <button class="del" onclick="removePregunta(${idx})">✕</button>
           <div style="margin-left:36px;">
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
-              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.8rem;color:${isMulti?'#10b981':'#94a3b8'};background:${isMulti?'rgba(16,185,129,0.1)':'rgba(148,163,184,0.05)'};border:1px solid ${isMulti?'rgba(16,185,129,0.3)':'#334155'};padding:6px 12px;border-radius:8px;">
+              ${modoFormularioVivo ? '' : `<label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.8rem;color:${isMulti?'#10b981':'#94a3b8'};background:${isMulti?'rgba(16,185,129,0.1)':'rgba(148,163,184,0.05)'};border:1px solid ${isMulti?'rgba(16,185,129,0.3)':'#334155'};padding:6px 12px;border-radius:8px;">
                 <input type="checkbox" ${isMulti?'checked':''} onchange="toggleMulti(${idx},this.checked)" style="width:14px;height:14px;accent-color:#10b981;">
                 Múltiples respuestas
-              </label>
+              </label>`}
               <span style="font-size:0.75rem;color:#64748b;">${isMulti ? '☑️ Marque todas las correctas' : '⚪ Marque la correcta'}</span>
               ${puntuacionPersonalizada ? `<label style="display:flex;align-items:center;gap:4px;font-size:0.8rem;color:#f59e0b;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);padding:5px 10px;border-radius:8px;">⭐ Puntos: <input type="number" value="${p.puntos||1}" min="1" max="100" onchange="setPreguntaPuntos(${idx},this.value)" style="width:50px;padding:3px 6px;background:#1e293b;border:1px solid #334155;border-radius:4px;color:#f1f5f9;font-size:0.85rem;"></label>` : ''}
             </div>
@@ -1462,6 +1463,10 @@
               ${optsHtml}
               <button class="btn btn-sm" style="margin-top:8px;background:#334155;color:#94a3b8;" onclick="addOpcion(${idx})">+ Agregar opción</button>
             </div>
+            ${modoFormularioVivo ? `<div class="form-group">
+              <label>🎮 Por qué es correcta <span style="font-weight:400;color:#64748b;">(se muestra solo en la pantalla proyectada, al ver los resultados)</span></label>
+              <textarea onchange="setPreguntaExplicacion(${idx},this.value)" placeholder="Ej: Porque en ella se vive de forma permanente" style="min-height:50px;">${p.explicacion||''}</textarea>
+            </div>` : ''}
           </div>
         </div>`;
       container.insertAdjacentHTML('beforeend', html);
@@ -1522,6 +1527,7 @@
 
   function setPreguntaTexto(idx, val) { preguntasTemp[idx].pregunta = val; }
   function setPreguntaImg(idx, val) { preguntasTemp[idx].imagen = val; }
+  function setPreguntaExplicacion(idx, val) { preguntasTemp[idx].explicacion = val; }
   function setPreguntaPuntos(idx, val) { preguntasTemp[idx].puntos = Math.max(1, parseInt(val) || 1); renderPreguntas(); }
 
   async function subirImagenPregunta(idx, file) {
@@ -1596,6 +1602,7 @@
   }
 
   function toggleMulti(idx, checked) {
+    if (modoFormularioVivo) { alert('🎮 El modo en vivo no admite preguntas de múltiples respuestas.'); renderPreguntas(); return; }
     if (checked) { preguntasTemp[idx].correcta = typeof preguntasTemp[idx].correcta === 'number' ? [preguntasTemp[idx].correcta] : preguntasTemp[idx].correcta; }
     else { preguntasTemp[idx].correcta = Array.isArray(preguntasTemp[idx].correcta) ? (preguntasTemp[idx].correcta[0] || 0) : preguntasTemp[idx].correcta; }
     renderPreguntas();
@@ -2638,7 +2645,8 @@
           opciones: p.opciones || ['', ''],
           correcta: p.correcta !== undefined ? p.correcta : 0,
           imagen: p.imagen || '',
-          puntos: p.puntos || 1
+          puntos: p.puntos || 1,
+          explicacion: p.explicacion || ''
         };
       });
       renderPreguntas();

@@ -32,10 +32,10 @@
   .ficha-amarillo { background: linear-gradient(135deg, #d89e00, #b58200); }
   .ficha-verde { background: linear-gradient(135deg, #26890c, #1c6809); }
 
-  .barra-resultado { position: relative; background: rgba(148,163,184,0.08); border-radius: 10px; margin-bottom: 12px; overflow: hidden; height: 44px; display: flex; align-items: center; }
-  .barra-fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 10px; transition: width 0.6s ease; opacity: 0.85; }
-  .barra-label { position: relative; z-index: 1; padding: 0 14px; font-size: 0.85rem; font-weight: 600; }
-  .barra-correcta { outline: 2px solid var(--success); }
+  .respuesta-correcta-card { background: rgba(16,185,129,0.1); border: 2px solid var(--success); border-radius: 14px; padding: 28px; text-align: center; }
+  .respuesta-correcta-icono { font-size: 2.6rem; margin-bottom: 10px; }
+  .respuesta-correcta-texto { font-size: 1.5rem; font-weight: 800; margin-bottom: 12px; }
+  .respuesta-correcta-explicacion { font-size: 1.05rem; }
 
   #miniLeaderboard, #rankingCompleto { list-style: none; padding: 0; margin-top: 10px; }
   #miniLeaderboard li, #rankingCompleto li { padding: 8px 14px; background: rgba(148,163,184,0.06); border-radius: 8px; margin-bottom: 6px; font-size: 0.9rem; }
@@ -118,8 +118,8 @@
   <!-- Resultados -->
   <section id="secResultados" class="hidden">
     <div class="card">
-      <h2 style="margin-bottom:16px;">📊 Resultados</h2>
-      <div id="barrasResultado"></div>
+      <h2 style="margin-bottom:16px;">✅ Respuesta correcta</h2>
+      <div id="respuestaCorrecta"></div>
       <h3 style="margin-top:20px;font-size:0.95rem;color:var(--accent);">🏆 Top 5</h3>
       <ul id="miniLeaderboard"></ul>
       <div style="text-align:center;margin-top:22px;">
@@ -230,7 +230,7 @@
     const msgEl = document.getElementById('setupMsg');
     msgEl.innerHTML = '<div class="msg" style="background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3);color:#60a5fa;padding:10px;border-radius:8px;margin-bottom:10px;">⏳ Creando partida...</div>';
 
-    const res = await crearPartidaVivo(examenId, 20);
+    const res = await crearPartidaVivo(examenId, 20, musicaUrls.pregunta, musicaUrls.podio);
     if (!res.success) {
       msgEl.innerHTML = '<div class="msg msg-err" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#f87171;padding:10px;border-radius:8px;">❌ ' + res.error + '</div>';
       return;
@@ -348,15 +348,15 @@
     const idx = partidaData.preguntaActual;
     const pregunta = examenActual.preguntas[idx];
     const opciones = pregunta.opciones || [];
-    const conteo = opciones.map((_, i) => jugadoresCache.filter(j => j.respuestas && j.respuestas[idx] && j.respuestas[idx].opcionIndex === i).length);
-    const maxConteo = Math.max(1, ...conteo);
+    const textoCorrecta = opciones[pregunta.correcta] || '';
 
-    document.getElementById('barrasResultado').innerHTML = opciones.map((op, i) => `
-      <div class="barra-resultado ${i === pregunta.correcta ? 'barra-correcta' : ''}">
-        <div class="barra-fill ficha-${COLORES[i].clave}" style="width:${(conteo[i] / maxConteo * 100)}%"></div>
-        <span class="barra-label">${COLORES[i].icono} ${escapeHtml(op)} ${i === pregunta.correcta ? '✓ correcta' : ''} — ${conteo[i]}</span>
+    document.getElementById('respuestaCorrecta').innerHTML = `
+      <div class="respuesta-correcta-card">
+        <div class="respuesta-correcta-icono">${COLORES[pregunta.correcta].icono}</div>
+        <div class="respuesta-correcta-texto">${escapeHtml(textoCorrecta)}</div>
+        ${pregunta.explicacion ? `<div class="respuesta-correcta-explicacion muted">${escapeHtml(pregunta.explicacion)}</div>` : ''}
       </div>
-    `).join('');
+    `;
 
     const top5 = [...jugadoresCache].sort((a, b) => (b.puntos || 0) - (a.puntos || 0)).slice(0, 5);
     document.getElementById('miniLeaderboard').innerHTML = top5.map((j, i) => `<li>${i + 1}. ${escapeHtml(j.nombre)} — ${j.puntos || 0} pts</li>`).join('');

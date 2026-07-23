@@ -113,6 +113,9 @@
   let partidaData = null;
   let jugadoresCache = [];
   let yaRespondiPregunta = -1;
+  let musicaUrls = { pregunta: '', podio: '' };
+  let musicaAudio = null;
+  let estadoAnterior = null;
 
   function escapeHtml(v) { const d = document.createElement('div'); d.textContent = v || ''; return d.innerHTML; }
   function mostrarCaja(id) {
@@ -163,13 +166,43 @@
     localStorage.setItem('vivo_' + pin, JSON.stringify({ partidaId, jugadorId, nombre }));
     document.getElementById('miNombre').textContent = nombre;
     mostrarCaja('secEsperando');
+
+    // "Desbloquea" el audio del celular dentro del mismo gesto de tocar
+    // "Unirme" — los navegadores móviles bloquean el play() automático si
+    // no está ligado a una interacción real del usuario.
+    try {
+      const partidaSnap = await db.collection('partidas_vivo').doc(partidaId).get();
+      const pdata = partidaSnap.data() || {};
+      musicaUrls.pregunta = pdata.musicaPreguntaUrl || '';
+      musicaUrls.podio = pdata.musicaPodioUrl || '';
+      if (musicaUrls.pregunta || musicaUrls.podio) {
+        musicaAudio = new Audio(musicaUrls.pregunta || musicaUrls.podio);
+        musicaAudio.volume = 0.3;
+        await musicaAudio.play();
+        musicaAudio.pause();
+        musicaAudio.currentTime = 0;
+      }
+    } catch (e) { /* si el navegador bloquea el desbloqueo, seguimos sin música */ }
+
     suscribir();
+  }
+
+  function reproducirMusica(tipo) {
+    const url = tipo === 'podio' ? musicaUrls.podio : musicaUrls.pregunta;
+    if (musicaAudio) { musicaAudio.pause(); }
+    if (!url) return;
+    musicaAudio = new Audio(url);
+    musicaAudio.loop = tipo === 'pregunta';
+    musicaAudio.volume = 0.3;
+    musicaAudio.play().catch(() => {});
   }
 
   function suscribir() {
     db.collection('partidas_vivo').doc(partidaId).onSnapshot(snap => {
       if (!snap.exists) return;
       partidaData = snap.data();
+      musicaUrls.pregunta = partidaData.musicaPreguntaUrl || '';
+      musicaUrls.podio = partidaData.musicaPodioUrl || '';
       refrescar();
     });
     db.collection('partidas_vivo').doc(partidaId).collection('jugadores').onSnapshot(snap => {
@@ -191,6 +224,13 @@
   function refrescar() {
     if (!partidaData) return;
     const yo = miJugador();
+
+    if (partidaData.estado !== estadoAnterior) {
+      if (partidaData.estado === 'pregunta') reproducirMusica('pregunta');
+      else if (partidaData.estado === 'terminado') reproducirMusica('podio');
+      else if (musicaAudio) musicaAudio.pause();
+      estadoAnterior = partidaData.estado;
+    }
 
     if (partidaData.estado === 'esperando') {
       mostrarCaja('secEsperando');

@@ -345,7 +345,7 @@ function generarPin() {
 
 exports.crearPartidaVivo = onCall(async (request) => {
   const auth = requireAdmin(request);
-  const { examenId, tiempoPreguntaSeg } = request.data || {};
+  const { examenId, tiempoPreguntaSeg, musicaPreguntaUrl, musicaPodioUrl } = request.data || {};
   if (!examenId) throw new HttpsError('invalid-argument', 'Falta el examen.');
 
   const examenDoc = await db().collection('examenes').doc(examenId).get();
@@ -376,6 +376,8 @@ exports.crearPartidaVivo = onCall(async (request) => {
     preguntaActual: -1,
     preguntaIniciadaEn: null,
     tiempoPreguntaSeg: (tiempoPreguntaSeg && tiempoPreguntaSeg > 0) ? tiempoPreguntaSeg : 20,
+    musicaPreguntaUrl: musicaPreguntaUrl ? String(musicaPreguntaUrl).slice(0, 500) : '',
+    musicaPodioUrl: musicaPodioUrl ? String(musicaPodioUrl).slice(0, 500) : '',
     expiraEn: new Date(Date.now() + 4 * 60 * 60 * 1000),
     createdAt: FieldValue.serverTimestamp()
   };

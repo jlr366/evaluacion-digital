@@ -396,9 +396,9 @@ async function getGradesByUserAndExamen(userId, examenId) {
 
 // ── MODO EN VIVO (estilo Kahoot) ────────────────────────────────────────────
 
-async function crearPartidaVivo(examenId, tiempoPreguntaSeg) {
+async function crearPartidaVivo(examenId, tiempoPreguntaSeg, musicaPreguntaUrl, musicaPodioUrl) {
   try {
-    const res = await callFn('crearPartidaVivo', { examenId, tiempoPreguntaSeg });
+    const res = await callFn('crearPartidaVivo', { examenId, tiempoPreguntaSeg, musicaPreguntaUrl, musicaPodioUrl });
     return res.data;
   } catch (e) {
     return { success: false, error: e.message || 'Error de conexión' };
