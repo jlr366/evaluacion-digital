@@ -1,7 +1,7 @@
 /**
  * Firebase Configuration & Database Logic
  * Platform: Exam Management System
- * Collections: admins, usuarios, examenes, notas
+ * Collections: admins, usuarios, examenes, notas, partidas_vivo
  *
  * AUTH: el login/alta/edición/borrado de `admins` y `usuarios` pasa por
  * Cloud Functions (ver /functions/index.js) — nunca se leen ni escriben
@@ -390,5 +390,61 @@ async function getGradesByUserAndExamen(userId, examenId) {
   } catch (error) {
     console.error('getGradesByUserAndExamen error:', error);
     return [];
+  }
+}
+
+// ── MODO EN VIVO (estilo Kahoot) ────────────────────────────────────────────
+
+async function crearPartidaVivo(examenId, tiempoPreguntaSeg) {
+  try {
+    const res = await callFn('crearPartidaVivo', { examenId, tiempoPreguntaSeg });
+    return res.data;
+  } catch (e) {
+    return { success: false, error: e.message || 'Error de conexión' };
+  }
+}
+
+async function unirsePartidaVivo(pin, nombre) {
+  try {
+    const res = await callFn('unirsePartidaVivo', { pin, nombre });
+    return res.data;
+  } catch (e) {
+    return { success: false, error: e.message || 'Error de conexión' };
+  }
+}
+
+async function iniciarPregunta(partidaId, index) {
+  try {
+    const res = await callFn('iniciarPregunta', { partidaId, index });
+    return res.data;
+  } catch (e) {
+    return { success: false, error: e.message || 'Error de conexión' };
+  }
+}
+
+async function enviarRespuestaVivo(partidaId, jugadorId, opcionIndex) {
+  try {
+    const res = await callFn('enviarRespuestaVivo', { partidaId, jugadorId, opcionIndex });
+    return res.data;
+  } catch (e) {
+    return { success: false, error: e.message || 'Error de conexión' };
+  }
+}
+
+async function mostrarResultadosVivo(partidaId) {
+  try {
+    const res = await callFn('mostrarResultados', { partidaId });
+    return res.data;
+  } catch (e) {
+    return { success: false, error: e.message || 'Error de conexión' };
+  }
+}
+
+async function finalizarPartidaVivo(partidaId) {
+  try {
+    const res = await callFn('finalizarPartidaVivo', { partidaId });
+    return res.data;
+  } catch (e) {
+    return { success: false, error: e.message || 'Error de conexión' };
   }
 }

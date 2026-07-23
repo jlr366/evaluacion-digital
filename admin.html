@@ -531,6 +531,10 @@
       mostrarQR(examId, title, url);
       return;
     }
+    if (action === 'vivo') {
+      window.open('vivo-anfitrion.html?examenId=' + examId, '_blank');
+      return;
+    }
     if (action === 'print') {
       imprimirExamenPDF(examId, btn);
       return;
@@ -1912,6 +1916,7 @@
             <button type="button" class="btn btn-sm" data-action="edit" data-id="${safeId}" title="Editar" style="background:#f59e0b;color:#000;">✏️ Editar</button>
             <button type="button" class="btn btn-sm" data-action="send" data-id="${safeId}" data-title="${safeTitle}" data-url="${safeUrl}" title="Enviar por correo" style="background:#0ea5e9;color:#fff;">📨 Enviar</button>
             <button type="button" class="btn btn-sm" data-action="qr" data-id="${safeId}" data-title="${safeTitle}" data-url="${safeUrl}" title="Ver QR" style="background:#1e293b;border:1px solid #334155;color:#94a3b8;">📱 QR</button>
+            <button type="button" class="btn btn-sm" data-action="vivo" data-id="${safeId}" title="Modo en vivo estilo Kahoot" style="background:linear-gradient(135deg,#6c5ce7,#00bcf2);color:#fff;">🎮 En vivo</button>
             ${isSuperAdmin ? '<button type="button" class="btn btn-sm" style="background:#8b5cf6;color:#fff;" data-action="assign" data-id="' + safeId + '" data-title="' + safeTitle + '" title="Asignar a profesor">👤 Asignar</button>' : ''}
             <button type="button" class="btn btn-sm" data-action="print" data-id="${safeId}" title="Imprimir examen" style="background:#059669;color:#fff;">🖨️ Imprimir</button>
             <button type="button" class="btn btn-sm btn-red" data-action="delete" data-id="${safeId}" title="Eliminar">🗑️</button>

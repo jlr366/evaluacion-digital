@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Modo en vivo — Evaluación Digital</title>
+<link rel="icon" type="image/png" href="logo_circular_transparente2.png">
+<link rel="stylesheet" href="css/styles.css">
+<style>
+  body { min-height: 100vh; }
+  .wrap { max-width: 1000px; margin: 0 auto; padding: 24px; }
+  .hidden { display: none !important; }
+  .muted { color: var(--text-muted); }
+
+  .pin-grande { font-size: 4rem; font-weight: 800; letter-spacing: 0.15em; color: var(--accent); text-align: center; margin: 10px 0; }
+  #qrLobby { display: flex; justify-content: center; margin: 16px 0; background: #fff; padding: 16px; border-radius: 12px; width: fit-content; margin-left: auto; margin-right: auto; }
+  #linkLobby { text-align: center; font-size: 0.8rem; color: var(--text-dim); word-break: break-all; }
+
+  #listaJugadoresLobby { list-style: none; display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; padding: 0; justify-content: center; }
+  #listaJugadoresLobby li { background: rgba(0,188,242,0.1); border: 1px solid rgba(0,188,242,0.3); color: var(--accent); padding: 6px 14px; border-radius: 20px; font-size: 0.85rem; }
+
+  .pregunta-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+  #countdown { font-size: 2.2rem; font-weight: 800; color: var(--warning); min-width: 60px; text-align: center; }
+  #preguntaTexto { font-size: 1.5rem; font-weight: 700; text-align: center; margin: 20px 0 30px; line-height: 1.4; }
+  #contadorRespondieron { text-align: center; color: var(--text-muted); font-size: 0.9rem; margin-top: 16px; }
+
+  .fichas-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .ficha { border-radius: 14px; padding: 22px 18px; display: flex; align-items: center; gap: 14px; font-size: 1.15rem; font-weight: 700; color: #fff; box-shadow: 0 4px 14px rgba(0,0,0,0.25); }
+  .ficha-icono { font-size: 1.6rem; }
+  .ficha-rojo { background: linear-gradient(135deg, #e21b3c, #b3142f); }
+  .ficha-azul { background: linear-gradient(135deg, #1368ce, #0d4a99); }
+  .ficha-amarillo { background: linear-gradient(135deg, #d89e00, #b58200); }
+  .ficha-verde { background: linear-gradient(135deg, #26890c, #1c6809); }
+
+  .barra-resultado { position: relative; background: rgba(148,163,184,0.08); border-radius: 10px; margin-bottom: 12px; overflow: hidden; height: 44px; display: flex; align-items: center; }
+  .barra-fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 10px; transition: width 0.6s ease; opacity: 0.85; }
+  .barra-label { position: relative; z-index: 1; padding: 0 14px; font-size: 0.85rem; font-weight: 600; }
+  .barra-correcta { outline: 2px solid var(--success); }
+
+  #miniLeaderboard, #rankingCompleto { list-style: none; padding: 0; margin-top: 10px; }
+  #miniLeaderboard li, #rankingCompleto li { padding: 8px 14px; background: rgba(148,163,184,0.06); border-radius: 8px; margin-bottom: 6px; font-size: 0.9rem; }
+
+  .podio-row { display: flex; align-items: flex-end; justify-content: center; gap: 18px; margin: 30px 0; }
+  .podio-puesto { text-align: center; }
+  .podio-nombre { font-weight: 700; margin-bottom: 6px; }
+  .podio-puntos { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 8px; }
+  .podio-bloque { border-radius: 10px 10px 0 0; display: flex; align-items: flex-start; justify-content: center; padding-top: 10px; font-size: 1.8rem; font-weight: 800; color: #05070d; }
+  #puesto1 .podio-bloque { height: 140px; width: 120px; background: linear-gradient(135deg, #ffd700, #e0b400); }
+  #puesto2 .podio-bloque { height: 105px; width: 110px; background: linear-gradient(135deg, #d6d6d6, #a8a8a8); }
+  #puesto3 .podio-bloque { height: 80px; width: 110px; background: linear-gradient(135deg, #cd7f32, #a86426); }
+</style>
+</head>
+<body>
+
+<header class="navbar">
+  <div class="inner">
+    <div class="brand"><img src="logo_circular_transparente2.png" alt="Logo" style="height:44px;"> <span>Evaluación</span>Digital — Modo en vivo</div>
+    <nav>
+      <a href="admin.html">← Volver al panel</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- Selección de examen -->
+  <section id="secSetup">
+    <div class="card">
+      <h2 style="margin-bottom:6px;">🎮 Lanzar una partida en vivo</h2>
+      <p class="muted" style="font-size:0.85rem;margin-bottom:16px;">Elige uno de tus exámenes. Solo se pueden usar exámenes con preguntas de opción única, máximo 4 opciones (sin selección múltiple, pares ni numéricas).</p>
+      <div id="setupMsg"></div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px;">
+        <div>
+          <label style="font-size:0.8rem;color:var(--text-muted);">🎵 Música durante las preguntas (URL, opcional)</label>
+          <input type="text" id="musicaPregunta" placeholder="https://..." style="width:100%;padding:8px 12px;background:#0f172a;border:1px solid #334155;border-radius:8px;color:#f1f5f9;margin-top:4px;">
+        </div>
+        <div>
+          <label style="font-size:0.8rem;color:var(--text-muted);">🎵 Música del podio (URL, opcional)</label>
+          <input type="text" id="musicaPodio" placeholder="https://..." style="width:100%;padding:8px 12px;background:#0f172a;border:1px solid #334155;border-radius:8px;color:#f1f5f9;margin-top:4px;">
+        </div>
+      </div>
+
+      <div id="listaExamenesVivo"><p class="muted">Cargando exámenes...</p></div>
+    </div>
+  </section>
+
+  <!-- Lobby -->
+  <section id="secLobby" class="hidden">
+    <div class="card">
+      <h2 id="lobbyExamenTitulo" style="text-align:center;"></h2>
+      <p class="muted" style="text-align:center;">Entra en <strong>evaluacion-digital.com/vivo-jugador.html</strong> o escanea el código</p>
+      <div class="pin-grande" id="pinGrande">------</div>
+      <div id="qrLobby"></div>
+      <p id="linkLobby"></p>
+      <h3 style="text-align:center;margin-top:24px;">Jugadores conectados (<span id="numJugadoresLobby">0</span>)</h3>
+      <ul id="listaJugadoresLobby"></ul>
+      <div style="text-align:center;margin-top:26px;display:flex;gap:10px;justify-content:center;">
+        <button class="btn btn-primary" onclick="iniciarJuego()">🚀 Iniciar juego</button>
+        <button class="btn btn-sm" style="background:rgba(148,163,184,0.15);color:#f1f5f9;" onclick="cancelarPartida()">Cancelar</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pregunta -->
+  <section id="secPregunta" class="hidden">
+    <div class="card">
+      <div class="pregunta-header">
+        <span class="muted" id="preguntaNum">1 / 10</span>
+        <span id="countdown">20</span>
+      </div>
+      <div id="preguntaTexto"></div>
+      <div class="fichas-grid" id="fichasAnfitrion"></div>
+      <div id="contadorRespondieron">0 de 0 respondieron</div>
+    </div>
+  </section>
+
+  <!-- Resultados -->
+  <section id="secResultados" class="hidden">
+    <div class="card">
+      <h2 style="margin-bottom:16px;">📊 Resultados</h2>
+      <div id="barrasResultado"></div>
+      <h3 style="margin-top:20px;font-size:0.95rem;color:var(--accent);">🏆 Top 5</h3>
+      <ul id="miniLeaderboard"></ul>
+      <div style="text-align:center;margin-top:22px;">
+        <button class="btn btn-primary" id="btnSiguientePregunta" onclick="siguientePreguntaOFinal()">➡️ Siguiente pregunta</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Podio -->
+  <section id="secPodio" class="hidden">
+    <div class="card">
+      <h2 style="text-align:center;">🏆 ¡Partida terminada!</h2>
+      <div class="podio-row">
+        <div class="podio-puesto" id="puesto2">
+          <div class="podio-nombre">—</div>
+          <div class="podio-puntos"></div>
+          <div class="podio-bloque">2</div>
+        </div>
+        <div class="podio-puesto" id="puesto1">
+          <div class="podio-nombre">—</div>
+          <div class="podio-puntos"></div>
+          <div class="podio-bloque">1</div>
+        </div>
+        <div class="podio-puesto" id="puesto3">
+          <div class="podio-nombre">—</div>
+          <div class="podio-puntos"></div>
+          <div class="podio-bloque">3</div>
+        </div>
+      </div>
+      <h3 style="font-size:0.95rem;color:var(--accent);">Clasificación completa</h3>
+      <ul id="rankingCompleto"></ul>
+      <div style="text-align:center;margin-top:22px;">
+        <button class="btn btn-primary" onclick="location.reload()">🔁 Nueva partida</button>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-functions-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="firebase-config.js"></script>
+<script>
+  const currentUser = JSON.parse(sessionStorage.getItem('currentUser') || 'null');
+  if (!currentUser || currentUser.tipo !== 'admin') { window.location.href = 'index.html'; }
+
+  const COLORES = [
+    { clave: 'rojo', icono: '▲' },
+    { clave: 'azul', icono: '◆' },
+    { clave: 'amarillo', icono: '●' },
+    { clave: 'verde', icono: '■' }
+  ];
+
+  let examenActual = null;
+  let partidaId = null;
+  let partidaData = null;
+  let jugadoresCache = [];
+  let preguntaPintadaIdx = -1;
+  let countdownInterval = null;
+  let audioActual = null;
+  const musicaUrls = { pregunta: '', podio: '' };
+
+  function escapeHtml(v) { const d = document.createElement('div'); d.textContent = v || ''; return d.innerHTML; }
+
+  function mostrarSeccion(id) {
+    ['secSetup', 'secLobby', 'secPregunta', 'secResultados', 'secPodio'].forEach(s => {
+      document.getElementById(s).classList.toggle('hidden', s !== id);
+    });
+  }
+
+  async function init() {
+    await waitForAuthReady();
+    const params = new URLSearchParams(window.location.search);
+    const examenIdUrl = params.get('examenId');
+    if (examenIdUrl) {
+      document.getElementById('listaExamenesVivo').innerHTML = '<p class="muted">Cargando...</p>';
+      await lanzarPartida(examenIdUrl);
+    } else {
+      await cargarExamenes();
+    }
+  }
+
+  async function cargarExamenes() {
+    const examenes = await getExamenes(currentUser.id);
+    const cont = document.getElementById('listaExamenesVivo');
+    if (examenes.length === 0) {
+      cont.innerHTML = '<p class="muted">No tienes exámenes creados todavía.</p>';
+      return;
+    }
+    cont.innerHTML = examenes.map(ex => `
+      <div class="card" style="margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
+        <div>
+          <h3 style="font-size:0.95rem;">${escapeHtml(ex.titulo)}</h3>
+          <p class="muted" style="font-size:0.78rem;">${(ex.preguntas || []).length} preguntas</p>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="lanzarPartida('${ex.id}')">🎮 Lanzar en vivo</button>
+      </div>
+    `).join('');
+  }
+
+  async function lanzarPartida(examenId) {
+    musicaUrls.pregunta = document.getElementById('musicaPregunta').value.trim();
+    musicaUrls.podio = document.getElementById('musicaPodio').value.trim();
+
+    const msgEl = document.getElementById('setupMsg');
+    msgEl.innerHTML = '<div class="msg" style="background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3);color:#60a5fa;padding:10px;border-radius:8px;margin-bottom:10px;">⏳ Creando partida...</div>';
+
+    const res = await crearPartidaVivo(examenId, 20);
+    if (!res.success) {
+      msgEl.innerHTML = '<div class="msg msg-err" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#f87171;padding:10px;border-radius:8px;">❌ ' + res.error + '</div>';
+      return;
+    }
+
+    partidaId = res.partidaId;
+    examenActual = await getExamen(examenId);
+    document.getElementById('lobbyExamenTitulo').textContent = examenActual.titulo;
+    document.getElementById('pinGrande').textContent = res.pin;
+    generarQR(res.pin);
+    mostrarSeccion('secLobby');
+    suscribirPartida();
+    suscribirJugadores();
+  }
+
+  function generarQR(pin) {
+    const url = window.location.origin + window.location.pathname.replace('vivo-anfitrion.html', 'vivo-jugador.html') + '?pin=' + pin;
+    document.getElementById('qrLobby').innerHTML = '';
+    new QRCode(document.getElementById('qrLobby'), { text: url, width: 160, height: 160 });
+    document.getElementById('linkLobby').textContent = url;
+  }
+
+  function suscribirPartida() {
+    db.collection('partidas_vivo').doc(partidaId).onSnapshot(snap => {
+      if (!snap.exists) return;
+      const nuevo = snap.data();
+      const cambioEstado = !partidaData || partidaData.estado !== nuevo.estado || partidaData.preguntaActual !== nuevo.preguntaActual;
+      partidaData = nuevo;
+      if (cambioEstado) manejarCambioEstado();
+      refrescarUI();
+    });
+  }
+
+  function suscribirJugadores() {
+    db.collection('partidas_vivo').doc(partidaId).collection('jugadores').onSnapshot(snap => {
+      jugadoresCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      refrescarUI();
+    });
+  }
+
+  function manejarCambioEstado() {
+    if (partidaData.estado === 'esperando') {
+      mostrarSeccion('secLobby');
+    } else if (partidaData.estado === 'pregunta') {
+      mostrarSeccion('secPregunta');
+      pintarPreguntaBase();
+    } else if (partidaData.estado === 'resultados') {
+      mostrarSeccion('secResultados');
+    } else if (partidaData.estado === 'terminado') {
+      mostrarSeccion('secPodio');
+      pintarPodio();
+    }
+  }
+
+  function refrescarUI() {
+    if (!partidaData) return;
+    renderJugadoresLobby();
+    if (partidaData.estado === 'pregunta') renderContadorRespondieron();
+    if (partidaData.estado === 'resultados') pintarResultados();
+  }
+
+  function renderJugadoresLobby() {
+    document.getElementById('numJugadoresLobby').textContent = jugadoresCache.length;
+    const ul = document.getElementById('listaJugadoresLobby');
+    ul.innerHTML = jugadoresCache.map(j => `<li>${escapeHtml(j.nombre)}</li>`).join('') || '<li class="muted" style="background:none;border:none;">Esperando jugadores...</li>';
+  }
+
+  async function iniciarJuego() {
+    if (jugadoresCache.length === 0) { alert('⚠️ Todavía no se ha unido ningún jugador.'); return; }
+    await iniciarPregunta(partidaId, 0);
+  }
+
+  async function cancelarPartida() {
+    if (!confirm('¿Cancelar esta partida?')) return;
+    await finalizarPartidaVivo(partidaId);
+    location.reload();
+  }
+
+  function pintarPreguntaBase() {
+    preguntaPintadaIdx = partidaData.preguntaActual;
+    const pregunta = examenActual.preguntas[preguntaPintadaIdx];
+    document.getElementById('preguntaTexto').textContent = pregunta.pregunta;
+    document.getElementById('preguntaNum').textContent = (preguntaPintadaIdx + 1) + ' / ' + examenActual.preguntas.length;
+
+    const opciones = pregunta.opciones || [];
+    document.getElementById('fichasAnfitrion').innerHTML = opciones.map((op, i) => `
+      <div class="ficha ficha-${COLORES[i].clave}">
+        <span class="ficha-icono">${COLORES[i].icono}</span>
+        <span>${escapeHtml(op)}</span>
+      </div>
+    `).join('');
+
+    const inicioMs = partidaData.preguntaIniciadaEn ? partidaData.preguntaIniciadaEn.toMillis() : Date.now();
+    const limiteMs = (partidaData.tiempoPreguntaSeg || 20) * 1000;
+    if (countdownInterval) clearInterval(countdownInterval);
+    countdownInterval = setInterval(() => {
+      const restanteMs = Math.max(0, limiteMs - (Date.now() - inicioMs));
+      document.getElementById('countdown').textContent = Math.ceil(restanteMs / 1000);
+      if (restanteMs <= 0) {
+        clearInterval(countdownInterval);
+        mostrarResultadosVivo(partidaId);
+      }
+    }, 200);
+
+    reproducirMusica('pregunta');
+  }
+
+  function renderContadorRespondieron() {
+    const idx = partidaData.preguntaActual;
+    const respondieron = jugadoresCache.filter(j => j.respuestas && j.respuestas[idx] !== undefined).length;
+    document.getElementById('contadorRespondieron').textContent = respondieron + ' de ' + jugadoresCache.length + ' respondieron';
+  }
+
+  function pintarResultados() {
+    const idx = partidaData.preguntaActual;
+    const pregunta = examenActual.preguntas[idx];
+    const opciones = pregunta.opciones || [];
+    const conteo = opciones.map((_, i) => jugadoresCache.filter(j => j.respuestas && j.respuestas[idx] && j.respuestas[idx].opcionIndex === i).length);
+    const maxConteo = Math.max(1, ...conteo);
+
+    document.getElementById('barrasResultado').innerHTML = opciones.map((op, i) => `
+      <div class="barra-resultado ${i === pregunta.correcta ? 'barra-correcta' : ''}">
+        <div class="barra-fill ficha-${COLORES[i].clave}" style="width:${(conteo[i] / maxConteo * 100)}%"></div>
+        <span class="barra-label">${COLORES[i].icono} ${escapeHtml(op)} ${i === pregunta.correcta ? '✓ correcta' : ''} — ${conteo[i]}</span>
+      </div>
+    `).join('');
+
+    const top5 = [...jugadoresCache].sort((a, b) => (b.puntos || 0) - (a.puntos || 0)).slice(0, 5);
+    document.getElementById('miniLeaderboard').innerHTML = top5.map((j, i) => `<li>${i + 1}. ${escapeHtml(j.nombre)} — ${j.puntos || 0} pts</li>`).join('');
+
+    const esUltima = idx >= examenActual.preguntas.length - 1;
+    document.getElementById('btnSiguientePregunta').textContent = esUltima ? '🏆 Ver podio final' : '➡️ Siguiente pregunta';
+  }
+
+  async function siguientePreguntaOFinal() {
+    const idx = partidaData.preguntaActual;
+    const esUltima = idx >= examenActual.preguntas.length - 1;
+    if (esUltima) {
+      await finalizarPartidaVivo(partidaId);
+    } else {
+      await iniciarPregunta(partidaId, idx + 1);
+    }
+  }
+
+  function pintarPodio() {
+    const ranking = [...jugadoresCache].sort((a, b) => (b.puntos || 0) - (a.puntos || 0));
+    const top3 = ranking.slice(0, 3);
+    [1, 2, 3].forEach(n => {
+      const el = document.getElementById('puesto' + n);
+      el.querySelector('.podio-nombre').textContent = '—';
+      el.querySelector('.podio-puntos').textContent = '';
+    });
+    top3.forEach((j, i) => {
+      const el = document.getElementById('puesto' + (i + 1));
+      el.querySelector('.podio-nombre').textContent = j.nombre;
+      el.querySelector('.podio-puntos').textContent = (j.puntos || 0) + ' pts';
+    });
+    document.getElementById('rankingCompleto').innerHTML = ranking.map((j, i) => `<li>${i + 1}. ${escapeHtml(j.nombre)} — ${j.puntos || 0} pts</li>`).join('');
+    reproducirMusica('podio');
+  }
+
+  function reproducirMusica(tipo) {
+    if (audioActual) { audioActual.pause(); audioActual = null; }
+    const url = musicaUrls[tipo];
+    if (!url) return;
+    try {
+      audioActual = new Audio(url);
+      audioActual.loop = tipo === 'pregunta';
+      audioActual.volume = 0.35;
+      audioActual.play().catch(() => {});
+    } catch (e) {}
+  }
+
+  init();
+</script>
+</body>
+</html>

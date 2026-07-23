@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Unirme a partida — Evaluación Digital</title>
+<link rel="icon" type="image/png" href="logo_circular_transparente2.png">
+<link rel="stylesheet" href="css/styles.css">
+<style>
+  body { min-height: 100vh; display: flex; flex-direction: column; }
+  .hidden { display: none !important; }
+  .wrap { flex: 1; display: flex; align-items: center; justify-content: center; padding: 20px; }
+  .caja { width: 100%; max-width: 420px; text-align: center; }
+
+  input[type="text"] {
+    width: 100%; padding: 14px 16px; margin-bottom: 12px;
+    background: #0f172a; border: 1px solid #334155; border-radius: 10px;
+    color: #f1f5f9; font-size: 1.1rem; text-align: center;
+  }
+  #inputPin { font-size: 1.6rem; letter-spacing: 0.15em; font-weight: 700; }
+
+  .fichas-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; width: 100%; max-width: 500px; }
+  .ficha-btn {
+    border: none; border-radius: 16px; padding: 40px 14px; font-size: 2.2rem;
+    color: #fff; box-shadow: 0 4px 16px rgba(0,0,0,0.3); cursor: pointer;
+  }
+  .ficha-btn:active { transform: scale(0.96); }
+  .ficha-rojo { background: linear-gradient(135deg, #e21b3c, #b3142f); }
+  .ficha-azul { background: linear-gradient(135deg, #1368ce, #0d4a99); }
+  .ficha-amarillo { background: linear-gradient(135deg, #d89e00, #b58200); }
+  .ficha-verde { background: linear-gradient(135deg, #26890c, #1c6809); }
+
+  .feedback-ok { color: var(--success); }
+  .feedback-mal { color: var(--danger); }
+  .puntos-grandes { font-size: 2.4rem; font-weight: 800; margin: 10px 0; }
+
+  .podio-mini { font-size: 3rem; margin-bottom: 10px; }
+</style>
+</head>
+<body>
+
+<header class="navbar">
+  <div class="inner">
+    <div class="brand"><img src="logo_circular_transparente2.png" alt="Logo" style="height:40px;"> <span>Evaluación</span>Digital</div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- Unirse -->
+  <div class="caja" id="secUnirse">
+    <h2 style="margin-bottom:6px;">🎮 Unirme a la partida</h2>
+    <p class="muted" style="margin-bottom:18px;">Pide el PIN a tu profesor</p>
+    <div id="unirseMsg"></div>
+    <input type="text" id="inputPin" placeholder="PIN" inputmode="numeric" maxlength="6">
+    <input type="text" id="inputNombre" placeholder="Tu nombre" maxlength="40">
+    <button class="btn btn-primary" style="width:100%;" onclick="unirse()">Unirme</button>
+  </div>
+
+  <!-- Esperando -->
+  <div class="caja hidden" id="secEsperando">
+    <h2>👋 Hola, <span id="miNombre"></span></h2>
+    <p class="muted">Esperando a que el profesor inicie el juego...</p>
+  </div>
+
+  <!-- Pregunta -->
+  <div class="caja hidden" id="secPregunta">
+    <h3 class="muted" style="margin-bottom:16px;">Elige tu respuesta</h3>
+    <div class="fichas-grid" id="fichasJugador">
+      <button class="ficha-btn ficha-rojo" onclick="responder(0)">▲</button>
+      <button class="ficha-btn ficha-azul" onclick="responder(1)">◆</button>
+      <button class="ficha-btn ficha-amarillo" onclick="responder(2)">●</button>
+      <button class="ficha-btn ficha-verde" onclick="responder(3)">■</button>
+    </div>
+  </div>
+
+  <!-- Esperando resultado (ya respondio) -->
+  <div class="caja hidden" id="secEnviado">
+    <h2>✅ ¡Enviado!</h2>
+    <p class="muted">Esperando a los demás jugadores...</p>
+  </div>
+
+  <!-- Resultado de la pregunta -->
+  <div class="caja hidden" id="secResultado">
+    <h2 id="resultadoTitulo"></h2>
+    <div class="puntos-grandes" id="resultadoPuntos"></div>
+    <p class="muted">Puntaje total: <strong id="resultadoTotal">0</strong></p>
+    <p class="muted">Vas en el puesto <strong id="resultadoPuesto">-</strong></p>
+    <p class="muted" style="margin-top:16px;">Esperando la siguiente pregunta...</p>
+  </div>
+
+  <!-- Podio final -->
+  <div class="caja hidden" id="secFinal">
+    <div class="podio-mini" id="finalEmoji">🏆</div>
+    <h2 id="finalTitulo"></h2>
+    <p class="muted">Puntaje final: <strong id="finalPuntos">0</strong></p>
+    <p class="muted">Puesto final: <strong id="finalPuesto">-</strong></p>
+  </div>
+
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-functions-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script>
+  let partidaId = null;
+  let jugadorId = null;
+  let partidaData = null;
+  let jugadoresCache = [];
+  let yaRespondiPregunta = -1;
+
+  function escapeHtml(v) { const d = document.createElement('div'); d.textContent = v || ''; return d.innerHTML; }
+  function mostrarCaja(id) {
+    ['secUnirse', 'secEsperando', 'secPregunta', 'secEnviado', 'secResultado', 'secFinal'].forEach(s => {
+      document.getElementById(s).classList.toggle('hidden', s !== id);
+    });
+  }
+
+  // Prellenar PIN desde ?pin=... (viene del QR) y recuperar sesión guardada
+  // si el celular recargó la página a mitad de una partida.
+  (function initInputs() {
+    const params = new URLSearchParams(window.location.search);
+    const pinUrl = params.get('pin');
+    if (pinUrl) {
+      document.getElementById('inputPin').value = pinUrl;
+      const guardada = localStorage.getItem('vivo_' + pinUrl);
+      if (guardada) {
+        try {
+          const sesion = JSON.parse(guardada);
+          partidaId = sesion.partidaId;
+          jugadorId = sesion.jugadorId;
+          document.getElementById('miNombre').textContent = sesion.nombre;
+          mostrarCaja('secEsperando');
+          suscribir();
+        } catch (e) {}
+      }
+    }
+  })();
+
+  async function unirse() {
+    const pin = document.getElementById('inputPin').value.trim();
+    const nombre = document.getElementById('inputNombre').value.trim();
+    const msgEl = document.getElementById('unirseMsg');
+    if (!pin || !nombre) {
+      msgEl.innerHTML = '<div class="msg msg-err" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#f87171;padding:10px;border-radius:8px;margin-bottom:10px;">⚠️ Ingresa el PIN y tu nombre</div>';
+      return;
+    }
+    msgEl.innerHTML = '<div class="msg" style="background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3);color:#60a5fa;padding:10px;border-radius:8px;margin-bottom:10px;">⏳ Uniendo...</div>';
+
+    const res = await unirsePartidaVivo(pin, nombre);
+    if (!res.success) {
+      msgEl.innerHTML = '<div class="msg msg-err" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#f87171;padding:10px;border-radius:8px;">❌ ' + res.error + '</div>';
+      return;
+    }
+
+    partidaId = res.partidaId;
+    jugadorId = res.jugadorId;
+    localStorage.setItem('vivo_' + pin, JSON.stringify({ partidaId, jugadorId, nombre }));
+    document.getElementById('miNombre').textContent = nombre;
+    mostrarCaja('secEsperando');
+    suscribir();
+  }
+
+  function suscribir() {
+    db.collection('partidas_vivo').doc(partidaId).onSnapshot(snap => {
+      if (!snap.exists) return;
+      partidaData = snap.data();
+      refrescar();
+    });
+    db.collection('partidas_vivo').doc(partidaId).collection('jugadores').onSnapshot(snap => {
+      jugadoresCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      refrescar();
+    });
+  }
+
+  function miJugador() {
+    return jugadoresCache.find(j => j.id === jugadorId);
+  }
+
+  function miPuesto() {
+    const ranking = [...jugadoresCache].sort((a, b) => (b.puntos || 0) - (a.puntos || 0));
+    const idx = ranking.findIndex(j => j.id === jugadorId);
+    return idx === -1 ? '-' : (idx + 1) + ' de ' + ranking.length;
+  }
+
+  function refrescar() {
+    if (!partidaData) return;
+    const yo = miJugador();
+
+    if (partidaData.estado === 'esperando') {
+      mostrarCaja('secEsperando');
+    } else if (partidaData.estado === 'pregunta') {
+      const idx = partidaData.preguntaActual;
+      const yaRespondida = yo && yo.respuestas && yo.respuestas[idx] !== undefined;
+      mostrarCaja(yaRespondida ? 'secEnviado' : 'secPregunta');
+    } else if (partidaData.estado === 'resultados') {
+      pintarResultado();
+    } else if (partidaData.estado === 'terminado') {
+      pintarFinal();
+    }
+  }
+
+  async function responder(opcionIndex) {
+    mostrarCaja('secEnviado');
+    const res = await enviarRespuestaVivo(partidaId, jugadorId, opcionIndex);
+    if (!res.success) {
+      // Si ya habia respondido o la pregunta ya cerro, no pasa nada grave —
+      // solo nos quedamos en pantalla de espera hasta el siguiente cambio de estado.
+      console.warn('enviarRespuestaVivo:', res.error);
+    }
+  }
+
+  function pintarResultado() {
+    const yo = miJugador();
+    const idx = partidaData.preguntaActual;
+    const respuesta = yo && yo.respuestas ? yo.respuestas[idx] : null;
+
+    mostrarCaja('secResultado');
+    const titulo = document.getElementById('resultadoTitulo');
+    const puntosEl = document.getElementById('resultadoPuntos');
+    if (!respuesta) {
+      titulo.textContent = '⏱️ No respondiste a tiempo';
+      titulo.className = 'feedback-mal';
+      puntosEl.textContent = '+0';
+    } else if (respuesta.correcta) {
+      titulo.textContent = '🎉 ¡Correcto!';
+      titulo.className = 'feedback-ok';
+      puntosEl.textContent = '+' + respuesta.puntosGanados;
+    } else {
+      titulo.textContent = '❌ Incorrecto';
+      titulo.className = 'feedback-mal';
+      puntosEl.textContent = '+0';
+    }
+    document.getElementById('resultadoTotal').textContent = (yo && yo.puntos) || 0;
+    document.getElementById('resultadoPuesto').textContent = miPuesto();
+  }
+
+  function pintarFinal() {
+    const yo = miJugador();
+    const ranking = [...jugadoresCache].sort((a, b) => (b.puntos || 0) - (a.puntos || 0));
+    const idx = ranking.findIndex(j => j.id === jugadorId);
+    const puesto = idx === -1 ? null : idx + 1;
+
+    mostrarCaja('secFinal');
+    document.getElementById('finalEmoji').textContent = puesto === 1 ? '🥇' : puesto === 2 ? '🥈' : puesto === 3 ? '🥉' : '🏁';
+    document.getElementById('finalTitulo').textContent = puesto === 1 ? '¡Ganaste!' : '¡Partida terminada!';
+    document.getElementById('finalPuntos').textContent = (yo && yo.puntos) || 0;
+    document.getElementById('finalPuesto').textContent = puesto ? (puesto + ' de ' + ranking.length) : '-';
+  }
+</script>
+</body>
+</html>

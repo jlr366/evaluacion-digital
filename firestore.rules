@@ -21,6 +21,8 @@ rules_version = '2';
 //   • Notas      → solo escritura de nuevas notas (crear), no borrar desde afuera
 //   • Sesiones   → operaciones de sesión permitidas (anti-trampa)
 //   • Cursos     → lectura/escritura normal
+//   • Partidas en vivo (Kahoot) → lectura pública, escritura solo vía
+//     Cloud Functions (mismo patrón que admins/usuarios)
 // ─────────────────────────────────────────────────────────────────────────────
 
 service cloud.firestore {
@@ -76,6 +78,22 @@ service cloud.firestore {
     // ── Exámenes externos ─────────────────────────────────────────────────────
     match /examenes_externos/{docId} {
       allow read, write: if true;
+    }
+
+    // ── Partidas en vivo (modo Kahoot) ────────────────────────────────────────
+    // Lectura pública: el anfitrión y los jugadores (sin cuenta) necesitan
+    // ver el estado de la partida y el tablero de posiciones en tiempo real.
+    // Escritura bloqueada: crear partida, unirse, avanzar pregunta y enviar
+    // respuestas pasan por Cloud Functions (Admin SDK, ignora estas reglas)
+    // — así la respuesta correcta nunca se expone al cliente.
+    match /partidas_vivo/{partidaId} {
+      allow read: if true;
+      allow write: if false;
+
+      match /jugadores/{jugadorId} {
+        allow read: if true;
+        allow write: if false;
+      }
     }
 
     // ── Bloquear cualquier otra colección no definida ─────────────────────────

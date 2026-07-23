@@ -320,3 +320,202 @@ exports.limpiarEstudiantesDemo = onCall(async (request) => {
 // propósito el 2026-07-17 — todas las contraseñas de `admins` y `usuarios`
 // quedaron migradas a `passwordHash` (bcrypt). Se desinstaló de producción
 // y se retiró de aquí a propósito para que no quede un endpoint reutilizable.
+
+// ── MODO EN VIVO (estilo Kahoot) ────────────────────────────────────────
+//
+// partidas_vivo/{pin} — el PIN de 6 dígitos ES el id del documento.
+// Subcolección partidas_vivo/{pin}/jugadores/{jugadorId}.
+// Los jugadores se unen sin cuenta (mismo espíritu que "examen libre").
+// El cliente (celular del jugador) nunca recibe el contenido de las
+// preguntas ni la respuesta correcta — solo el anfitrión lee el examen
+// directamente; la validación de la respuesta ocurre aquí, server-side.
+
+// Verifica que la partida {partidaData} pertenezca al admin autenticado
+// (o que sea superadmin, por si hay que rescatar una partida trabada).
+async function assertOwnsPartida(auth, partidaData) {
+  if (auth.token.role === 'superadmin') return;
+  if (partidaData.createdBy !== auth.uid) {
+    throw new HttpsError('permission-denied', 'Esa partida no te pertenece.');
+  }
+}
+
+function generarPin() {
+  return String(Math.floor(100000 + Math.random() * 900000));
+}
+
+exports.crearPartidaVivo = onCall(async (request) => {
+  const auth = requireAdmin(request);
+  const { examenId, tiempoPreguntaSeg } = request.data || {};
+  if (!examenId) throw new HttpsError('invalid-argument', 'Falta el examen.');
+
+  const examenDoc = await db().collection('examenes').doc(examenId).get();
+  if (!examenDoc.exists) throw new HttpsError('not-found', 'Examen no encontrado.');
+  const preguntas = examenDoc.data().preguntas || [];
+  if (preguntas.length === 0) throw new HttpsError('invalid-argument', 'Este examen no tiene preguntas.');
+
+  // El formato de 4 fichas de color no soporta selección múltiple, pares,
+  // numéricas, ni preguntas con más de 4 opciones.
+  const incompatible = preguntas.some(p => {
+    const tipo = p.tipo || 'opcion';
+    if (tipo !== 'opcion') return true;
+    if (Array.isArray(p.correcta)) return true;
+    if (!Array.isArray(p.opciones) || p.opciones.length > 4 || p.opciones.length < 2) return true;
+    return false;
+  });
+  if (incompatible) {
+    throw new HttpsError(
+      'invalid-argument',
+      'Este examen tiene preguntas no compatibles con el modo en vivo (selección múltiple, pares, numéricas o más de 4 opciones).'
+    );
+  }
+
+  const data = {
+    examenId,
+    createdBy: auth.uid,
+    estado: 'esperando',
+    preguntaActual: -1,
+    preguntaIniciadaEn: null,
+    tiempoPreguntaSeg: (tiempoPreguntaSeg && tiempoPreguntaSeg > 0) ? tiempoPreguntaSeg : 20,
+    expiraEn: new Date(Date.now() + 4 * 60 * 60 * 1000),
+    createdAt: FieldValue.serverTimestamp()
+  };
+
+  let pin;
+  let creado = false;
+  for (let intento = 0; intento < 8 && !creado; intento++) {
+    pin = generarPin();
+    const ref = db().collection('partidas_vivo').doc(pin);
+    try {
+      await db().runTransaction(async (t) => { t.create(ref, data); });
+      creado = true;
+    } catch (e) {
+      if (intento === 7) throw new HttpsError('internal', 'No se pudo generar un PIN disponible, intenta de nuevo.');
+    }
+  }
+
+  return { success: true, partidaId: pin, pin };
+});
+
+exports.unirsePartidaVivo = onCall(async (request) => {
+  const { pin, nombre } = request.data || {};
+  if (!pin || !nombre) throw new HttpsError('invalid-argument', 'Falta el PIN o el nombre.');
+  const nombreTrim = String(nombre).trim().slice(0, 40);
+  if (!nombreTrim) throw new HttpsError('invalid-argument', 'El nombre no puede estar vacío.');
+
+  const partidaRef = db().collection('partidas_vivo').doc(String(pin).trim());
+  const partidaDoc = await partidaRef.get();
+  if (!partidaDoc.exists) throw new HttpsError('not-found', 'No existe una partida con ese PIN.');
+  if (partidaDoc.data().estado !== 'esperando') {
+    throw new HttpsError('failed-precondition', 'Esta partida ya inició, no se puede unir ahora.');
+  }
+
+  const jugadorRef = await partidaRef.collection('jugadores').add({
+    nombre: nombreTrim,
+    puntos: 0,
+    respuestas: {},
+    createdAt: FieldValue.serverTimestamp()
+  });
+
+  return { success: true, partidaId: partidaRef.id, jugadorId: jugadorRef.id };
+});
+
+exports.iniciarPregunta = onCall(async (request) => {
+  const auth = requireAuth(request);
+  const { partidaId, index } = request.data || {};
+  if (!partidaId || index === undefined || index === null) {
+    throw new HttpsError('invalid-argument', 'Faltan datos.');
+  }
+
+  const partidaRef = db().collection('partidas_vivo').doc(String(partidaId));
+  const partidaDoc = await partidaRef.get();
+  if (!partidaDoc.exists) throw new HttpsError('not-found', 'Partida no encontrada.');
+  await assertOwnsPartida(auth, partidaDoc.data());
+
+  const examenDoc = await db().collection('examenes').doc(partidaDoc.data().examenId).get();
+  const totalPreguntas = (examenDoc.data().preguntas || []).length;
+  if (index < 0 || index >= totalPreguntas) throw new HttpsError('invalid-argument', 'Índice de pregunta inválido.');
+
+  await partidaRef.update({
+    estado: 'pregunta',
+    preguntaActual: index,
+    preguntaIniciadaEn: FieldValue.serverTimestamp()
+  });
+  return { success: true };
+});
+
+exports.enviarRespuestaVivo = onCall(async (request) => {
+  const { partidaId, jugadorId, opcionIndex } = request.data || {};
+  if (!partidaId || !jugadorId || opcionIndex === undefined || opcionIndex === null) {
+    throw new HttpsError('invalid-argument', 'Faltan datos.');
+  }
+
+  const partidaRef = db().collection('partidas_vivo').doc(String(partidaId));
+  const jugadorRef = partidaRef.collection('jugadores').doc(String(jugadorId));
+
+  return db().runTransaction(async (t) => {
+    // Todas las lecturas antes que cualquier escritura (requisito de las
+    // transacciones de Firestore).
+    const partidaSnap = await t.get(partidaRef);
+    if (!partidaSnap.exists) throw new HttpsError('not-found', 'Partida no encontrada.');
+    const partida = partidaSnap.data();
+    if (partida.estado !== 'pregunta') {
+      throw new HttpsError('failed-precondition', 'No hay una pregunta activa en este momento.');
+    }
+    const index = partida.preguntaActual;
+
+    const jugadorSnap = await t.get(jugadorRef);
+    if (!jugadorSnap.exists) throw new HttpsError('not-found', 'Jugador no encontrado.');
+    const jugador = jugadorSnap.data();
+    if (jugador.respuestas && jugador.respuestas[index] !== undefined) {
+      // Si dos envíos llegan casi al mismo tiempo, Firestore reintenta esta
+      // transacción automáticamente ante conflicto de escritura sobre
+      // jugadorRef — el reintento vuelve a leer y ve la respuesta ya
+      // guardada, bloqueando el doble conteo.
+      throw new HttpsError('already-exists', 'Ya respondiste esta pregunta.');
+    }
+
+    const examenSnap = await t.get(db().collection('examenes').doc(partida.examenId));
+    const pregunta = (examenSnap.data().preguntas || [])[index];
+    if (!pregunta) throw new HttpsError('not-found', 'Pregunta no encontrada.');
+
+    // Tiempo medido en el servidor — nunca se confía en el reloj del
+    // cliente para el puntaje.
+    const tiempoLimiteMs = (partida.tiempoPreguntaSeg || 20) * 1000;
+    const iniciadaEnMs = partida.preguntaIniciadaEn ? partida.preguntaIniciadaEn.toMillis() : Date.now();
+    const elapsedMs = Math.max(0, Math.min(Date.now() - iniciadaEnMs, tiempoLimiteMs));
+
+    const esCorrecta = pregunta.correcta === opcionIndex;
+    const puntosGanados = esCorrecta ? Math.round(500 + 500 * (1 - elapsedMs / tiempoLimiteMs)) : 0;
+
+    t.update(jugadorRef, {
+      [`respuestas.${index}`]: { opcionIndex, elapsedMs, correcta: esCorrecta, puntosGanados },
+      puntos: FieldValue.increment(puntosGanados)
+    });
+
+    return { success: true, correcta: esCorrecta, puntosGanados };
+  });
+});
+
+exports.mostrarResultados = onCall(async (request) => {
+  const auth = requireAuth(request);
+  const { partidaId } = request.data || {};
+  if (!partidaId) throw new HttpsError('invalid-argument', 'Falta el id de la partida.');
+  const partidaRef = db().collection('partidas_vivo').doc(String(partidaId));
+  const partidaDoc = await partidaRef.get();
+  if (!partidaDoc.exists) throw new HttpsError('not-found', 'Partida no encontrada.');
+  await assertOwnsPartida(auth, partidaDoc.data());
+  await partidaRef.update({ estado: 'resultados' });
+  return { success: true };
+});
+
+exports.finalizarPartidaVivo = onCall(async (request) => {
+  const auth = requireAuth(request);
+  const { partidaId } = request.data || {};
+  if (!partidaId) throw new HttpsError('invalid-argument', 'Falta el id de la partida.');
+  const partidaRef = db().collection('partidas_vivo').doc(String(partidaId));
+  const partidaDoc = await partidaRef.get();
+  if (!partidaDoc.exists) throw new HttpsError('not-found', 'Partida no encontrada.');
+  await assertOwnsPartida(auth, partidaDoc.data());
+  await partidaRef.update({ estado: 'terminado' });
+  return { success: true };
+});
