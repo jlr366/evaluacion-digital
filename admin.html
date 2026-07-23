@@ -111,17 +111,18 @@
   </div>
 
   <div class="tabs">
-    <div class="tab active" onclick="showTab('examenes')">📝 Exámenes</div>
-    <div class="tab" onclick="showTab('usuarios')">👥 Usuarios</div>
-    <div class="tab" onclick="showTab('cursos')">📚 Cursos</div>
-    <div class="tab" onclick="showTab('notas')">📊 Notas</div>
-    <div class="tab" onclick="showTab('vivo')">🎮 En vivo</div>
-    <div class="tab hidden" id="tabAdmins" onclick="showTab('admins')">🔑 Profesores</div>
+    <div class="tab active" data-tab="examenes" onclick="showTab('examenes')">📝 Exámenes</div>
+    <div class="tab" data-tab="usuarios" onclick="showTab('usuarios')">👥 Usuarios</div>
+    <div class="tab" data-tab="cursos" onclick="showTab('cursos')">📚 Cursos</div>
+    <div class="tab" data-tab="notas" onclick="showTab('notas')">📊 Notas</div>
+    <div class="tab" data-tab="vivo" onclick="showTab('vivo')">🎮 Exámenes en vivo</div>
+    <div class="tab hidden" id="tabAdmins" data-tab="admins" onclick="showTab('admins')">🔑 Profesores</div>
   </div>
 
   <!-- TAB: Exámenes -->
   <div id="secExamenes">
-    <div class="card">
+    <div id="examFormAnchorExamenes"></div>
+    <div class="card" id="examFormCard">
       <h2 id="exFormTitle">Crear nuevo examen</h2>
       <div id="exMsg"></div>
       <div class="form-row">
@@ -337,11 +338,12 @@
     </div>
   </div>
 
-  <!-- TAB: En vivo -->
+  <!-- TAB: Exámenes en vivo -->
   <div id="secVivo" class="hidden">
+    <div id="examFormAnchorVivo"></div>
     <div class="card">
-      <h2>🎮 Modo en vivo estilo Kahoot</h2>
-      <p style="color:#64748b;font-size:0.82rem;margin-bottom:14px;">Elige un examen para lanzar una partida en vivo: los estudiantes se unen desde el celular con un PIN, responden en tiempo real y compiten por puntaje y podio. Solo funciona con exámenes de preguntas de opción única (máx. 4 alternativas).</p>
+      <h2>🎮 Mis exámenes en vivo</h2>
+      <p style="color:#64748b;font-size:0.82rem;margin-bottom:14px;">Estos exámenes se crean exclusivamente para el modo en vivo estilo Kahoot y no aparecen en la pestaña "Exámenes" normal. Solo admiten preguntas de opción única (máx. 4 alternativas). Elige uno para lanzar una partida: los estudiantes se unen desde el celular con un PIN, responden en tiempo real y compiten por puntaje y podio.</p>
       <div id="listaExamenesVivo">Cargando...</div>
     </div>
   </div>
@@ -560,9 +562,13 @@
   });
 
   document.getElementById('listaExamenesVivo').addEventListener('click', function(e) {
-    const btn = e.target.closest('button[data-action="vivo"]');
+    const btn = e.target.closest('button[data-action]');
     if (!btn) return;
-    window.open('vivo-anfitrion.html?examenId=' + btn.dataset.id, '_blank');
+    const action = btn.dataset.action;
+    const examId = btn.dataset.id;
+    if (action === 'vivo') { window.open('vivo-anfitrion.html?examenId=' + examId, '_blank'); return; }
+    if (action === 'edit') { editarExamen(examId); return; }
+    if (action === 'delete') { eliminarExamen(examId); return; }
   });
 
   // ── Demo mode setup ──
@@ -611,19 +617,35 @@
   // ── Tabs ──
   function showTab(tab) {
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    event.target.classList.add('active');
+    const tabEl = document.querySelector('.tab[data-tab="' + tab + '"]');
+    if (tabEl) tabEl.classList.add('active');
     document.getElementById('secExamenes').classList.toggle('hidden', tab !== 'examenes');
     document.getElementById('secUsuarios').classList.toggle('hidden', tab !== 'usuarios');
     document.getElementById('secCursos').classList.toggle('hidden', tab !== 'cursos');
     document.getElementById('secNotas').classList.toggle('hidden', tab !== 'notas');
     document.getElementById('secVivo').classList.toggle('hidden', tab !== 'vivo');
     document.getElementById('secAdmins').classList.toggle('hidden', tab !== 'admins');
-    if (tab === 'examenes') loadExamenes();
+    if (tab === 'examenes') { moverFormularioExamen(false); loadExamenes(); }
     if (tab === 'usuarios') loadEstudiantes();
     if (tab === 'cursos') loadCursos();
     if (tab === 'notas') loadNotas();
-    if (tab === 'vivo') loadExamenesVivo();
+    if (tab === 'vivo') { moverFormularioExamen(true); loadExamenesVivo(); }
     if (tab === 'admins') { showSubTab('profesores'); }
+  }
+
+  // El formulario de crear/editar examen es un solo nodo DOM que se mueve
+  // entre la pestaña "Exámenes" y "Exámenes en vivo" (conserva preguntasTemp,
+  // listeners, etc). modoFormularioVivo determina el flag esVivo al guardar.
+  let modoFormularioVivo = false;
+  function moverFormularioExamen(vivo) {
+    const form = document.getElementById('examFormCard');
+    const anchor = document.getElementById(vivo ? 'examFormAnchorVivo' : 'examFormAnchorExamenes');
+    if (form && anchor) anchor.insertAdjacentElement('afterend', form);
+    if (modoFormularioVivo !== vivo && editandoExamenId) cancelarEdicion();
+    modoFormularioVivo = vivo;
+    if (!editandoExamenId) {
+      document.getElementById('exFormTitle').textContent = vivo ? '🎮 Crear examen para modo en vivo' : 'Crear nuevo examen';
+    }
   }
 
   function showSubTab(sub) {
@@ -1698,7 +1720,8 @@
       audioAprobado: document.getElementById('exAudioAprobado').value.trim() || '',
       audioReprobado: document.getElementById('exAudioReprobado').value.trim() || '',
       permitirDescarga: document.getElementById('exPermitirDescarga').checked,
-      accesoLibre: document.getElementById('exAccesoLibre').checked
+      accesoLibre: document.getElementById('exAccesoLibre').checked,
+      esVivo: modoFormularioVivo
     };
 
     await normalizePreguntasImagenes();
@@ -1713,11 +1736,11 @@
         document.getElementById('exTitulo').value = '';
         document.getElementById('exSubtitulo').value = '';
         document.getElementById('exInstitucion').value = '';
-        document.getElementById('exFormTitle').textContent = 'Crear nuevo examen';
+        document.getElementById('exFormTitle').textContent = modoFormularioVivo ? '🎮 Crear examen para modo en vivo' : 'Crear nuevo examen';
         document.getElementById('btnCancelarEdicion').style.display = 'none';
         preguntasTemp = [];
         renderPreguntas();
-        loadExamenes();
+        if (modoFormularioVivo) loadExamenesVivo(); else loadExamenes();
       } catch(e) {
         document.getElementById('exMsg').innerHTML = '<div class="msg msg-err">❌ Error: ' + e.message + '</div>';
       }
@@ -1734,7 +1757,7 @@
       document.getElementById('exSubtitulo').value = '';
       preguntasTemp = [];
       renderPreguntas();
-      loadExamenes();
+      if (modoFormularioVivo) loadExamenesVivo(); else loadExamenes();
     } else {
       document.getElementById('exMsg').innerHTML = '<div class="msg msg-err">❌ ' + result.error + '</div>';
     }
@@ -1851,7 +1874,7 @@
       : null;
 
     const filterBy = filtroProfesorId || adminFilter;
-    const examenes = await getExamenes(filterBy);
+    const examenes = (await getExamenes(filterBy)).filter(ex => !ex.esVivo);
     const baseUrl = window.location.origin + window.location.pathname.replace('admin.html', 'examen.html');
 
     let html = '';
@@ -1947,11 +1970,11 @@
       ? document.getElementById('filtroProfesor').value
       : null;
     const filterBy = filtroProfesorId || adminFilter;
-    const examenes = await getExamenes(filterBy);
+    const examenes = (await getExamenes(filterBy)).filter(ex => ex.esVivo);
 
     const cont = document.getElementById('listaExamenesVivo');
     if (examenes.length === 0) {
-      cont.innerHTML = '<p style="color:#64748b;font-style:italic;">No hay exámenes creados</p>';
+      cont.innerHTML = '<p style="color:#64748b;font-style:italic;">Todavía no has creado ningún examen en vivo. Usa el formulario de arriba para crear el primero.</p>';
       return;
     }
 
@@ -1963,8 +1986,10 @@
       html += `<tr>
         <td><strong>${safeTitleDisplay}</strong><br><span style="color:#64748b;font-size:0.75rem;">${safeSubtitulo}</span></td>
         <td>${(ex.preguntas||[]).length}</td>
-        <td>
+        <td style="display:flex;gap:4px;flex-wrap:wrap;">
           <button type="button" class="btn btn-sm" data-action="vivo" data-id="${safeId}" title="Lanzar partida en vivo" style="background:linear-gradient(135deg,#6c5ce7,#00bcf2);color:#fff;">🚀 Lanzar en vivo</button>
+          <button type="button" class="btn btn-sm" data-action="edit" data-id="${safeId}" title="Editar" style="background:#f59e0b;color:#000;">✏️ Editar</button>
+          <button type="button" class="btn btn-sm btn-red" data-action="delete" data-id="${safeId}" title="Eliminar">🗑️</button>
         </td>
       </tr>`;
     });
@@ -2277,7 +2302,7 @@
     }
   }
 
-  async function eliminarExamen(id) { if (confirm('¿Eliminar este examen?')) { await deleteExamen(id); loadExamenes(); } }
+  async function eliminarExamen(id) { if (confirm('¿Eliminar este examen?')) { await deleteExamen(id); if (modoFormularioVivo) loadExamenesVivo(); else loadExamenes(); } }
 
   // ── QR Code ──
   function mostrarQR(examenId, titulo, url) {
@@ -2541,7 +2566,7 @@
     preguntasTemp = [];
     renderPreguntas();
     document.getElementById('exMsg').innerHTML = '';
-    document.getElementById('exFormTitle').textContent = 'Crear nuevo examen';
+    document.getElementById('exFormTitle').textContent = modoFormularioVivo ? '🎮 Crear examen para modo en vivo' : 'Crear nuevo examen';
     document.getElementById('btnCancelarEdicion').style.display = 'none';
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
@@ -2550,6 +2575,9 @@
     try {
       const examen = await getExamen(id);
       if (!examen) { alert('No se pudo cargar el examen'); return; }
+
+      // Asegura que el formulario esté en la pestaña correcta antes de llenarlo
+      showTab(examen.esVivo ? 'vivo' : 'examenes');
 
       // Fill the form with existing data
       document.getElementById('exTitulo').value = examen.titulo || '';
@@ -2605,7 +2633,7 @@
 
       // Show cancel button and update title
       document.getElementById('btnCancelarEdicion').style.display = '';
-      document.getElementById('exFormTitle').textContent = '✏️ Editando examen';
+      document.getElementById('exFormTitle').textContent = examen.esVivo ? '✏️ Editando examen en vivo' : '✏️ Editando examen';
 
       // Scroll to top and show message
       document.getElementById('exMsg').innerHTML = '<div class="msg" style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);color:#f59e0b;">✏️ Editando examen: <strong>' + examen.titulo + '</strong> — Modifica lo que necesites y pulsa Guardar.</div>';

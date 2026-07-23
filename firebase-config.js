@@ -230,6 +230,7 @@ async function createExamen(data) {
     audioReprobado: data.audioReprobado || '',
     permitirDescarga: data.permitirDescarga !== false,
     accesoLibre: data.accesoLibre || false,
+    esVivo: data.esVivo === true,
     activo: true,
     createdAt: firebase.firestore.FieldValue.serverTimestamp()
   });

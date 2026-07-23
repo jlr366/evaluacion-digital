@@ -206,10 +206,10 @@
   }
 
   async function cargarExamenes() {
-    const examenes = await getExamenes(currentUser.id);
+    const examenes = (await getExamenes(currentUser.id)).filter(ex => ex.esVivo);
     const cont = document.getElementById('listaExamenesVivo');
     if (examenes.length === 0) {
-      cont.innerHTML = '<p class="muted">No tienes exámenes creados todavía.</p>';
+      cont.innerHTML = '<p class="muted">No tienes exámenes en vivo creados todavía. Crea uno desde la pestaña "🎮 Exámenes en vivo" del panel.</p>';
       return;
     }
     cont.innerHTML = examenes.map(ex => `
