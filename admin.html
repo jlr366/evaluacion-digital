@@ -288,13 +288,14 @@
       <p id="puntuacionInfo" style="font-size:0.78rem;color:#64748b;margin-bottom:12px;">📌 Nota final = (puntos obtenidos / puntos totales) × nota máxima.</p>
 
       <h3 style="color:#94a3b8; font-size:0.85rem; margin:16px 0 10px;">Preguntas</h3>
+      <p id="avisoTiposVivo" class="hidden" style="font-size:0.78rem;color:#8b5cf6;margin-bottom:8px;">🎮 Modo en vivo: solo se admiten preguntas de una sola respuesta, con máximo 4 alternativas.</p>
       <div id="preguntasEditor"></div>
       <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
         <button class="btn btn-blue" onclick="addPregunta('opcion')">⚪ Una sola respuesta</button>
-        <button class="btn" style="background:rgba(16,185,129,0.2);border:1px solid rgba(16,185,129,0.4);color:#34d399;" onclick="addPregunta('multi')">☑️ Múltiple respuesta</button>
-        <button class="btn" style="background:rgba(168,85,247,0.2);border:1px solid rgba(168,85,247,0.4);color:#c084fc;" onclick="addPregunta('pares')">🧩 Unión de pares</button>
-        <button class="btn" style="background:rgba(251,146,60,0.2);border:1px solid rgba(251,146,60,0.4);color:#fb923c;" onclick="addPregunta('imagen')">🖼️ Opciones con imagen</button>
-        <button class="btn" style="background:rgba(34,211,238,0.2);border:1px solid rgba(34,211,238,0.4);color:#22d3ee;" onclick="addPregunta('numerico')">🔢 Respuesta numérica</button>
+        <button class="btn btnTipoAvanzado" style="background:rgba(16,185,129,0.2);border:1px solid rgba(16,185,129,0.4);color:#34d399;" onclick="addPregunta('multi')">☑️ Múltiple respuesta</button>
+        <button class="btn btnTipoAvanzado" style="background:rgba(168,85,247,0.2);border:1px solid rgba(168,85,247,0.4);color:#c084fc;" onclick="addPregunta('pares')">🧩 Unión de pares</button>
+        <button class="btn btnTipoAvanzado" style="background:rgba(251,146,60,0.2);border:1px solid rgba(251,146,60,0.4);color:#fb923c;" onclick="addPregunta('imagen')">🖼️ Opciones con imagen</button>
+        <button class="btn btnTipoAvanzado" style="background:rgba(34,211,238,0.2);border:1px solid rgba(34,211,238,0.4);color:#22d3ee;" onclick="addPregunta('numerico')">🔢 Respuesta numérica</button>
       </div>
 
       <div style="margin-top:20px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
@@ -646,6 +647,8 @@
     if (!editandoExamenId) {
       document.getElementById('exFormTitle').textContent = vivo ? '🎮 Crear examen para modo en vivo' : 'Crear nuevo examen';
     }
+    document.querySelectorAll('.btnTipoAvanzado').forEach(b => b.classList.toggle('hidden', vivo));
+    document.getElementById('avisoTiposVivo').classList.toggle('hidden', !vivo);
   }
 
   function showSubTab(sub) {
@@ -1269,6 +1272,10 @@
       alert('🎯 Cuenta demo: máximo 5 preguntas por examen.\n\nActualiza tu plan en evaluacion-digital.com/precios.html');
       return;
     }
+    if (modoFormularioVivo && tipo !== 'opcion') {
+      alert('🎮 El modo en vivo solo admite preguntas de una sola respuesta (máx. 4 alternativas).');
+      return;
+    }
     if (tipo === 'pares') {
       preguntasTemp.push({ tipo: 'pares', pregunta: '', pares: [{ izq: '', der: '' }, { izq: '', der: '' }, { izq: '', der: '' }], puntos: 1 });
     } else if (tipo === 'multi') {
@@ -1566,7 +1573,14 @@
   }
 
   function setOpcion(idx, oi, val) { preguntasTemp[idx].opciones[oi] = val; }
-  function addOpcion(idx) { preguntasTemp[idx].opciones.push(''); renderPreguntas(); }
+  function addOpcion(idx) {
+    if (modoFormularioVivo && preguntasTemp[idx].opciones.length >= 4) {
+      alert('🎮 El modo en vivo admite máximo 4 alternativas por pregunta.');
+      return;
+    }
+    preguntasTemp[idx].opciones.push('');
+    renderPreguntas();
+  }
   function removeOpcion(idx, oi) { preguntasTemp[idx].opciones.splice(oi, 1); if (Array.isArray(preguntasTemp[idx].correcta)) { preguntasTemp[idx].correcta = preguntasTemp[idx].correcta.filter(c => c !== oi).map(c => c > oi ? c-1 : c); } else if (preguntasTemp[idx].correcta >= oi) { preguntasTemp[idx].correcta = Math.max(0, preguntasTemp[idx].correcta - 1); } renderPreguntas(); }
 
   function setCorrecta(idx, oi, el) {
