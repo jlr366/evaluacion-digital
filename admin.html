@@ -129,11 +129,11 @@
         <div class="form-group"><label>Título del examen</label><input type="text" id="exTitulo" placeholder="Ej: Examen AWS Cloud Practitioner" /></div>
         <div class="form-group"><label>Subtítulo</label><input type="text" id="exSubtitulo" placeholder="Ej: Módulo 1 - Fundamentos" /></div>
       </div>
-      <div class="form-row">
+      <div class="form-row campoNoVivo">
         <div class="form-group"><label>Institución</label><input type="text" id="exInstitucion" placeholder="Ej: Universidad Nacional, Academia XYZ..." /></div>
         <div class="form-group"><label>Tiempo (minutos)</label><input type="number" id="exTiempo" value="40" /></div>
       </div>
-      <div class="form-row">
+      <div class="form-row campoNoVivo">
         <div class="form-group"><label>Nota máxima (escala)</label><input type="number" id="exNotaMax" value="100" placeholder="7, 10, 20, 100..." /></div>
         <div class="form-group">
           <label>⏱️ Tiempo de reconexión permitido (minutos)</label>
@@ -147,7 +147,7 @@
           <span style="font-size:0.72rem;color:#64748b;">Pon 0 para no permitir reconexión · Marca "Indefinido" para acceso libre (modo práctica).</span>
         </div>
       </div>
-      <div class="form-row">
+      <div class="form-row campoNoVivo">
         <div class="form-group">
           <label>Nota mínima para aprobar (en la misma escala)</label>
           <input type="number" id="exNota" value="70" step="0.1" />
@@ -161,7 +161,7 @@
           </select>
         </div>
       </div>
-      <div class="form-row">
+      <div class="form-row campoNoVivo">
         <div class="form-group">
           <label>🔁 Intentos permitidos</label>
           <select id="exIntentos">
@@ -179,7 +179,7 @@
           <span style="font-size:0.72rem;color:#64748b;">El examen no estará disponible antes de esta fecha.</span>
         </div>
       </div>
-      <div class="form-row">
+      <div class="form-row campoNoVivo">
         <div class="form-group">
           <label>📅 Fecha de cierre <span style="font-weight:400;color:#64748b;">(opcional)</span></label>
           <input type="datetime-local" id="exFechaCierre" style="color-scheme:dark;" />
@@ -193,7 +193,7 @@
           </label>
         </div>
       </div>
-      <div class="form-row">
+      <div class="form-row campoNoVivo">
         <div class="form-group">
           <label>🔓 Acceso libre</label>
           <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.82rem;color:#94a3b8;background:rgba(148,163,184,0.05);border:1px solid #334155;padding:8px 12px;border-radius:8px;">
@@ -206,7 +206,7 @@
       </div>
 
       <!-- ── Multimedia ── -->
-      <div style="background:#0a0e1a;border:1px solid rgba(0,188,242,0.15);border-radius:12px;padding:18px;margin-bottom:16px;">
+      <div class="campoNoVivo" style="background:#0a0e1a;border:1px solid rgba(0,188,242,0.15);border-radius:12px;padding:18px;margin-bottom:16px;">
         <h3 style="color:#00bcf2;font-size:0.85rem;margin-bottom:14px;">🎨 Multimedia del resultado <span style="color:#64748b;font-weight:400;">(opcional)</span></h3>
         <div class="form-row">
           <div class="form-group">
@@ -273,7 +273,7 @@
           <div class="form-group"></div>
         </div>
       </div>
-      <div id="puntosMaxContainer" style="display:none; margin-bottom:12px;">
+      <div id="puntosMaxContainer" class="campoNoVivo" style="display:none; margin-bottom:12px;">
         <div class="form-row">
           <div class="form-group">
             <label>Total de puntos a repartir</label>
@@ -285,7 +285,7 @@
           </div>
         </div>
       </div>
-      <p id="puntuacionInfo" style="font-size:0.78rem;color:#64748b;margin-bottom:12px;">📌 Nota final = (puntos obtenidos / puntos totales) × nota máxima.</p>
+      <p id="puntuacionInfo" class="campoNoVivo" style="font-size:0.78rem;color:#64748b;margin-bottom:12px;">📌 Nota final = (puntos obtenidos / puntos totales) × nota máxima.</p>
 
       <h3 style="color:#94a3b8; font-size:0.85rem; margin:16px 0 10px;">Preguntas</h3>
       <p id="avisoTiposVivo" class="hidden" style="font-size:0.78rem;color:#8b5cf6;margin-bottom:8px;">🎮 Modo en vivo: solo se admiten preguntas de una sola respuesta, con máximo 4 alternativas.</p>
@@ -649,6 +649,7 @@
     }
     document.querySelectorAll('.btnTipoAvanzado').forEach(b => b.classList.toggle('hidden', vivo));
     document.getElementById('avisoTiposVivo').classList.toggle('hidden', !vivo);
+    document.querySelectorAll('.campoNoVivo').forEach(el => el.classList.toggle('hidden', vivo));
     renderPreguntas();
   }
 
