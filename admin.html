@@ -115,6 +115,7 @@
     <div class="tab" onclick="showTab('usuarios')">👥 Usuarios</div>
     <div class="tab" onclick="showTab('cursos')">📚 Cursos</div>
     <div class="tab" onclick="showTab('notas')">📊 Notas</div>
+    <div class="tab" onclick="showTab('vivo')">🎮 En vivo</div>
     <div class="tab hidden" id="tabAdmins" onclick="showTab('admins')">🔑 Profesores</div>
   </div>
 
@@ -336,6 +337,15 @@
     </div>
   </div>
 
+  <!-- TAB: En vivo -->
+  <div id="secVivo" class="hidden">
+    <div class="card">
+      <h2>🎮 Modo en vivo estilo Kahoot</h2>
+      <p style="color:#64748b;font-size:0.82rem;margin-bottom:14px;">Elige un examen para lanzar una partida en vivo: los estudiantes se unen desde el celular con un PIN, responden en tiempo real y compiten por puntaje y podio. Solo funciona con exámenes de preguntas de opción única (máx. 4 alternativas).</p>
+      <div id="listaExamenesVivo">Cargando...</div>
+    </div>
+  </div>
+
   <!-- TAB: Usuarios -->
   <div id="secUsuarios" class="hidden">
     <div class="card">
@@ -531,10 +541,6 @@
       mostrarQR(examId, title, url);
       return;
     }
-    if (action === 'vivo') {
-      window.open('vivo-anfitrion.html?examenId=' + examId, '_blank');
-      return;
-    }
     if (action === 'print') {
       imprimirExamenPDF(examId, btn);
       return;
@@ -551,6 +557,12 @@
       asignarExamenAProfesor(examId, title);
       return;
     }
+  });
+
+  document.getElementById('listaExamenesVivo').addEventListener('click', function(e) {
+    const btn = e.target.closest('button[data-action="vivo"]');
+    if (!btn) return;
+    window.open('vivo-anfitrion.html?examenId=' + btn.dataset.id, '_blank');
   });
 
   // ── Demo mode setup ──
@@ -604,11 +616,13 @@
     document.getElementById('secUsuarios').classList.toggle('hidden', tab !== 'usuarios');
     document.getElementById('secCursos').classList.toggle('hidden', tab !== 'cursos');
     document.getElementById('secNotas').classList.toggle('hidden', tab !== 'notas');
+    document.getElementById('secVivo').classList.toggle('hidden', tab !== 'vivo');
     document.getElementById('secAdmins').classList.toggle('hidden', tab !== 'admins');
     if (tab === 'examenes') loadExamenes();
     if (tab === 'usuarios') loadEstudiantes();
     if (tab === 'cursos') loadCursos();
     if (tab === 'notas') loadNotas();
+    if (tab === 'vivo') loadExamenesVivo();
     if (tab === 'admins') { showSubTab('profesores'); }
   }
 
@@ -1916,7 +1930,6 @@
             <button type="button" class="btn btn-sm" data-action="edit" data-id="${safeId}" title="Editar" style="background:#f59e0b;color:#000;">✏️ Editar</button>
             <button type="button" class="btn btn-sm" data-action="send" data-id="${safeId}" data-title="${safeTitle}" data-url="${safeUrl}" title="Enviar por correo" style="background:#0ea5e9;color:#fff;">📨 Enviar</button>
             <button type="button" class="btn btn-sm" data-action="qr" data-id="${safeId}" data-title="${safeTitle}" data-url="${safeUrl}" title="Ver QR" style="background:#1e293b;border:1px solid #334155;color:#94a3b8;">📱 QR</button>
-            <button type="button" class="btn btn-sm" data-action="vivo" data-id="${safeId}" title="Modo en vivo estilo Kahoot" style="background:linear-gradient(135deg,#6c5ce7,#00bcf2);color:#fff;">🎮 En vivo</button>
             ${isSuperAdmin ? '<button type="button" class="btn btn-sm" style="background:#8b5cf6;color:#fff;" data-action="assign" data-id="' + safeId + '" data-title="' + safeTitle + '" title="Asignar a profesor">👤 Asignar</button>' : ''}
             <button type="button" class="btn btn-sm" data-action="print" data-id="${safeId}" title="Imprimir examen" style="background:#059669;color:#fff;">🖨️ Imprimir</button>
             <button type="button" class="btn btn-sm btn-red" data-action="delete" data-id="${safeId}" title="Eliminar">🗑️</button>
@@ -1927,6 +1940,36 @@
     }
 
     document.getElementById('listaExamenes').innerHTML = html;
+  }
+
+  async function loadExamenesVivo() {
+    const filtroProfesorId = isSuperAdmin && document.getElementById('filtroProfesor')
+      ? document.getElementById('filtroProfesor').value
+      : null;
+    const filterBy = filtroProfesorId || adminFilter;
+    const examenes = await getExamenes(filterBy);
+
+    const cont = document.getElementById('listaExamenesVivo');
+    if (examenes.length === 0) {
+      cont.innerHTML = '<p style="color:#64748b;font-style:italic;">No hay exámenes creados</p>';
+      return;
+    }
+
+    let html = '<table><thead><tr><th>Título</th><th>Preguntas</th><th>Acciones</th></tr></thead><tbody>';
+    examenes.forEach(ex => {
+      const safeId = escapeHtmlAttr(ex.id);
+      const safeTitleDisplay = escapeHtmlAttr(ex.titulo || '');
+      const safeSubtitulo = escapeHtmlAttr(ex.subtitulo || '');
+      html += `<tr>
+        <td><strong>${safeTitleDisplay}</strong><br><span style="color:#64748b;font-size:0.75rem;">${safeSubtitulo}</span></td>
+        <td>${(ex.preguntas||[]).length}</td>
+        <td>
+          <button type="button" class="btn btn-sm" data-action="vivo" data-id="${safeId}" title="Lanzar partida en vivo" style="background:linear-gradient(135deg,#6c5ce7,#00bcf2);color:#fff;">🚀 Lanzar en vivo</button>
+        </td>
+      </tr>`;
+    });
+    html += '</tbody></table>';
+    cont.innerHTML = html;
   }
 
   function normalizeBase64Image(dataUrl) {
