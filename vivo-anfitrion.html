@@ -198,11 +198,29 @@
     const params = new URLSearchParams(window.location.search);
     const examenIdUrl = params.get('examenId');
     if (examenIdUrl) {
-      document.getElementById('listaExamenesVivo').innerHTML = '<p class="muted">Cargando...</p>';
-      await lanzarPartida(examenIdUrl);
+      await mostrarSetupExamen(examenIdUrl);
     } else {
       await cargarExamenes();
     }
+  }
+
+  // Muestra la pantalla de configuración (música, etc.) para UN examen ya
+  // elegido desde el panel, en vez de crear la partida de inmediato — así
+  // el profesor alcanza a escribir la URL de música antes de lanzar.
+  async function mostrarSetupExamen(examenId) {
+    const cont = document.getElementById('listaExamenesVivo');
+    cont.innerHTML = '<p class="muted">Cargando...</p>';
+    const ex = await getExamen(examenId);
+    if (!ex) { cont.innerHTML = '<p class="muted">No se pudo cargar el examen.</p>'; return; }
+    cont.innerHTML = `
+      <div class="card" style="margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
+        <div>
+          <h3 style="font-size:0.95rem;">${escapeHtml(ex.titulo)}</h3>
+          <p class="muted" style="font-size:0.78rem;">${(ex.preguntas || []).length} preguntas</p>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="lanzarPartida('${examenId}')">🎮 Crear partida</button>
+      </div>
+    `;
   }
 
   async function cargarExamenes() {
