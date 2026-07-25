@@ -112,6 +112,13 @@
     <p class="muted" style="margin-top:16px;">Esperando la siguiente pregunta...</p>
   </div>
 
+  <!-- Esperando el anuncio del podio en la pantalla principal -->
+  <div class="caja hidden" id="secFinalEsperando">
+    <div class="podio-mini">🥁</div>
+    <h2>Calculando el resultado final...</h2>
+    <p class="muted">Mira la pantalla principal</p>
+  </div>
+
   <!-- Podio final -->
   <div class="caja hidden" id="secFinal">
     <div class="podio-mini" id="finalEmoji">🏆</div>
@@ -153,7 +160,7 @@
 
   function escapeHtml(v) { const d = document.createElement('div'); d.textContent = v || ''; return d.innerHTML; }
   function mostrarCaja(id) {
-    ['secUnirse', 'secEsperando', 'secPregunta', 'secEnviado', 'secResultado', 'secFinal'].forEach(s => {
+    ['secUnirse', 'secEsperando', 'secPregunta', 'secEnviado', 'secResultado', 'secFinalEsperando', 'secFinal'].forEach(s => {
       document.getElementById(s).classList.toggle('hidden', s !== id);
     });
   }
@@ -278,7 +285,7 @@
     } else if (partidaData.estado === 'resultados') {
       pintarResultado();
     } else if (partidaData.estado === 'terminado') {
-      pintarFinal();
+      manejarFinal();
     }
   }
 
@@ -342,6 +349,23 @@
     }
     document.getElementById('resultadoTotal').textContent = (yo && yo.puntos) || 0;
     document.getElementById('resultadoPuesto').textContent = miPuesto();
+  }
+
+  let finalTimerIniciado = false;
+
+  // Espera a que la pantalla principal termine su mini-show del podio
+  // (revela 3ro, 2do y 1er lugar con pausas) antes de mostrarle a cada
+  // jugador su resultado, para que no se enteren antes que el anuncio.
+  function manejarFinal() {
+    if (finalTimerIniciado) return;
+    finalTimerIniciado = true;
+    mostrarCaja('secFinalEsperando');
+
+    const ranking = [...jugadoresCache].sort((a, b) => (b.puntos || 0) - (a.puntos || 0));
+    const idx = ranking.findIndex(j => j.id === jugadorId);
+    const puesto = idx === -1 ? null : idx + 1;
+    const delay = puesto === 3 ? 1200 : puesto === 2 ? 3000 : puesto === 1 ? 5000 : 6300;
+    setTimeout(pintarFinal, delay);
   }
 
   function pintarFinal() {
