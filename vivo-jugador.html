@@ -13,7 +13,11 @@
 <style>
   body {
     min-height: 100vh; display: flex; flex-direction: column;
-    background: radial-gradient(circle at 50% -10%, rgba(0,188,242,0.15), transparent 55%), #0a0e1a;
+    background:
+      radial-gradient(circle at 50% -10%, rgba(0,188,242,0.15), transparent 55%),
+      linear-gradient(rgba(10,14,26,0.9), rgba(10,14,26,0.94)),
+      url('https://firebasestorage.googleapis.com/v0/b/examen-aws.firebasestorage.app/o/examenes%2Fmedia%2Fvivo-fondo.png?alt=media') center/cover no-repeat,
+      #0a0e1a;
   }
   .hidden { display: none !important; }
   .wrap { flex: 1; display: flex; align-items: center; justify-content: center; padding: 20px; }
@@ -34,8 +38,14 @@
     border: none; border-radius: 16px; padding: 24px 10px; min-height: 110px;
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
     color: #fff; box-shadow: 0 4px 16px rgba(0,0,0,0.3); cursor: pointer;
+    animation: fichaBtnIn 0.35s ease backwards;
   }
   .ficha-btn:active { transform: scale(0.96); }
+  .ficha-btn:nth-child(1) { animation-delay: 0s; }
+  .ficha-btn:nth-child(2) { animation-delay: 0.06s; }
+  .ficha-btn:nth-child(3) { animation-delay: 0.12s; }
+  .ficha-btn:nth-child(4) { animation-delay: 0.18s; }
+  @keyframes fichaBtnIn { from { opacity: 0; transform: scale(0.85); } to { opacity: 1; transform: scale(1); } }
   .ficha-icono { font-size: 2rem; line-height: 1; }
   .ficha-texto { font-size: 0.95rem; font-weight: 700; text-align: center; word-break: break-word; }
   .ficha-rojo { background: linear-gradient(135deg, #e21b3c, #b3142f); }
@@ -43,8 +53,16 @@
   .ficha-amarillo { background: linear-gradient(135deg, #d89e00, #b58200); }
   .ficha-verde { background: linear-gradient(135deg, #26890c, #1c6809); }
 
-  .feedback-ok { color: var(--success); }
-  .feedback-mal { color: var(--danger); }
+  .feedback-ok { color: var(--success); animation: okPop 0.5s ease; }
+  .feedback-mal { color: var(--danger); animation: malShake 0.4s ease; }
+  @keyframes okPop { 0% { opacity: 0; transform: scale(0.7); } 60% { opacity: 1; transform: scale(1.15); } 100% { transform: scale(1); } }
+  @keyframes malShake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-8px); }
+    40% { transform: translateX(8px); }
+    60% { transform: translateX(-6px); }
+    80% { transform: translateX(6px); }
+  }
   .puntos-grandes { font-size: 2.4rem; font-weight: 800; margin: 10px 0; }
 
   .podio-mini { font-size: 3rem; margin-bottom: 10px; }

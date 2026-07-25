@@ -11,7 +11,14 @@
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
 <style>
-  body { min-height: 100vh; background: radial-gradient(circle at 50% -10%, rgba(0,188,242,0.12), transparent 55%), var(--bg); }
+  body {
+    min-height: 100vh;
+    background:
+      radial-gradient(circle at 50% -10%, rgba(0,188,242,0.12), transparent 55%),
+      linear-gradient(rgba(10,14,26,0.88), rgba(10,14,26,0.93)),
+      url('https://firebasestorage.googleapis.com/v0/b/examen-aws.firebasestorage.app/o/examenes%2Fmedia%2Fvivo-fondo.png?alt=media') center/cover no-repeat fixed,
+      var(--bg);
+  }
   .wrap { max-width: 1000px; margin: 0 auto; padding: 24px; }
   .hidden { display: none !important; }
   .muted { color: var(--text-muted); }
@@ -39,14 +46,31 @@
   #contadorRespondieron { text-align: center; color: var(--text-muted); font-size: 0.9rem; margin-top: 16px; }
 
   .fichas-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-  .ficha { border-radius: 14px; padding: 22px 18px; display: flex; align-items: center; gap: 14px; font-size: 1.15rem; font-weight: 700; color: #fff; box-shadow: 0 4px 14px rgba(0,0,0,0.25); }
+  .ficha {
+    border-radius: 14px; padding: 22px 18px; display: flex; align-items: center; gap: 14px;
+    font-size: 1.15rem; font-weight: 700; color: #fff; box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+    animation: fichaIn 0.4s ease backwards;
+  }
+  .ficha:nth-child(1) { animation-delay: 0s; }
+  .ficha:nth-child(2) { animation-delay: 0.08s; }
+  .ficha:nth-child(3) { animation-delay: 0.16s; }
+  .ficha:nth-child(4) { animation-delay: 0.24s; }
+  @keyframes fichaIn {
+    from { opacity: 0; transform: translateY(16px) scale(0.95); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
   .ficha-icono { font-size: 1.6rem; }
   .ficha-rojo { background: linear-gradient(135deg, #e21b3c, #b3142f); }
   .ficha-azul { background: linear-gradient(135deg, #1368ce, #0d4a99); }
   .ficha-amarillo { background: linear-gradient(135deg, #d89e00, #b58200); }
   .ficha-verde { background: linear-gradient(135deg, #26890c, #1c6809); }
 
-  .respuesta-correcta-card { background: rgba(16,185,129,0.1); border: 2px solid var(--success); border-radius: 14px; padding: 28px; text-align: center; }
+  .respuesta-correcta-card { background: rgba(16,185,129,0.1); border: 2px solid var(--success); border-radius: 14px; padding: 28px; text-align: center; animation: correctaPop 0.5s ease; }
+  @keyframes correctaPop {
+    0% { opacity: 0; transform: scale(0.85); }
+    60% { opacity: 1; transform: scale(1.03); }
+    100% { transform: scale(1); }
+  }
   .respuesta-correcta-icono { font-size: 2.6rem; margin-bottom: 10px; }
   .respuesta-correcta-texto { font-size: 1.5rem; font-weight: 800; margin-bottom: 12px; }
   .respuesta-correcta-explicacion { font-size: 1.05rem; }
