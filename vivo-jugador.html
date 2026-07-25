@@ -6,11 +6,21 @@
 <title>Unirme a partida — Evaluación Digital</title>
 <link rel="icon" type="image/png" href="logo_circular_transparente2.png">
 <link rel="stylesheet" href="css/styles.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
 <style>
-  body { min-height: 100vh; display: flex; flex-direction: column; }
+  body {
+    min-height: 100vh; display: flex; flex-direction: column;
+    background: radial-gradient(circle at 50% -10%, rgba(0,188,242,0.15), transparent 55%), #0a0e1a;
+  }
   .hidden { display: none !important; }
   .wrap { flex: 1; display: flex; align-items: center; justify-content: center; padding: 20px; }
-  .caja { width: 100%; max-width: 420px; text-align: center; }
+  .caja { width: 100%; max-width: 420px; text-align: center; animation: entrarCaja 0.4s ease; }
+  @keyframes entrarCaja { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+
+  h2, #inputPin, .ficha-texto, .puntos-grandes, .podio-mini { font-family: 'Baloo 2', 'Segoe UI', sans-serif; }
 
   input[type="text"] {
     width: 100%; padding: 14px 16px; margin-bottom: 12px;
@@ -297,6 +307,14 @@
     }
   }
 
+  let confettiPreguntaMostrado = -1;
+  let confettiFinalDisparado = false;
+
+  function lanzarConfettiJugador() {
+    if (typeof confetti !== 'function') return;
+    confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
+  }
+
   function pintarResultado() {
     const yo = miJugador();
     const idx = partidaData.preguntaActual;
@@ -313,6 +331,10 @@
       titulo.textContent = '🎉 ¡Correcto!';
       titulo.className = 'feedback-ok';
       puntosEl.textContent = '+' + respuesta.puntosGanados;
+      if (confettiPreguntaMostrado !== idx) {
+        confettiPreguntaMostrado = idx;
+        lanzarConfettiJugador();
+      }
     } else {
       titulo.textContent = '❌ Incorrecto';
       titulo.className = 'feedback-mal';
@@ -333,6 +355,11 @@
     document.getElementById('finalTitulo').textContent = puesto === 1 ? '¡Ganaste!' : '¡Partida terminada!';
     document.getElementById('finalPuntos').textContent = (yo && yo.puntos) || 0;
     document.getElementById('finalPuesto').textContent = puesto ? (puesto + ' de ' + ranking.length) : '-';
+
+    if (!confettiFinalDisparado && puesto && puesto <= 3) {
+      confettiFinalDisparado = true;
+      lanzarConfettiJugador();
+    }
   }
 </script>
 </body>

@@ -6,11 +6,25 @@
 <title>Modo en vivo — Evaluación Digital</title>
 <link rel="icon" type="image/png" href="logo_circular_transparente2.png">
 <link rel="stylesheet" href="css/styles.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
 <style>
-  body { min-height: 100vh; }
+  body { min-height: 100vh; background: radial-gradient(circle at 50% -10%, rgba(0,188,242,0.12), transparent 55%), var(--bg); }
   .wrap { max-width: 1000px; margin: 0 auto; padding: 24px; }
   .hidden { display: none !important; }
   .muted { color: var(--text-muted); }
+
+  h2, .pin-grande, #preguntaTexto, #countdown, .respuesta-correcta-texto, .podio-nombre, .ficha, .podio-bloque {
+    font-family: 'Baloo 2', 'Segoe UI', sans-serif;
+  }
+
+  #secSetup, #secLobby, #secPregunta, #secResultados, #secPodio { animation: entrarPantalla 0.45s ease; }
+  @keyframes entrarPantalla {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
 
   .pin-grande { font-size: 4rem; font-weight: 800; letter-spacing: 0.15em; color: var(--accent); text-align: center; margin: 10px 0; }
   #qrLobby { display: flex; justify-content: center; margin: 16px 0; background: #fff; padding: 16px; border-radius: 12px; width: fit-content; margin-left: auto; margin-right: auto; }
@@ -449,6 +463,14 @@
     }
   }
 
+  function lanzarConfetti() {
+    if (typeof confetti !== 'function') return;
+    const colores = ['#ffd700', '#00bcf2', '#e21b3c', '#26890c'];
+    confetti({ particleCount: 120, spread: 90, origin: { y: 0.5 }, colors: colores });
+    setTimeout(() => confetti({ particleCount: 60, spread: 120, origin: { x: 0.15, y: 0.6 }, colors: colores }), 200);
+    setTimeout(() => confetti({ particleCount: 60, spread: 120, origin: { x: 0.85, y: 0.6 }, colors: colores }), 200);
+  }
+
   function pintarPodio() {
     podioTimers.forEach(clearTimeout);
     podioTimers = [];
@@ -478,7 +500,10 @@
     // pausas para generar suspenso, como una ceremonia real.
     podioTimers.push(setTimeout(() => revelarPuesto(3, top3[2]), 1200));
     podioTimers.push(setTimeout(() => revelarPuesto(2, top3[1]), 3000));
-    podioTimers.push(setTimeout(() => revelarPuesto(1, top3[0]), 5000));
+    podioTimers.push(setTimeout(() => {
+      revelarPuesto(1, top3[0]);
+      lanzarConfetti();
+    }, 5000));
     podioTimers.push(setTimeout(() => {
       document.getElementById('podioSuspenso').classList.add('hidden');
       document.getElementById('podioRankingWrap').classList.remove('hidden');
