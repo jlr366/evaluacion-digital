@@ -131,6 +131,7 @@
     <h2 id="finalTitulo"></h2>
     <p class="muted">Puntaje final: <strong id="finalPuntos">0</strong></p>
     <p class="muted">Puesto final: <strong id="finalPuesto">-</strong></p>
+    <img id="finalSticker" src="" alt="" style="max-width:260px;width:100%;margin-top:16px;border-radius:12px;">
   </div>
 
 </div>
@@ -146,6 +147,8 @@
   let partidaData = null;
   let jugadoresCache = [];
   let yaRespondiPregunta = -1;
+  const STICKER_GANADOR = 'https://firebasestorage.googleapis.com/v0/b/examen-aws.firebasestorage.app/o/examenes%2Fmedia%2Fvivo-ganador.png?alt=media';
+  const STICKER_NO_GANADOR = 'https://firebasestorage.googleapis.com/v0/b/examen-aws.firebasestorage.app/o/examenes%2Fmedia%2Fvivo-no-ganador.png?alt=media';
   let musicaUrls = { pregunta: '', podio: '' };
   let musicaAudio = null;
   let volumenMusica = 0.3;
@@ -391,6 +394,7 @@
     document.getElementById('finalTitulo').textContent = puesto === 1 ? '¡Ganaste!' : '¡Partida terminada!';
     document.getElementById('finalPuntos').textContent = (yo && yo.puntos) || 0;
     document.getElementById('finalPuesto').textContent = puesto ? (puesto + ' de ' + ranking.length) : '-';
+    document.getElementById('finalSticker').src = puesto === 1 ? STICKER_GANADOR : STICKER_NO_GANADOR;
 
     if (!confettiFinalDisparado && puesto && puesto <= 3) {
       confettiFinalDisparado = true;
