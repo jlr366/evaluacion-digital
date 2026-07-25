@@ -136,7 +136,10 @@
       <p class="muted" style="text-align:center;">Entra en <strong>evaluacion-digital.com/vivo-jugador.html</strong> o escanea el código</p>
       <div class="pin-grande" id="pinGrande">------</div>
       <div id="qrLobby"></div>
-      <p id="linkLobby"></p>
+      <div style="display:flex;align-items:center;justify-content:center;gap:8px;">
+        <p id="linkLobby"></p>
+        <button type="button" onclick="copiarLinkLobby(this)" title="Copiar enlace" style="background:none;border:1px solid #334155;border-radius:6px;color:var(--text-dim);cursor:pointer;padding:4px 8px;font-size:0.85rem;">📋</button>
+      </div>
       <h3 style="text-align:center;margin-top:24px;">Jugadores conectados (<span id="numJugadoresLobby">0</span>)</h3>
       <ul id="listaJugadoresLobby"></ul>
       <div style="text-align:center;margin-top:26px;display:flex;gap:10px;justify-content:center;">
@@ -345,6 +348,15 @@
     document.getElementById('qrLobby').innerHTML = '';
     new QRCode(document.getElementById('qrLobby'), { text: url, width: 160, height: 160 });
     document.getElementById('linkLobby').textContent = url;
+  }
+
+  function copiarLinkLobby(btn) {
+    const url = document.getElementById('linkLobby').textContent;
+    navigator.clipboard.writeText(url).then(() => {
+      const original = btn.textContent;
+      btn.textContent = '✅';
+      setTimeout(() => { btn.textContent = original; }, 1500);
+    });
   }
 
   function suscribirPartida() {
