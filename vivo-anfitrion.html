@@ -197,6 +197,7 @@
   let jugadoresCache = [];
   let preguntaPintadaIdx = -1;
   let countdownInterval = null;
+  let avanzandoResultados = false;
   let audioActual = null;
   const musicaUrls = { pregunta: '', podio: '' };
 
@@ -345,7 +346,7 @@
   function renderJugadoresLobby() {
     document.getElementById('numJugadoresLobby').textContent = jugadoresCache.length;
     const ul = document.getElementById('listaJugadoresLobby');
-    ul.innerHTML = jugadoresCache.map(j => `<li>${escapeHtml(j.nombre)}</li>`).join('') || '<li class="muted" style="background:none;border:none;">Esperando jugadores...</li>';
+    ul.innerHTML = jugadoresCache.map(j => `<li>${j.avatar || '🐱'} ${escapeHtml(j.nombre)}</li>`).join('') || '<li class="muted" style="background:none;border:none;">Esperando jugadores...</li>';
   }
 
   async function iniciarJuego() {
@@ -360,6 +361,7 @@
   }
 
   function pintarPreguntaBase() {
+    avanzandoResultados = false;
     preguntaPintadaIdx = partidaData.preguntaActual;
     const pregunta = examenActual.preguntas[preguntaPintadaIdx];
     document.getElementById('preguntaTexto').textContent = pregunta.pregunta;
@@ -392,6 +394,15 @@
     const idx = partidaData.preguntaActual;
     const respondieron = jugadoresCache.filter(j => j.respuestas && j.respuestas[idx] !== undefined).length;
     document.getElementById('contadorRespondieron').textContent = respondieron + ' de ' + jugadoresCache.length + ' respondieron';
+
+    // Si ya respondieron todos, no hace falta esperar a que se acabe el
+    // tiempo — el cronómetro sigue corriendo igual por si alguien no
+    // responde, esto solo adelanta el pase a resultados.
+    if (!avanzandoResultados && jugadoresCache.length > 0 && respondieron >= jugadoresCache.length) {
+      avanzandoResultados = true;
+      if (countdownInterval) clearInterval(countdownInterval);
+      mostrarResultadosVivo(partidaId);
+    }
   }
 
   function pintarResultados() {
@@ -409,7 +420,7 @@
     `;
 
     const top5 = [...jugadoresCache].sort((a, b) => (b.puntos || 0) - (a.puntos || 0)).slice(0, 5);
-    document.getElementById('miniLeaderboard').innerHTML = top5.map((j, i) => `<li>${i + 1}. ${escapeHtml(j.nombre)} — ${j.puntos || 0} pts</li>`).join('');
+    document.getElementById('miniLeaderboard').innerHTML = top5.map((j, i) => `<li>${i + 1}. ${j.avatar || '🐱'} ${escapeHtml(j.nombre)} — ${j.puntos || 0} pts</li>`).join('');
 
     const esUltima = idx >= examenActual.preguntas.length - 1;
     document.getElementById('btnSiguientePregunta').textContent = esUltima ? '🏆 Ver podio final' : '➡️ Siguiente pregunta';
@@ -435,10 +446,10 @@
     });
     top3.forEach((j, i) => {
       const el = document.getElementById('puesto' + (i + 1));
-      el.querySelector('.podio-nombre').textContent = j.nombre;
+      el.querySelector('.podio-nombre').textContent = (j.avatar || '🐱') + ' ' + j.nombre;
       el.querySelector('.podio-puntos').textContent = (j.puntos || 0) + ' pts';
     });
-    document.getElementById('rankingCompleto').innerHTML = ranking.map((j, i) => `<li>${i + 1}. ${escapeHtml(j.nombre)} — ${j.puntos || 0} pts</li>`).join('');
+    document.getElementById('rankingCompleto').innerHTML = ranking.map((j, i) => `<li>${i + 1}. ${j.avatar || '🐱'} ${escapeHtml(j.nombre)} — ${j.puntos || 0} pts</li>`).join('');
     reproducirMusica('podio');
   }
 

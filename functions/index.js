@@ -398,11 +398,14 @@ exports.crearPartidaVivo = onCall(async (request) => {
   return { success: true, partidaId: pin, pin };
 });
 
+const AVATARES_VIVO = ['🐱', '🐶', '🦊', '🐼', '🐸', '🦁', '🐯', '🐨', '🐷', '🐰', '🐵', '🦄'];
+
 exports.unirsePartidaVivo = onCall(async (request) => {
-  const { pin, nombre } = request.data || {};
+  const { pin, nombre, avatar } = request.data || {};
   if (!pin || !nombre) throw new HttpsError('invalid-argument', 'Falta el PIN o el nombre.');
   const nombreTrim = String(nombre).trim().slice(0, 40);
   if (!nombreTrim) throw new HttpsError('invalid-argument', 'El nombre no puede estar vacío.');
+  const avatarFinal = AVATARES_VIVO.includes(avatar) ? avatar : AVATARES_VIVO[0];
 
   const partidaRef = db().collection('partidas_vivo').doc(String(pin).trim());
   const partidaDoc = await partidaRef.get();
@@ -413,6 +416,7 @@ exports.unirsePartidaVivo = onCall(async (request) => {
 
   const jugadorRef = await partidaRef.collection('jugadores').add({
     nombre: nombreTrim,
+    avatar: avatarFinal,
     puntos: 0,
     respuestas: {},
     createdAt: FieldValue.serverTimestamp()

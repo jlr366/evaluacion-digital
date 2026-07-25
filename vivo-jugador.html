@@ -38,6 +38,13 @@
   .puntos-grandes { font-size: 2.4rem; font-weight: 800; margin: 10px 0; }
 
   .podio-mini { font-size: 3rem; margin-bottom: 10px; }
+
+  .avatar-picker { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .avatar-opcion {
+    font-size: 1.7rem; padding: 10px 0; border-radius: 10px; cursor: pointer;
+    background: #0f172a; border: 2px solid #334155;
+  }
+  .avatar-opcion.seleccionado { border-color: var(--primary, #6c5ce7); background: rgba(108,92,231,0.15); }
 </style>
 </head>
 <body>
@@ -57,11 +64,14 @@
     <div id="unirseMsg"></div>
     <input type="text" id="inputPin" placeholder="PIN" inputmode="numeric" maxlength="6">
     <input type="text" id="inputNombre" placeholder="Tu nombre" maxlength="40">
-    <button class="btn btn-primary" style="width:100%;" onclick="unirse()">Unirme</button>
+    <p class="muted" style="margin:14px 0 8px;font-size:0.8rem;">Elige tu figurita</p>
+    <div id="avatarPicker" class="avatar-picker"></div>
+    <button class="btn btn-primary" style="width:100%;margin-top:14px;" onclick="unirse()">Unirme</button>
   </div>
 
   <!-- Esperando -->
   <div class="caja hidden" id="secEsperando">
+    <div class="podio-mini" id="miAvatar">🐱</div>
     <h2>👋 Hola, <span id="miNombre"></span></h2>
     <p class="muted">Esperando a que el profesor inicie el juego...</p>
   </div>
@@ -116,6 +126,20 @@
   let musicaUrls = { pregunta: '', podio: '' };
   let musicaAudio = null;
   let estadoAnterior = null;
+  const AVATARES = ['🐱', '🐶', '🦊', '🐼', '🐸', '🦁', '🐯', '🐨', '🐷', '🐰', '🐵', '🦄'];
+  let avatarElegido = AVATARES[0];
+
+  (function pintarAvatarPicker() {
+    document.getElementById('avatarPicker').innerHTML = AVATARES.map((a, i) => `
+      <button type="button" class="avatar-opcion${i === 0 ? ' seleccionado' : ''}" data-avatar="${a}" onclick="elegirAvatar('${a}', this)">${a}</button>
+    `).join('');
+  })();
+
+  function elegirAvatar(avatar, btn) {
+    avatarElegido = avatar;
+    document.querySelectorAll('.avatar-opcion').forEach(b => b.classList.remove('seleccionado'));
+    btn.classList.add('seleccionado');
+  }
 
   function escapeHtml(v) { const d = document.createElement('div'); d.textContent = v || ''; return d.innerHTML; }
   function mostrarCaja(id) {
@@ -138,6 +162,7 @@
           partidaId = sesion.partidaId;
           jugadorId = sesion.jugadorId;
           document.getElementById('miNombre').textContent = sesion.nombre;
+          document.getElementById('miAvatar').textContent = sesion.avatar || AVATARES[0];
           mostrarCaja('secEsperando');
           suscribir();
         } catch (e) {}
@@ -155,7 +180,7 @@
     }
     msgEl.innerHTML = '<div class="msg" style="background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3);color:#60a5fa;padding:10px;border-radius:8px;margin-bottom:10px;">⏳ Uniendo...</div>';
 
-    const res = await unirsePartidaVivo(pin, nombre);
+    const res = await unirsePartidaVivo(pin, nombre, avatarElegido);
     if (!res.success) {
       msgEl.innerHTML = '<div class="msg msg-err" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#f87171;padding:10px;border-radius:8px;">❌ ' + res.error + '</div>';
       return;
@@ -163,8 +188,9 @@
 
     partidaId = res.partidaId;
     jugadorId = res.jugadorId;
-    localStorage.setItem('vivo_' + pin, JSON.stringify({ partidaId, jugadorId, nombre }));
+    localStorage.setItem('vivo_' + pin, JSON.stringify({ partidaId, jugadorId, nombre, avatar: avatarElegido }));
     document.getElementById('miNombre').textContent = nombre;
+    document.getElementById('miAvatar').textContent = avatarElegido;
     mostrarCaja('secEsperando');
 
     // "Desbloquea" el audio del celular dentro del mismo gesto de tocar

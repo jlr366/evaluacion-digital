@@ -405,9 +405,9 @@ async function crearPartidaVivo(examenId, tiempoPreguntaSeg, musicaPreguntaUrl, 
   }
 }
 
-async function unirsePartidaVivo(pin, nombre) {
+async function unirsePartidaVivo(pin, nombre, avatar) {
   try {
-    const res = await callFn('unirsePartidaVivo', { pin, nombre });
+    const res = await callFn('unirsePartidaVivo', { pin, nombre, avatar });
     return res.data;
   } catch (e) {
     return { success: false, error: e.message || 'Error de conexión' };
