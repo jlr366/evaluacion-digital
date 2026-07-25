@@ -16,7 +16,7 @@
   .hidden { display: none !important; }
   .muted { color: var(--text-muted); }
 
-  h2, .pin-grande, #preguntaTexto, #countdown, .respuesta-correcta-texto, .podio-nombre, .ficha, .podio-bloque {
+  h2, .pin-grande, #preguntaTexto, #countdown, .respuesta-correcta-texto, .podio-nombre, .podio-puntos, .ficha, .podio-bloque {
     font-family: 'Baloo 2', 'Segoe UI', sans-serif;
   }
 
@@ -57,9 +57,10 @@
   .podio-row { display: flex; align-items: flex-end; justify-content: center; gap: 18px; margin: 30px 0; }
   .podio-puesto { text-align: center; opacity: 0; transform: translateY(40px) scale(0.8); transition: opacity 0.6s ease, transform 0.6s ease; }
   .podio-puesto.revelado { opacity: 1; transform: translateY(0) scale(1); }
-  .podio-nombre { font-weight: 700; margin-bottom: 6px; }
-  .podio-puntos { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 8px; }
-  .podio-bloque { border-radius: 10px 10px 0 0; display: flex; align-items: flex-start; justify-content: center; padding-top: 10px; font-size: 1.8rem; font-weight: 800; color: #05070d; }
+  .podio-avatar { font-size: 2.6rem; line-height: 1; margin-bottom: 4px; }
+  .podio-nombre { font-weight: 700; font-size: 1.3rem; margin-bottom: 6px; }
+  .podio-puntos { color: var(--text-muted); font-size: 1.1rem; font-weight: 600; margin-bottom: 8px; }
+  .podio-bloque { border-radius: 10px 10px 0 0; display: flex; align-items: flex-start; justify-content: center; padding-top: 10px; font-size: 2.1rem; font-weight: 800; color: #05070d; }
   #puesto1 .podio-bloque { height: 140px; width: 120px; background: linear-gradient(135deg, #ffd700, #e0b400); }
   #puesto2 .podio-bloque { height: 105px; width: 110px; background: linear-gradient(135deg, #d6d6d6, #a8a8a8); }
   #puesto3 .podio-bloque { height: 80px; width: 110px; background: linear-gradient(135deg, #cd7f32, #a86426); }
@@ -71,6 +72,9 @@
   }
   #podioSuspenso { animation: parpadeo 1.4s ease-in-out infinite; }
   @keyframes parpadeo { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
+
+  .volumen-control { display: flex; align-items: center; gap: 6px; font-size: 0.95rem; }
+  .volumen-control input[type="range"] { width: 90px; accent-color: var(--accent); cursor: pointer; }
 </style>
 </head>
 <body>
@@ -78,7 +82,10 @@
 <header class="navbar">
   <div class="inner">
     <div class="brand"><img src="logo_circular_transparente2.png" alt="Logo" style="height:44px;"> <span>Evaluación</span>Digital — Modo en vivo</div>
-    <nav>
+    <nav style="display:flex;align-items:center;gap:16px;">
+      <div class="volumen-control" title="Volumen de la música">
+        🔊 <input type="range" id="volumenMusica" min="0" max="100" value="35" oninput="cambiarVolumen(this.value)">
+      </div>
       <a href="admin.html">← Volver al panel</a>
     </nav>
   </div>
@@ -172,16 +179,19 @@
       <p id="podioSuspenso" class="muted" style="text-align:center;font-size:1.1rem;">🥁 Calculando el podio final...</p>
       <div class="podio-row">
         <div class="podio-puesto" id="puesto2">
+          <div class="podio-avatar">—</div>
           <div class="podio-nombre">—</div>
           <div class="podio-puntos"></div>
           <div class="podio-bloque">2</div>
         </div>
         <div class="podio-puesto" id="puesto1">
+          <div class="podio-avatar">—</div>
           <div class="podio-nombre">—</div>
           <div class="podio-puntos"></div>
           <div class="podio-bloque">1</div>
         </div>
         <div class="podio-puesto" id="puesto3">
+          <div class="podio-avatar">—</div>
           <div class="podio-nombre">—</div>
           <div class="podio-puntos"></div>
           <div class="podio-bloque">3</div>
@@ -227,6 +237,12 @@
   let podioTimers = [];
   let audioActual = null;
   const musicaUrls = { pregunta: '', podio: '' };
+  let volumenMusica = 0.35;
+
+  function cambiarVolumen(valor) {
+    volumenMusica = Math.max(0, Math.min(100, valor)) / 100;
+    if (audioActual) audioActual.volume = volumenMusica;
+  }
 
   function escapeHtml(v) { const d = document.createElement('div'); d.textContent = v || ''; return d.innerHTML; }
 
@@ -481,6 +497,7 @@
     [1, 2, 3].forEach(n => {
       const el = document.getElementById('puesto' + n);
       el.classList.remove('revelado');
+      el.querySelector('.podio-avatar').textContent = '—';
       el.querySelector('.podio-nombre').textContent = '—';
       el.querySelector('.podio-puntos').textContent = '';
     });
@@ -491,7 +508,8 @@
     const revelarPuesto = (n, jugador) => {
       if (!jugador) return;
       const el = document.getElementById('puesto' + n);
-      el.querySelector('.podio-nombre').textContent = (jugador.avatar || '🐱') + ' ' + jugador.nombre;
+      el.querySelector('.podio-avatar').textContent = jugador.avatar || '🐱';
+      el.querySelector('.podio-nombre').textContent = jugador.nombre;
       el.querySelector('.podio-puntos').textContent = (jugador.puntos || 0) + ' pts';
       el.classList.add('revelado');
     };
@@ -520,7 +538,7 @@
     try {
       audioActual = new Audio(url);
       audioActual.loop = tipo === 'pregunta';
-      audioActual.volume = 0.35;
+      audioActual.volume = volumenMusica;
       audioActual.play().catch(() => {});
     } catch (e) {}
   }

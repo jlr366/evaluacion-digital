@@ -49,6 +49,9 @@
 
   .podio-mini { font-size: 3rem; margin-bottom: 10px; }
 
+  .volumen-control { display: flex; align-items: center; gap: 6px; font-size: 0.9rem; }
+  .volumen-control input[type="range"] { width: 70px; accent-color: var(--accent, #00bcf2); cursor: pointer; }
+
   .avatar-picker { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
   .avatar-opcion {
     font-size: 1.7rem; padding: 10px 0; border-radius: 10px; cursor: pointer;
@@ -62,6 +65,9 @@
 <header class="navbar">
   <div class="inner">
     <div class="brand"><img src="logo_circular_transparente2.png" alt="Logo" style="height:40px;"> <span>Evaluación</span>Digital</div>
+    <div class="volumen-control" title="Volumen de la música">
+      🔊 <input type="range" id="volumenMusica" min="0" max="100" value="30" oninput="cambiarVolumen(this.value)">
+    </div>
   </div>
 </header>
 
@@ -142,6 +148,12 @@
   let yaRespondiPregunta = -1;
   let musicaUrls = { pregunta: '', podio: '' };
   let musicaAudio = null;
+  let volumenMusica = 0.3;
+
+  function cambiarVolumen(valor) {
+    volumenMusica = Math.max(0, Math.min(100, valor)) / 100;
+    if (musicaAudio) musicaAudio.volume = volumenMusica;
+  }
   let estadoAnterior = null;
   const AVATARES = ['🐱', '🐶', '🦊', '🐼', '🐸', '🦁', '🐯', '🐨', '🐷', '🐰', '🐵', '🦄'];
   let avatarElegido = AVATARES[0];
@@ -220,7 +232,7 @@
       musicaUrls.podio = pdata.musicaPodioUrl || '';
       if (musicaUrls.pregunta || musicaUrls.podio) {
         musicaAudio = new Audio(musicaUrls.pregunta || musicaUrls.podio);
-        musicaAudio.volume = 0.3;
+        musicaAudio.volume = volumenMusica;
         await musicaAudio.play();
         musicaAudio.pause();
         musicaAudio.currentTime = 0;
@@ -236,7 +248,7 @@
     if (!url) return;
     musicaAudio = new Audio(url);
     musicaAudio.loop = tipo === 'pregunta';
-    musicaAudio.volume = 0.3;
+    musicaAudio.volume = volumenMusica;
     musicaAudio.play().catch(() => {});
   }
 
