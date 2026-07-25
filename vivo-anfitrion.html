@@ -72,12 +72,26 @@
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px;">
         <div>
-          <label style="font-size:0.8rem;color:var(--text-muted);">🎵 Música durante las preguntas (URL, opcional)</label>
-          <input type="text" id="musicaPregunta" placeholder="https://..." style="width:100%;padding:8px 12px;background:#0f172a;border:1px solid #334155;border-radius:8px;color:#f1f5f9;margin-top:4px;">
+          <label style="font-size:0.8rem;color:var(--text-muted);">🎵 Música durante las preguntas (opcional)</label>
+          <div style="display:flex;gap:8px;align-items:center;margin-top:4px;">
+            <input type="text" id="musicaPregunta" placeholder="URL o sube un archivo de audio" style="flex:1;padding:8px 12px;background:#0f172a;border:1px solid #334155;border-radius:8px;color:#f1f5f9;">
+            <label style="cursor:pointer;background:#0078d4;color:white;padding:8px 12px;border-radius:8px;font-size:0.78rem;font-weight:700;white-space:nowrap;">
+              📁 Buscar
+              <input type="file" accept="audio/*" onchange="subirMusicaVivo('musicaPregunta',this.files[0],'statusMusicaPregunta')" style="display:none;">
+            </label>
+          </div>
+          <span id="statusMusicaPregunta" style="font-size:0.72rem;color:#64748b;margin-top:3px;display:block;"></span>
         </div>
         <div>
-          <label style="font-size:0.8rem;color:var(--text-muted);">🎵 Música del podio (URL, opcional)</label>
-          <input type="text" id="musicaPodio" placeholder="https://..." style="width:100%;padding:8px 12px;background:#0f172a;border:1px solid #334155;border-radius:8px;color:#f1f5f9;margin-top:4px;">
+          <label style="font-size:0.8rem;color:var(--text-muted);">🎵 Música del podio (opcional)</label>
+          <div style="display:flex;gap:8px;align-items:center;margin-top:4px;">
+            <input type="text" id="musicaPodio" placeholder="URL o sube un archivo de audio" style="flex:1;padding:8px 12px;background:#0f172a;border:1px solid #334155;border-radius:8px;color:#f1f5f9;">
+            <label style="cursor:pointer;background:#0078d4;color:white;padding:8px 12px;border-radius:8px;font-size:0.78rem;font-weight:700;white-space:nowrap;">
+              📁 Buscar
+              <input type="file" accept="audio/*" onchange="subirMusicaVivo('musicaPodio',this.files[0],'statusMusicaPodio')" style="display:none;">
+            </label>
+          </div>
+          <span id="statusMusicaPodio" style="font-size:0.72rem;color:#64748b;margin-top:3px;display:block;"></span>
         </div>
       </div>
 
@@ -161,6 +175,7 @@
 
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-functions-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -239,6 +254,23 @@
         <button class="btn btn-primary btn-sm" onclick="lanzarPartida('${ex.id}')">🎮 Lanzar en vivo</button>
       </div>
     `).join('');
+  }
+
+  async function subirMusicaVivo(inputId, file, statusId) {
+    if (!file) return;
+    const statusEl = document.getElementById(statusId);
+    if (statusEl) statusEl.textContent = '⏳ Subiendo...';
+    try {
+      const ext = file.name.split('.').pop();
+      const nombre = 'examenes/media/vivo_' + inputId + '_' + Date.now() + '.' + ext;
+      const ref = firebase.storage().ref().child(nombre);
+      const snapshot = await ref.put(file);
+      const url = await snapshot.ref.getDownloadURL();
+      document.getElementById(inputId).value = url;
+      if (statusEl) statusEl.textContent = '✅ ' + file.name;
+    } catch (e) {
+      if (statusEl) statusEl.textContent = '❌ Error: ' + e.message;
+    }
   }
 
   async function lanzarPartida(examenId) {
