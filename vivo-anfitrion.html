@@ -99,6 +99,16 @@
 
   .volumen-control { display: flex; align-items: center; gap: 6px; font-size: 0.95rem; }
   .volumen-control input[type="range"] { width: 90px; accent-color: var(--accent); cursor: pointer; }
+
+  .mascota-sprite {
+    display: block; margin: 20px auto 0; width: 84px; height: 84px;
+    image-rendering: pixelated; image-rendering: crisp-edges;
+    animation: mascotaBrinca 0.6s ease-in-out infinite;
+  }
+  @keyframes mascotaBrinca {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
 </style>
 </head>
 <body>
@@ -166,6 +176,7 @@
       </div>
       <h3 style="text-align:center;margin-top:24px;">Jugadores conectados (<span id="numJugadoresLobby">0</span>)</h3>
       <ul id="listaJugadoresLobby"></ul>
+      <img id="mascota" class="mascota-sprite" src="" alt="">
       <div style="text-align:center;margin-top:26px;display:flex;gap:10px;justify-content:center;">
         <button class="btn btn-primary" onclick="iniciarJuego()">🚀 Iniciar juego</button>
         <button class="btn btn-sm" style="background:rgba(148,163,184,0.15);color:#f1f5f9;" onclick="cancelarPartida()">Cancelar</button>
@@ -265,6 +276,20 @@
   let audioActual = null;
   const musicaUrls = { pregunta: '', podio: '' };
   let volumenMusica = 0.35;
+
+  const MASCOTA_FRAMES = [0, 1, 2, 3].map(i =>
+    `https://firebasestorage.googleapis.com/v0/b/examen-aws.firebasestorage.app/o/examenes%2Fmedia%2Fvivo-mascota-${i}.png?alt=media`
+  );
+  function iniciarMascota() {
+    const img = document.getElementById('mascota');
+    if (!img) return;
+    let frame = 0;
+    img.src = MASCOTA_FRAMES[0];
+    setInterval(() => {
+      frame = (frame + 1) % MASCOTA_FRAMES.length;
+      img.src = MASCOTA_FRAMES[frame];
+    }, 180);
+  }
 
   function cambiarVolumen(valor) {
     volumenMusica = Math.max(0, Math.min(100, valor)) / 100;
@@ -580,6 +605,7 @@
   }
 
   init();
+  iniciarMascota();
 </script>
 </body>
 </html>
