@@ -41,13 +41,22 @@
   #miniLeaderboard li, #rankingCompleto li { padding: 8px 14px; background: rgba(148,163,184,0.06); border-radius: 8px; margin-bottom: 6px; font-size: 0.9rem; }
 
   .podio-row { display: flex; align-items: flex-end; justify-content: center; gap: 18px; margin: 30px 0; }
-  .podio-puesto { text-align: center; }
+  .podio-puesto { text-align: center; opacity: 0; transform: translateY(40px) scale(0.8); transition: opacity 0.6s ease, transform 0.6s ease; }
+  .podio-puesto.revelado { opacity: 1; transform: translateY(0) scale(1); }
   .podio-nombre { font-weight: 700; margin-bottom: 6px; }
   .podio-puntos { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 8px; }
   .podio-bloque { border-radius: 10px 10px 0 0; display: flex; align-items: flex-start; justify-content: center; padding-top: 10px; font-size: 1.8rem; font-weight: 800; color: #05070d; }
   #puesto1 .podio-bloque { height: 140px; width: 120px; background: linear-gradient(135deg, #ffd700, #e0b400); }
   #puesto2 .podio-bloque { height: 105px; width: 110px; background: linear-gradient(135deg, #d6d6d6, #a8a8a8); }
   #puesto3 .podio-bloque { height: 80px; width: 110px; background: linear-gradient(135deg, #cd7f32, #a86426); }
+  #puesto1.revelado { animation: puesto1Pop 0.7s ease; }
+  @keyframes puesto1Pop {
+    0% { transform: scale(0.6) translateY(40px); opacity: 0; }
+    60% { transform: scale(1.15) translateY(0); opacity: 1; }
+    100% { transform: scale(1) translateY(0); }
+  }
+  #podioSuspenso { animation: parpadeo 1.4s ease-in-out infinite; }
+  @keyframes parpadeo { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
 </style>
 </head>
 <body>
@@ -146,6 +155,7 @@
   <section id="secPodio" class="hidden">
     <div class="card">
       <h2 style="text-align:center;">🏆 ¡Partida terminada!</h2>
+      <p id="podioSuspenso" class="muted" style="text-align:center;font-size:1.1rem;">🥁 Calculando el podio final...</p>
       <div class="podio-row">
         <div class="podio-puesto" id="puesto2">
           <div class="podio-nombre">—</div>
@@ -163,10 +173,12 @@
           <div class="podio-bloque">3</div>
         </div>
       </div>
-      <h3 style="font-size:0.95rem;color:var(--accent);">Clasificación completa</h3>
-      <ul id="rankingCompleto"></ul>
-      <div style="text-align:center;margin-top:22px;">
-        <button class="btn btn-primary" onclick="location.reload()">🔁 Nueva partida</button>
+      <div id="podioRankingWrap" class="hidden">
+        <h3 style="font-size:0.95rem;color:var(--accent);">Clasificación completa</h3>
+        <ul id="rankingCompleto"></ul>
+        <div style="text-align:center;margin-top:22px;">
+          <button class="btn btn-primary" onclick="location.reload()">🔁 Nueva partida</button>
+        </div>
       </div>
     </div>
   </section>
@@ -198,6 +210,7 @@
   let preguntaPintadaIdx = -1;
   let countdownInterval = null;
   let avanzandoResultados = false;
+  let podioTimers = [];
   let audioActual = null;
   const musicaUrls = { pregunta: '', podio: '' };
 
@@ -437,19 +450,41 @@
   }
 
   function pintarPodio() {
+    podioTimers.forEach(clearTimeout);
+    podioTimers = [];
+
     const ranking = [...jugadoresCache].sort((a, b) => (b.puntos || 0) - (a.puntos || 0));
     const top3 = ranking.slice(0, 3);
+
     [1, 2, 3].forEach(n => {
       const el = document.getElementById('puesto' + n);
+      el.classList.remove('revelado');
       el.querySelector('.podio-nombre').textContent = '—';
       el.querySelector('.podio-puntos').textContent = '';
     });
-    top3.forEach((j, i) => {
-      const el = document.getElementById('puesto' + (i + 1));
-      el.querySelector('.podio-nombre').textContent = (j.avatar || '🐱') + ' ' + j.nombre;
-      el.querySelector('.podio-puntos').textContent = (j.puntos || 0) + ' pts';
-    });
-    document.getElementById('rankingCompleto').innerHTML = ranking.map((j, i) => `<li>${i + 1}. ${j.avatar || '🐱'} ${escapeHtml(j.nombre)} — ${j.puntos || 0} pts</li>`).join('');
+    document.getElementById('podioRankingWrap').classList.add('hidden');
+    document.getElementById('podioSuspenso').classList.remove('hidden');
+    document.getElementById('rankingCompleto').innerHTML = '';
+
+    const revelarPuesto = (n, jugador) => {
+      if (!jugador) return;
+      const el = document.getElementById('puesto' + n);
+      el.querySelector('.podio-nombre').textContent = (jugador.avatar || '🐱') + ' ' + jugador.nombre;
+      el.querySelector('.podio-puntos').textContent = (jugador.puntos || 0) + ' pts';
+      el.classList.add('revelado');
+    };
+
+    // Mini show de premiación: revela del tercer al primer lugar, con
+    // pausas para generar suspenso, como una ceremonia real.
+    podioTimers.push(setTimeout(() => revelarPuesto(3, top3[2]), 1200));
+    podioTimers.push(setTimeout(() => revelarPuesto(2, top3[1]), 3000));
+    podioTimers.push(setTimeout(() => revelarPuesto(1, top3[0]), 5000));
+    podioTimers.push(setTimeout(() => {
+      document.getElementById('podioSuspenso').classList.add('hidden');
+      document.getElementById('podioRankingWrap').classList.remove('hidden');
+      document.getElementById('rankingCompleto').innerHTML = ranking.map((j, i) => `<li>${i + 1}. ${j.avatar || '🐱'} ${escapeHtml(j.nombre)} — ${j.puntos || 0} pts</li>`).join('');
+    }, 6300));
+
     reproducirMusica('podio');
   }
 
