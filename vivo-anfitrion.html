@@ -274,6 +274,7 @@
   let avanzandoResultados = false;
   let podioTimers = [];
   let audioActual = null;
+  let tipoAudioActual = null;
   const musicaUrls = { pregunta: '', podio: '' };
   let volumenMusica = 0.35;
 
@@ -593,8 +594,12 @@
   }
 
   function reproducirMusica(tipo) {
+    // Ya está sonando esta misma pista (ej: entre pregunta y pregunta) —
+    // no la reiniciamos, para que no se corte y siga en loop continuo.
+    if (tipoAudioActual === tipo && audioActual) return;
     if (audioActual) { audioActual.pause(); audioActual = null; }
     const url = musicaUrls[tipo];
+    tipoAudioActual = tipo;
     if (!url) return;
     try {
       audioActual = new Audio(url);

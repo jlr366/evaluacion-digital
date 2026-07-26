@@ -181,6 +181,7 @@
   const STICKER_NO_GANADOR = 'https://firebasestorage.googleapis.com/v0/b/examen-aws.firebasestorage.app/o/examenes%2Fmedia%2Fvivo-no-ganador.png?alt=media';
   let musicaUrls = { pregunta: '', podio: '' };
   let musicaAudio = null;
+  let tipoMusicaActual = null;
   let volumenMusica = 0.3;
 
   function cambiarVolumen(valor) {
@@ -289,8 +290,12 @@
   }
 
   function reproducirMusica(tipo) {
+    // Ya está sonando esta misma pista — no la reiniciamos entre preguntas,
+    // para que siga en loop continuo sin cortes.
+    if (tipoMusicaActual === tipo && musicaAudio) return;
     const url = tipo === 'podio' ? musicaUrls.podio : musicaUrls.pregunta;
     if (musicaAudio) { musicaAudio.pause(); }
+    tipoMusicaActual = tipo;
     if (!url) return;
     musicaAudio = new Audio(url);
     musicaAudio.loop = tipo === 'pregunta';
