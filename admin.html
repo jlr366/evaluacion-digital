@@ -288,11 +288,11 @@
       <p id="puntuacionInfo" class="campoNoVivo" style="font-size:0.78rem;color:#64748b;margin-bottom:12px;">📌 Nota final = (puntos obtenidos / puntos totales) × nota máxima.</p>
 
       <h3 style="color:#94a3b8; font-size:0.85rem; margin:16px 0 10px;">Preguntas</h3>
-      <p id="avisoTiposVivo" class="hidden" style="font-size:0.78rem;color:#8b5cf6;margin-bottom:8px;">🎮 Modo en vivo: solo se admiten preguntas de una sola respuesta, con máximo 4 alternativas.</p>
+      <p id="avisoTiposVivo" class="hidden" style="font-size:0.78rem;color:#8b5cf6;margin-bottom:8px;">🎮 Modo en vivo: preguntas de una o varias respuestas correctas, con máximo 4 alternativas.</p>
       <div id="preguntasEditor"></div>
       <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
         <button class="btn btn-blue" onclick="addPregunta('opcion')">⚪ Una sola respuesta</button>
-        <button class="btn btnTipoAvanzado" style="background:rgba(16,185,129,0.2);border:1px solid rgba(16,185,129,0.4);color:#34d399;" onclick="addPregunta('multi')">☑️ Múltiple respuesta</button>
+        <button class="btn" style="background:rgba(16,185,129,0.2);border:1px solid rgba(16,185,129,0.4);color:#34d399;" onclick="addPregunta('multi')">☑️ Múltiple respuesta</button>
         <button class="btn btnTipoAvanzado" style="background:rgba(168,85,247,0.2);border:1px solid rgba(168,85,247,0.4);color:#c084fc;" onclick="addPregunta('pares')">🧩 Unión de pares</button>
         <button class="btn btnTipoAvanzado" style="background:rgba(251,146,60,0.2);border:1px solid rgba(251,146,60,0.4);color:#fb923c;" onclick="addPregunta('imagen')">🖼️ Opciones con imagen</button>
         <button class="btn btnTipoAvanzado" style="background:rgba(34,211,238,0.2);border:1px solid rgba(34,211,238,0.4);color:#22d3ee;" onclick="addPregunta('numerico')">🔢 Respuesta numérica</button>
@@ -1274,8 +1274,8 @@
       alert('🎯 Cuenta demo: máximo 5 preguntas por examen.\n\nActualiza tu plan en evaluacion-digital.com/precios.html');
       return;
     }
-    if (modoFormularioVivo && tipo !== 'opcion') {
-      alert('🎮 El modo en vivo solo admite preguntas de una sola respuesta (máx. 4 alternativas).');
+    if (modoFormularioVivo && tipo !== 'opcion' && tipo !== 'multi') {
+      alert('🎮 El modo en vivo solo admite preguntas de una o varias respuestas (máx. 4 alternativas).');
       return;
     }
     if (tipo === 'pares') {
@@ -1439,10 +1439,10 @@
           <button class="del" onclick="removePregunta(${idx})">✕</button>
           <div style="margin-left:36px;">
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
-              ${modoFormularioVivo ? '' : `<label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.8rem;color:${isMulti?'#10b981':'#94a3b8'};background:${isMulti?'rgba(16,185,129,0.1)':'rgba(148,163,184,0.05)'};border:1px solid ${isMulti?'rgba(16,185,129,0.3)':'#334155'};padding:6px 12px;border-radius:8px;">
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.8rem;color:${isMulti?'#10b981':'#94a3b8'};background:${isMulti?'rgba(16,185,129,0.1)':'rgba(148,163,184,0.05)'};border:1px solid ${isMulti?'rgba(16,185,129,0.3)':'#334155'};padding:6px 12px;border-radius:8px;">
                 <input type="checkbox" ${isMulti?'checked':''} onchange="toggleMulti(${idx},this.checked)" style="width:14px;height:14px;accent-color:#10b981;">
                 Múltiples respuestas
-              </label>`}
+              </label>
               <span style="font-size:0.75rem;color:#64748b;">${isMulti ? '☑️ Marque todas las correctas' : '⚪ Marque la correcta'}</span>
               ${puntuacionPersonalizada ? `<label style="display:flex;align-items:center;gap:4px;font-size:0.8rem;color:#f59e0b;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);padding:5px 10px;border-radius:8px;">⭐ Puntos: <input type="number" value="${p.puntos||1}" min="1" max="100" onchange="setPreguntaPuntos(${idx},this.value)" style="width:50px;padding:3px 6px;background:#1e293b;border:1px solid #334155;border-radius:4px;color:#f1f5f9;font-size:0.85rem;"></label>` : ''}
             </div>
@@ -1603,7 +1603,6 @@
   }
 
   function toggleMulti(idx, checked) {
-    if (modoFormularioVivo) { alert('🎮 El modo en vivo no admite preguntas de múltiples respuestas.'); renderPreguntas(); return; }
     if (checked) { preguntasTemp[idx].correcta = typeof preguntasTemp[idx].correcta === 'number' ? [preguntasTemp[idx].correcta] : preguntasTemp[idx].correcta; }
     else { preguntasTemp[idx].correcta = Array.isArray(preguntasTemp[idx].correcta) ? (preguntasTemp[idx].correcta[0] || 0) : preguntasTemp[idx].correcta; }
     renderPreguntas();

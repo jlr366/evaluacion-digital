@@ -192,6 +192,7 @@
         <span id="countdown">20</span>
       </div>
       <div id="preguntaTexto"></div>
+      <p id="preguntaMultipleAviso" class="muted hidden" style="text-align:center;margin-bottom:14px;">☑️ Selecciona todas las que correspondan</p>
       <div class="fichas-grid" id="fichasAnfitrion"></div>
       <div id="contadorRespondieron">0 de 0 respondieron</div>
     </div>
@@ -471,6 +472,7 @@
     const pregunta = examenActual.preguntas[preguntaPintadaIdx];
     document.getElementById('preguntaTexto').textContent = pregunta.pregunta;
     document.getElementById('preguntaNum').textContent = (preguntaPintadaIdx + 1) + ' / ' + examenActual.preguntas.length;
+    document.getElementById('preguntaMultipleAviso').classList.toggle('hidden', !Array.isArray(pregunta.correcta));
 
     const opciones = pregunta.opciones || [];
     document.getElementById('fichasAnfitrion').innerHTML = opciones.map((op, i) => `
@@ -514,12 +516,16 @@
     const idx = partidaData.preguntaActual;
     const pregunta = examenActual.preguntas[idx];
     const opciones = pregunta.opciones || [];
-    const textoCorrecta = opciones[pregunta.correcta] || '';
+    const correctas = Array.isArray(pregunta.correcta) ? pregunta.correcta : [pregunta.correcta];
+
+    const filasCorrectas = correctas.map(ci => `
+      <div class="respuesta-correcta-icono">${COLORES[ci].icono}</div>
+      <div class="respuesta-correcta-texto">${escapeHtml(opciones[ci] || '')}</div>
+    `).join('<div style="height:8px;"></div>');
 
     document.getElementById('respuestaCorrecta').innerHTML = `
       <div class="respuesta-correcta-card">
-        <div class="respuesta-correcta-icono">${COLORES[pregunta.correcta].icono}</div>
-        <div class="respuesta-correcta-texto">${escapeHtml(textoCorrecta)}</div>
+        ${filasCorrectas}
         ${pregunta.explicacion ? `<div class="respuesta-correcta-explicacion muted">${escapeHtml(pregunta.explicacion)}</div>` : ''}
       </div>
     `;

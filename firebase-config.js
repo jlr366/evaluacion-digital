@@ -423,9 +423,9 @@ async function iniciarPregunta(partidaId, index) {
   }
 }
 
-async function enviarRespuestaVivo(partidaId, jugadorId, opcionIndex) {
+async function enviarRespuestaVivo(partidaId, jugadorId, opciones) {
   try {
-    const res = await callFn('enviarRespuestaVivo', { partidaId, jugadorId, opcionIndex });
+    const res = await callFn('enviarRespuestaVivo', { partidaId, jugadorId, opciones });
     return res.data;
   } catch (e) {
     return { success: false, error: e.message || 'Error de conexión' };

@@ -41,6 +41,7 @@
     animation: fichaBtnIn 0.35s ease backwards;
   }
   .ficha-btn:active { transform: scale(0.96); }
+  .ficha-btn.seleccionada { outline: 4px solid #fff; outline-offset: -4px; }
   .ficha-btn:nth-child(1) { animation-delay: 0s; }
   .ficha-btn:nth-child(2) { animation-delay: 0.06s; }
   .ficha-btn:nth-child(3) { animation-delay: 0.12s; }
@@ -123,13 +124,14 @@
 
   <!-- Pregunta -->
   <div class="caja hidden" id="secPregunta">
-    <h3 class="muted" style="margin-bottom:16px;">Elige tu respuesta</h3>
+    <h3 class="muted" id="preguntaInstruccion" style="margin-bottom:16px;">Elige tu respuesta</h3>
     <div class="fichas-grid" id="fichasJugador">
-      <button class="ficha-btn ficha-rojo" onclick="responder(0)"><span class="ficha-icono">▲</span><span class="ficha-texto" id="fichaTexto0"></span></button>
-      <button class="ficha-btn ficha-azul" onclick="responder(1)"><span class="ficha-icono">◆</span><span class="ficha-texto" id="fichaTexto1"></span></button>
-      <button class="ficha-btn ficha-amarillo" onclick="responder(2)"><span class="ficha-icono">●</span><span class="ficha-texto" id="fichaTexto2"></span></button>
-      <button class="ficha-btn ficha-verde" onclick="responder(3)"><span class="ficha-icono">■</span><span class="ficha-texto" id="fichaTexto3"></span></button>
+      <button class="ficha-btn ficha-rojo" onclick="fichaClick(0)"><span class="ficha-icono">▲</span><span class="ficha-texto" id="fichaTexto0"></span></button>
+      <button class="ficha-btn ficha-azul" onclick="fichaClick(1)"><span class="ficha-icono">◆</span><span class="ficha-texto" id="fichaTexto1"></span></button>
+      <button class="ficha-btn ficha-amarillo" onclick="fichaClick(2)"><span class="ficha-icono">●</span><span class="ficha-texto" id="fichaTexto2"></span></button>
+      <button class="ficha-btn ficha-verde" onclick="fichaClick(3)"><span class="ficha-icono">■</span><span class="ficha-texto" id="fichaTexto3"></span></button>
     </div>
+    <button class="btn btn-primary hidden" id="btnConfirmarMultiple" style="width:100%;margin-top:16px;" onclick="confirmarRespuestaMultiple()">✅ Enviar respuesta</button>
   </div>
 
   <!-- Esperando resultado (ya respondio) -->
@@ -343,7 +345,10 @@
     } else if (partidaData.estado === 'pregunta') {
       const idx = partidaData.preguntaActual;
       const yaRespondida = yo && yo.respuestas && yo.respuestas[idx] !== undefined;
-      if (!yaRespondida) pintarFichas();
+      if (!yaRespondida && idx !== preguntaPintadaIdx) {
+        preguntaPintadaIdx = idx;
+        pintarFichas();
+      }
       mostrarCaja(yaRespondida ? 'secEnviado' : 'secPregunta');
     } else if (partidaData.estado === 'resultados') {
       pintarResultado();
@@ -352,11 +357,17 @@
     }
   }
 
+  let preguntaPintadaIdx = -1;
+  let seleccionMultiple = [];
+
   function pintarFichas() {
+    seleccionMultiple = [];
     const opciones = partidaData.opcionesActuales || [];
+    const esMultiple = !!partidaData.esMultiple;
     const botones = document.querySelectorAll('#fichasJugador .ficha-btn');
     botones.forEach((btn, i) => {
       const texto = document.getElementById('fichaTexto' + i);
+      btn.classList.remove('seleccionada');
       if (i < opciones.length) {
         texto.textContent = opciones[i];
         btn.style.display = '';
@@ -365,11 +376,35 @@
         btn.style.display = 'none';
       }
     });
+    document.getElementById('preguntaInstruccion').textContent = esMultiple
+      ? 'Elige todas las que correspondan y confirma'
+      : 'Elige tu respuesta';
+    document.getElementById('btnConfirmarMultiple').classList.toggle('hidden', !esMultiple);
+  }
+
+  function fichaClick(i) {
+    if (partidaData && partidaData.esMultiple) {
+      const btn = document.querySelectorAll('#fichasJugador .ficha-btn')[i];
+      const pos = seleccionMultiple.indexOf(i);
+      if (pos === -1) { seleccionMultiple.push(i); btn.classList.add('seleccionada'); }
+      else { seleccionMultiple.splice(pos, 1); btn.classList.remove('seleccionada'); }
+    } else {
+      responder(i);
+    }
+  }
+
+  function confirmarRespuestaMultiple() {
+    if (seleccionMultiple.length === 0) { alert('Selecciona al menos una opción.'); return; }
+    enviarSeleccion([...seleccionMultiple]);
   }
 
   async function responder(opcionIndex) {
+    await enviarSeleccion([opcionIndex]);
+  }
+
+  async function enviarSeleccion(opciones) {
     mostrarCaja('secEnviado');
-    const res = await enviarRespuestaVivo(partidaId, jugadorId, opcionIndex);
+    const res = await enviarRespuestaVivo(partidaId, jugadorId, opciones);
     if (!res.success) {
       // Si ya habia respondido o la pregunta ya cerro, no pasa nada grave —
       // solo nos quedamos en pantalla de espera hasta el siguiente cambio de estado.

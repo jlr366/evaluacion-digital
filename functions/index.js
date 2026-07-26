@@ -353,19 +353,19 @@ exports.crearPartidaVivo = onCall(async (request) => {
   const preguntas = examenDoc.data().preguntas || [];
   if (preguntas.length === 0) throw new HttpsError('invalid-argument', 'Este examen no tiene preguntas.');
 
-  // El formato de 4 fichas de color no soporta selección múltiple, pares,
-  // numéricas, ni preguntas con más de 4 opciones.
+  // El formato de 4 fichas de color no soporta pares, numéricas, ni
+  // preguntas con más de 4 opciones. Selección múltiple sí es compatible.
   const incompatible = preguntas.some(p => {
     const tipo = p.tipo || 'opcion';
     if (tipo !== 'opcion') return true;
-    if (Array.isArray(p.correcta)) return true;
+    if (Array.isArray(p.correcta) && p.correcta.length === 0) return true;
     if (!Array.isArray(p.opciones) || p.opciones.length > 4 || p.opciones.length < 2) return true;
     return false;
   });
   if (incompatible) {
     throw new HttpsError(
       'invalid-argument',
-      'Este examen tiene preguntas no compatibles con el modo en vivo (selección múltiple, pares, numéricas o más de 4 opciones).'
+      'Este examen tiene preguntas no compatibles con el modo en vivo (pares, numéricas, más de 4 opciones, o multi-respuesta sin ninguna correcta marcada).'
     );
   }
 
@@ -445,19 +445,22 @@ exports.iniciarPregunta = onCall(async (request) => {
   // Se publican los textos de las opciones (no cuál es la correcta) para
   // que el celular del jugador pueda mostrarlas junto a las fichas de color.
   const opcionesTexto = (preguntas[index].opciones || []).map(o => String(o || ''));
+  const esMultiple = Array.isArray(preguntas[index].correcta);
 
   await partidaRef.update({
     estado: 'pregunta',
     preguntaActual: index,
     preguntaIniciadaEn: FieldValue.serverTimestamp(),
-    opcionesActuales: opcionesTexto
+    opcionesActuales: opcionesTexto,
+    esMultiple
   });
   return { success: true };
 });
 
 exports.enviarRespuestaVivo = onCall(async (request) => {
-  const { partidaId, jugadorId, opcionIndex } = request.data || {};
-  if (!partidaId || !jugadorId || opcionIndex === undefined || opcionIndex === null) {
+  const { partidaId, jugadorId, opciones } = request.data || {};
+  const seleccion = Array.isArray(opciones) ? [...new Set(opciones)] : null;
+  if (!partidaId || !jugadorId || !seleccion || seleccion.length === 0) {
     throw new HttpsError('invalid-argument', 'Faltan datos.');
   }
 
@@ -496,11 +499,17 @@ exports.enviarRespuestaVivo = onCall(async (request) => {
     const iniciadaEnMs = partida.preguntaIniciadaEn ? partida.preguntaIniciadaEn.toMillis() : Date.now();
     const elapsedMs = Math.max(0, Math.min(Date.now() - iniciadaEnMs, tiempoLimiteMs));
 
-    const esCorrecta = pregunta.correcta === opcionIndex;
+    // Selección múltiple exige coincidencia exacta con el set de correctas
+    // (ni de más ni de menos) para otorgar puntos — sin crédito parcial.
+    const esperado = Array.isArray(pregunta.correcta) ? pregunta.correcta : [pregunta.correcta];
+    const seleccionOrdenada = [...seleccion].sort((a, b) => a - b);
+    const esperadoOrdenado = [...esperado].sort((a, b) => a - b);
+    const esCorrecta = seleccionOrdenada.length === esperadoOrdenado.length
+      && seleccionOrdenada.every((v, i) => v === esperadoOrdenado[i]);
     const puntosGanados = esCorrecta ? Math.round(500 + 500 * (1 - elapsedMs / tiempoLimiteMs)) : 0;
 
     t.update(jugadorRef, {
-      [`respuestas.${index}`]: { opcionIndex, elapsedMs, correcta: esCorrecta, puntosGanados },
+      [`respuestas.${index}`]: { opciones: seleccionOrdenada, elapsedMs, correcta: esCorrecta, puntosGanados },
       puntos: FieldValue.increment(puntosGanados)
     });
 
