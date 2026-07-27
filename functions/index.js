@@ -419,6 +419,7 @@ exports.unirsePartidaVivo = onCall(async (request) => {
     avatar: avatarFinal,
     puntos: 0,
     respuestas: {},
+    comodines: { doble: false, cincuenta: false },
     createdAt: FieldValue.serverTimestamp()
   });
 
@@ -458,7 +459,7 @@ exports.iniciarPregunta = onCall(async (request) => {
 });
 
 exports.enviarRespuestaVivo = onCall(async (request) => {
-  const { partidaId, jugadorId, opciones } = request.data || {};
+  const { partidaId, jugadorId, opciones, usarDoble } = request.data || {};
   const seleccion = Array.isArray(opciones) ? [...new Set(opciones)] : null;
   if (!partidaId || !jugadorId || !seleccion || seleccion.length === 0) {
     throw new HttpsError('invalid-argument', 'Faltan datos.');
@@ -506,14 +507,72 @@ exports.enviarRespuestaVivo = onCall(async (request) => {
     const esperadoOrdenado = [...esperado].sort((a, b) => a - b);
     const esCorrecta = seleccionOrdenada.length === esperadoOrdenado.length
       && seleccionOrdenada.every((v, i) => v === esperadoOrdenado[i]);
-    const puntosGanados = esCorrecta ? Math.round(500 + 500 * (1 - elapsedMs / tiempoLimiteMs)) : 0;
 
-    t.update(jugadorRef, {
-      [`respuestas.${index}`]: { opciones: seleccionOrdenada, elapsedMs, correcta: esCorrecta, puntosGanados },
+    // Comodín "doble puntos" — uso único por partida, validado server-side
+    // (si ya lo usó antes, se ignora en vez de fallar el envío completo).
+    const dobleValido = usarDoble === true && !(jugador.comodines && jugador.comodines.doble);
+    const puntosBase = esCorrecta ? Math.round(500 + 500 * (1 - elapsedMs / tiempoLimiteMs)) : 0;
+    const puntosGanados = dobleValido ? puntosBase * 2 : puntosBase;
+
+    const update = {
+      [`respuestas.${index}`]: { opciones: seleccionOrdenada, elapsedMs, correcta: esCorrecta, puntosGanados, comodinDoble: dobleValido },
       puntos: FieldValue.increment(puntosGanados)
-    });
+    };
+    if (dobleValido) update['comodines.doble'] = true;
+
+    t.update(jugadorRef, update);
 
     return { success: true, correcta: esCorrecta, puntosGanados };
+  });
+});
+
+exports.usarComodinCincuenta = onCall(async (request) => {
+  const { partidaId, jugadorId } = request.data || {};
+  if (!partidaId || !jugadorId) throw new HttpsError('invalid-argument', 'Faltan datos.');
+
+  const partidaRef = db().collection('partidas_vivo').doc(String(partidaId));
+  const jugadorRef = partidaRef.collection('jugadores').doc(String(jugadorId));
+
+  return db().runTransaction(async (t) => {
+    const partidaSnap = await t.get(partidaRef);
+    if (!partidaSnap.exists) throw new HttpsError('not-found', 'Partida no encontrada.');
+    const partida = partidaSnap.data();
+    if (partida.estado !== 'pregunta') {
+      throw new HttpsError('failed-precondition', 'No hay una pregunta activa en este momento.');
+    }
+    const index = partida.preguntaActual;
+
+    const jugadorSnap = await t.get(jugadorRef);
+    if (!jugadorSnap.exists) throw new HttpsError('not-found', 'Jugador no encontrado.');
+    const jugador = jugadorSnap.data();
+    if (jugador.respuestas && jugador.respuestas[index] !== undefined) {
+      throw new HttpsError('failed-precondition', 'Ya respondiste esta pregunta.');
+    }
+    if (jugador.comodines && jugador.comodines.cincuenta) {
+      throw new HttpsError('failed-precondition', 'Ya usaste el comodín 50/50 en esta partida.');
+    }
+
+    const examenSnap = await t.get(db().collection('examenes').doc(partida.examenId));
+    const pregunta = (examenSnap.data().preguntas || [])[index];
+    if (!pregunta) throw new HttpsError('not-found', 'Pregunta no encontrada.');
+    if (Array.isArray(pregunta.correcta)) {
+      throw new HttpsError('failed-precondition', 'El comodín 50/50 no aplica a preguntas de varias respuestas.');
+    }
+
+    // Se elige al azar, en el servidor, cuáles opciones incorrectas
+    // "eliminar" — nunca se le revela al celular cuál es la correcta.
+    const incorrectas = (pregunta.opciones || [])
+      .map((_, i) => i)
+      .filter(i => i !== pregunta.correcta);
+    for (let i = incorrectas.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [incorrectas[i], incorrectas[j]] = [incorrectas[j], incorrectas[i]];
+    }
+    const eliminadas = incorrectas.slice(0, Math.min(2, incorrectas.length));
+
+    t.update(jugadorRef, { 'comodines.cincuenta': true });
+
+    return { success: true, eliminadas };
   });
 });
 

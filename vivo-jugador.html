@@ -42,6 +42,15 @@
   }
   .ficha-btn:active { transform: scale(0.96); }
   .ficha-btn.seleccionada { outline: 4px solid #fff; outline-offset: -4px; }
+  .ficha-btn.eliminada { opacity: 0.25; pointer-events: none; filter: grayscale(1); }
+
+  .comodines-row { display: flex; gap: 10px; justify-content: center; margin-bottom: 14px; width: 100%; max-width: 500px; }
+  .comodin-btn {
+    flex: 1; padding: 10px 8px; border-radius: 10px; border: 2px solid #6c5ce7;
+    background: rgba(108,92,231,0.12); color: #c4b5fd; font-size: 0.82rem; font-weight: 700; cursor: pointer;
+  }
+  .comodin-btn.armado { background: #6c5ce7; color: #fff; }
+  .comodin-btn:disabled { opacity: 0.35; cursor: not-allowed; border-color: #334155; background: transparent; color: #64748b; }
   .ficha-btn:nth-child(1) { animation-delay: 0s; }
   .ficha-btn:nth-child(2) { animation-delay: 0.06s; }
   .ficha-btn:nth-child(3) { animation-delay: 0.12s; }
@@ -124,7 +133,11 @@
 
   <!-- Pregunta -->
   <div class="caja hidden" id="secPregunta">
-    <h3 class="muted" id="preguntaInstruccion" style="margin-bottom:16px;">Elige tu respuesta</h3>
+    <h3 class="muted" id="preguntaInstruccion" style="margin-bottom:10px;">Elige tu respuesta</h3>
+    <div class="comodines-row" id="comodinesRow">
+      <button type="button" class="comodin-btn" id="btnComodinDoble" onclick="toggleComodinDoble()">2️⃣ Doble puntos</button>
+      <button type="button" class="comodin-btn" id="btnComodinCincuenta" onclick="usarComodin5050()">🎯 50/50</button>
+    </div>
     <div class="fichas-grid" id="fichasJugador">
       <button class="ficha-btn ficha-rojo" onclick="fichaClick(0)"><span class="ficha-icono">▲</span><span class="ficha-texto" id="fichaTexto0"></span></button>
       <button class="ficha-btn ficha-azul" onclick="fichaClick(1)"><span class="ficha-icono">◆</span><span class="ficha-texto" id="fichaTexto1"></span></button>
@@ -359,15 +372,17 @@
 
   let preguntaPintadaIdx = -1;
   let seleccionMultiple = [];
+  let dobleArmado = false;
 
   function pintarFichas() {
     seleccionMultiple = [];
+    dobleArmado = false;
     const opciones = partidaData.opcionesActuales || [];
     const esMultiple = !!partidaData.esMultiple;
     const botones = document.querySelectorAll('#fichasJugador .ficha-btn');
     botones.forEach((btn, i) => {
       const texto = document.getElementById('fichaTexto' + i);
-      btn.classList.remove('seleccionada');
+      btn.classList.remove('seleccionada', 'eliminada');
       if (i < opciones.length) {
         texto.textContent = opciones[i];
         btn.style.display = '';
@@ -380,11 +395,46 @@
       ? 'Elige todas las que correspondan y confirma'
       : 'Elige tu respuesta';
     document.getElementById('btnConfirmarMultiple').classList.toggle('hidden', !esMultiple);
+
+    // Los comodines se sincronizan con lo que ya usó este jugador en la
+    // partida (una sola vez cada uno, para toda la partida).
+    const comodines = (miJugador() && miJugador().comodines) || {};
+    const btnDoble = document.getElementById('btnComodinDoble');
+    btnDoble.classList.remove('armado');
+    btnDoble.disabled = !!comodines.doble;
+    const btnCincuenta = document.getElementById('btnComodinCincuenta');
+    btnCincuenta.disabled = !!comodines.cincuenta;
+    btnCincuenta.style.display = esMultiple ? 'none' : '';
+  }
+
+  function toggleComodinDoble() {
+    const btn = document.getElementById('btnComodinDoble');
+    if (btn.disabled) return;
+    dobleArmado = !dobleArmado;
+    btn.classList.toggle('armado', dobleArmado);
+  }
+
+  async function usarComodin5050() {
+    const btn = document.getElementById('btnComodinCincuenta');
+    if (btn.disabled) return;
+    btn.disabled = true;
+    const res = await usarComodinCincuenta(partidaId, jugadorId);
+    if (!res.success) {
+      console.warn('usarComodinCincuenta:', res.error);
+      btn.disabled = false;
+      return;
+    }
+    const botones = document.querySelectorAll('#fichasJugador .ficha-btn');
+    (res.eliminadas || []).forEach(i => {
+      if (botones[i]) botones[i].classList.add('eliminada');
+      if (seleccionMultiple.includes(i)) seleccionMultiple = seleccionMultiple.filter(v => v !== i);
+    });
   }
 
   function fichaClick(i) {
     if (partidaData && partidaData.esMultiple) {
       const btn = document.querySelectorAll('#fichasJugador .ficha-btn')[i];
+      if (btn.classList.contains('eliminada')) return;
       const pos = seleccionMultiple.indexOf(i);
       if (pos === -1) { seleccionMultiple.push(i); btn.classList.add('seleccionada'); }
       else { seleccionMultiple.splice(pos, 1); btn.classList.remove('seleccionada'); }
@@ -403,8 +453,9 @@
   }
 
   async function enviarSeleccion(opciones) {
+    const conDoble = dobleArmado;
     mostrarCaja('secEnviado');
-    const res = await enviarRespuestaVivo(partidaId, jugadorId, opciones);
+    const res = await enviarRespuestaVivo(partidaId, jugadorId, opciones, conDoble);
     if (!res.success) {
       // Si ya habia respondido o la pregunta ya cerro, no pasa nada grave —
       // solo nos quedamos en pantalla de espera hasta el siguiente cambio de estado.
@@ -433,7 +484,7 @@
       titulo.className = 'feedback-mal';
       puntosEl.textContent = '+0';
     } else if (respuesta.correcta) {
-      titulo.textContent = '🎉 ¡Correcto!';
+      titulo.textContent = respuesta.comodinDoble ? '🎉 ¡Correcto! (x2 🔥)' : '🎉 ¡Correcto!';
       titulo.className = 'feedback-ok';
       puntosEl.textContent = '+' + respuesta.puntosGanados;
       if (confettiPreguntaMostrado !== idx) {

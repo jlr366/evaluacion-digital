@@ -423,9 +423,18 @@ async function iniciarPregunta(partidaId, index) {
   }
 }
 
-async function enviarRespuestaVivo(partidaId, jugadorId, opciones) {
+async function enviarRespuestaVivo(partidaId, jugadorId, opciones, usarDoble) {
   try {
-    const res = await callFn('enviarRespuestaVivo', { partidaId, jugadorId, opciones });
+    const res = await callFn('enviarRespuestaVivo', { partidaId, jugadorId, opciones, usarDoble });
+    return res.data;
+  } catch (e) {
+    return { success: false, error: e.message || 'Error de conexión' };
+  }
+}
+
+async function usarComodinCincuenta(partidaId, jugadorId) {
+  try {
+    const res = await callFn('usarComodinCincuenta', { partidaId, jugadorId });
     return res.data;
   } catch (e) {
     return { success: false, error: e.message || 'Error de conexión' };
