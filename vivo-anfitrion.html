@@ -65,12 +65,28 @@
   .ficha-amarillo { background: linear-gradient(135deg, #d89e00, #b58200); }
   .ficha-verde { background: linear-gradient(135deg, #26890c, #1c6809); }
 
-  .respuesta-correcta-card { background: rgba(16,185,129,0.1); border: 2px solid var(--success); border-radius: 14px; padding: 28px; text-align: center; animation: correctaPop 0.5s ease; }
+  .respuesta-correcta-card {
+    position: relative; overflow: hidden; background: rgba(16,185,129,0.1);
+    border: 2px solid var(--success); border-radius: 14px; padding: 28px; text-align: center;
+    animation: correctaPop 0.5s ease, brilloPulso 1.8s ease-in-out infinite 0.5s;
+  }
+  .respuesta-correcta-card::before {
+    content: ''; position: absolute; inset: -60%;
+    background: conic-gradient(from 0deg, transparent, rgba(255,215,0,0.4), transparent 25%, transparent 75%, rgba(255,215,0,0.4), transparent);
+    animation: girarLuces 3.5s linear infinite;
+    pointer-events: none;
+  }
+  .respuesta-correcta-card > * { position: relative; z-index: 1; }
   @keyframes correctaPop {
     0% { opacity: 0; transform: scale(0.85); }
     60% { opacity: 1; transform: scale(1.03); }
     100% { transform: scale(1); }
   }
+  @keyframes brilloPulso {
+    0%, 100% { box-shadow: 0 0 20px rgba(255,215,0,0.15); }
+    50% { box-shadow: 0 0 40px rgba(255,215,0,0.5); }
+  }
+  @keyframes girarLuces { to { transform: rotate(360deg); } }
   .respuesta-correcta-icono { font-size: 2.6rem; margin-bottom: 10px; }
   .respuesta-correcta-texto { font-size: 1.5rem; font-weight: 800; margin-bottom: 12px; }
   .respuesta-correcta-explicacion { font-size: 1.05rem; }
