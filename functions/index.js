@@ -343,6 +343,10 @@ function generarPin() {
   return String(Math.floor(100000 + Math.random() * 900000));
 }
 
+// Música por defecto si el profesor no elige ni sube la suya.
+const MUSICA_PREGUNTA_DEFAULT = 'https://firebasestorage.googleapis.com/v0/b/examen-aws.firebasestorage.app/o/examenes%2Fmedia%2Fvivo_musicaPregunta_1785029795763.mp3?alt=media';
+const MUSICA_PODIO_DEFAULT = 'https://firebasestorage.googleapis.com/v0/b/examen-aws.firebasestorage.app/o/examenes%2Fmedia%2Fvivo_musicaPodio_1785017327407.mp3?alt=media';
+
 exports.crearPartidaVivo = onCall(async (request) => {
   const auth = requireAdmin(request);
   const { examenId, tiempoPreguntaSeg, musicaPreguntaUrl, musicaPodioUrl } = request.data || {};
@@ -376,8 +380,8 @@ exports.crearPartidaVivo = onCall(async (request) => {
     preguntaActual: -1,
     preguntaIniciadaEn: null,
     tiempoPreguntaSeg: (tiempoPreguntaSeg && tiempoPreguntaSeg > 0) ? tiempoPreguntaSeg : 20,
-    musicaPreguntaUrl: musicaPreguntaUrl ? String(musicaPreguntaUrl).slice(0, 500) : '',
-    musicaPodioUrl: musicaPodioUrl ? String(musicaPodioUrl).slice(0, 500) : '',
+    musicaPreguntaUrl: musicaPreguntaUrl ? String(musicaPreguntaUrl).slice(0, 500) : MUSICA_PREGUNTA_DEFAULT,
+    musicaPodioUrl: musicaPodioUrl ? String(musicaPodioUrl).slice(0, 500) : MUSICA_PODIO_DEFAULT,
     expiraEn: new Date(Date.now() + 4 * 60 * 60 * 1000),
     createdAt: FieldValue.serverTimestamp()
   };
