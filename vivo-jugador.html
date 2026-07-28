@@ -270,7 +270,20 @@
     }
   })();
 
+  const AUDIO_SILENCIO = 'data:audio/wav;base64,UklGRrQBAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YZABAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA';
+
   async function unirse() {
+    // Desbloquear el audio del celular en la MISMA linea sincrona del clic,
+    // antes de cualquier await: varios navegadores móviles (sobre todo iOS)
+    // dejan de considerar "gesto real del usuario" apenas pasa un await con
+    // una llamada de red de por medio, y sin gesto valido el play() de la
+    // musica real (mas adelante, disparado por un cambio de estado remoto)
+    // queda bloqueado en silencio para siempre.
+    try {
+      const desbloqueo = new Audio(AUDIO_SILENCIO);
+      desbloqueo.play().catch(() => {});
+    } catch (e) {}
+
     const pin = document.getElementById('inputPin').value.trim();
     const nombre = document.getElementById('inputNombre').value.trim();
     const msgEl = document.getElementById('unirseMsg');
