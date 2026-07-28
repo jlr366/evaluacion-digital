@@ -379,7 +379,7 @@ exports.crearPartidaVivo = onCall(async (request) => {
     estado: 'esperando',
     preguntaActual: -1,
     preguntaIniciadaEn: null,
-    tiempoPreguntaSeg: (tiempoPreguntaSeg && tiempoPreguntaSeg > 0) ? tiempoPreguntaSeg : 20,
+    tiempoPreguntaSeg: (tiempoPreguntaSeg && tiempoPreguntaSeg > 0) ? tiempoPreguntaSeg : 30,
     musicaPreguntaUrl: musicaPreguntaUrl ? String(musicaPreguntaUrl).slice(0, 500) : MUSICA_PREGUNTA_DEFAULT,
     musicaPodioUrl: musicaPodioUrl ? String(musicaPodioUrl).slice(0, 500) : MUSICA_PODIO_DEFAULT,
     expiraEn: new Date(Date.now() + 4 * 60 * 60 * 1000),

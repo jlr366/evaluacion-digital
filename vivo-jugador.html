@@ -223,9 +223,15 @@
     // preferible dejar ese caso con el audio.volume normal (funciona en todos
     // lados salvo iOS, en vez de arriesgarnos a silencio total en iOS).
     if (!/^https:\/\/firebasestorage\.googleapis\.com\/.*examen-aws\.firebasestorage\.app/.test(audioEl.src)) return;
+    // Si el AudioContext no llegó a "running" (algunos navegadores nunca lo
+    // retoman fuera de circunstancias muy específicas), NO conectamos el
+    // elemento al grafo: una vez conectado, su salida normal se desactiva
+    // para siempre, y con el contexto suspendido eso significa silencio
+    // total. Mejor dejarlo con audio.volume normal (se escucha seguro,
+    // aunque en iOS no se pueda regular el volumen).
+    if (!audioCtx || audioCtx.state !== 'running') return;
     try {
       const g = obtenerGainNode();
-      if (audioCtx.state === 'suspended') audioCtx.resume();
       const source = audioCtx.createMediaElementSource(audioEl);
       source.connect(g);
     } catch (e) { /* si Web Audio no está disponible, se usa audio.volume normal */ }
@@ -295,6 +301,15 @@
   })();
 
   async function unirse() {
+    // Crear/retomar el AudioContext ANTES de cualquier await: varios
+    // navegadores móviles (sobre todo iOS) exigen que esto ocurra dentro del
+    // mismo turno síncrono del gesto de clic, o el contexto queda
+    // "suspendido" para siempre y la música nunca se escucha.
+    try {
+      obtenerGainNode();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+    } catch (e) {}
+
     const pin = document.getElementById('inputPin').value.trim();
     const nombre = document.getElementById('inputNombre').value.trim();
     const msgEl = document.getElementById('unirseMsg');

@@ -394,7 +394,7 @@
     const msgEl = document.getElementById('setupMsg');
     msgEl.innerHTML = '<div class="msg" style="background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3);color:#60a5fa;padding:10px;border-radius:8px;margin-bottom:10px;">⏳ Creando partida...</div>';
 
-    const res = await crearPartidaVivo(examenId, 20, musicaUrls.pregunta, musicaUrls.podio);
+    const res = await crearPartidaVivo(examenId, 30, musicaUrls.pregunta, musicaUrls.podio);
     if (!res.success) {
       msgEl.innerHTML = '<div class="msg msg-err" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#f87171;padding:10px;border-radius:8px;">❌ ' + res.error + '</div>';
       return;
@@ -499,7 +499,7 @@
     `).join('');
 
     const inicioMs = partidaData.preguntaIniciadaEn ? partidaData.preguntaIniciadaEn.toMillis() : Date.now();
-    const limiteMs = (partidaData.tiempoPreguntaSeg || 20) * 1000;
+    const limiteMs = (partidaData.tiempoPreguntaSeg || 30) * 1000;
     if (countdownInterval) clearInterval(countdownInterval);
     countdownInterval = setInterval(() => {
       const restanteMs = Math.max(0, limiteMs - (Date.now() - inicioMs));
