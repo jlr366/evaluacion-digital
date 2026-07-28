@@ -199,9 +199,42 @@
   let tipoMusicaActual = null;
   let volumenMusica = 0.3;
 
+  // iOS Safari ignora por completo audio.volume desde JavaScript (solo deja
+  // controlar el volumen con los botones físicos). Para que el control de
+  // volumen sí funcione en celulares con iOS, el audio se enruta por la Web
+  // Audio API a través de un GainNode, que sí respeta el volumen por código.
+  let audioCtx = null;
+  let gainNode = null;
+
+  function obtenerGainNode() {
+    if (!gainNode) {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      gainNode = audioCtx.createGain();
+      gainNode.gain.value = volumenMusica;
+      gainNode.connect(audioCtx.destination);
+    }
+    return gainNode;
+  }
+
+  function conectarAudioAGanancia(audioEl) {
+    // Solo enrutamos por Web Audio si la pista viene de nuestro propio Storage
+    // (tiene CORS habilitado ahí). Con una URL externa pegada por el profesor,
+    // sin CORS el audio quedaría "tainted" y sonaría en silencio absoluto —
+    // preferible dejar ese caso con el audio.volume normal (funciona en todos
+    // lados salvo iOS, en vez de arriesgarnos a silencio total en iOS).
+    if (!/^https:\/\/firebasestorage\.googleapis\.com\/.*examen-aws\.firebasestorage\.app/.test(audioEl.src)) return;
+    try {
+      const g = obtenerGainNode();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      const source = audioCtx.createMediaElementSource(audioEl);
+      source.connect(g);
+    } catch (e) { /* si Web Audio no está disponible, se usa audio.volume normal */ }
+  }
+
   function cambiarVolumen(valor) {
     volumenMusica = Math.max(0, Math.min(100, valor)) / 100;
     if (musicaAudio) musicaAudio.volume = volumenMusica;
+    if (gainNode) gainNode.gain.value = volumenMusica;
   }
   let estadoAnterior = null;
   const AVATARES = ['🐱', '🐶', '🦊', '🐼', '🐸', '🦁', '🐯', '🐨', '🐷', '🐰', '🐵', '🦄'];
@@ -295,6 +328,8 @@
       if (musicaUrls.pregunta || musicaUrls.podio) {
         musicaAudio = new Audio(musicaUrls.pregunta || musicaUrls.podio);
         musicaAudio.volume = volumenMusica;
+        musicaAudio.crossOrigin = 'anonymous';
+        conectarAudioAGanancia(musicaAudio);
         await musicaAudio.play();
         musicaAudio.pause();
         musicaAudio.currentTime = 0;
@@ -315,6 +350,8 @@
     musicaAudio = new Audio(url);
     musicaAudio.loop = tipo === 'pregunta';
     musicaAudio.volume = volumenMusica;
+    musicaAudio.crossOrigin = 'anonymous';
+    conectarAudioAGanancia(musicaAudio);
     musicaAudio.play().catch(() => {});
   }
 
