@@ -134,7 +134,7 @@
     <div class="brand"><img src="logo_circular_transparente2.png" alt="Logo" style="height:44px;"> <span>Evaluación</span>Digital — Modo en vivo</div>
     <nav style="display:flex;align-items:center;gap:16px;">
       <div class="volumen-control" title="Volumen de la música">
-        🔊 <input type="range" id="volumenMusica" min="0" max="100" value="35" oninput="cambiarVolumen(this.value)">
+        🔊 <input type="range" id="volumenMusica" min="0" max="100" value="55" oninput="cambiarVolumen(this.value)">
       </div>
       <a href="admin.html">← Volver al panel</a>
     </nav>
@@ -293,7 +293,7 @@
   let audioActual = null;
   let tipoAudioActual = null;
   const musicaUrls = { pregunta: '', podio: '' };
-  let volumenMusica = 0.35;
+  let volumenMusica = 0.55;
 
   const MASCOTA_FRAMES = [0, 1, 2, 3].map(i =>
     `https://firebasestorage.googleapis.com/v0/b/examen-aws.firebasestorage.app/o/examenes%2Fmedia%2Fvivo-mascota-${i}.png?alt=media`
@@ -432,6 +432,12 @@
       const nuevo = snap.data();
       const cambioEstado = !partidaData || partidaData.estado !== nuevo.estado || partidaData.preguntaActual !== nuevo.preguntaActual;
       partidaData = nuevo;
+      // La partida puede haber quedado con la música por defecto del
+      // servidor aunque el campo se dejara vacío al crearla — sincronizamos
+      // siempre musicaUrls con lo que realmente se guardó, en vez de dejar
+      // lo que se haya escrito (o no) en el formulario de configuración.
+      musicaUrls.pregunta = nuevo.musicaPreguntaUrl || '';
+      musicaUrls.podio = nuevo.musicaPodioUrl || '';
       if (cambioEstado) manejarCambioEstado();
       refrescarUI();
     });

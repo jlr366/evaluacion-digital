@@ -104,7 +104,7 @@
   <div class="inner">
     <div class="brand"><img src="logo_circular_transparente2.png" alt="Logo" style="height:40px;"> <span>Evaluación</span>Digital</div>
     <div class="volumen-control" title="Volumen de la música">
-      🔊 <input type="range" id="volumenMusica" min="0" max="100" value="30" oninput="cambiarVolumen(this.value)">
+      🔊 <input type="range" id="volumenMusica" min="0" max="100" value="55" oninput="cambiarVolumen(this.value)">
     </div>
   </div>
 </header>
@@ -197,7 +197,7 @@
   let musicaUrls = { pregunta: '', podio: '' };
   let musicaAudio = null;
   let tipoMusicaActual = null;
-  let volumenMusica = 0.3;
+  let volumenMusica = 0.55;
 
   // iOS Safari ignora por completo audio.volume desde JavaScript (solo deja
   // controlar el volumen con los botones físicos). Para que el control de
