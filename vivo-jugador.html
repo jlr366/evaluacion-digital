@@ -77,9 +77,6 @@
 
   .podio-mini { font-size: 3rem; margin-bottom: 10px; }
 
-  .volumen-control { display: flex; align-items: center; gap: 6px; font-size: 0.9rem; }
-  .volumen-control input[type="range"] { width: 70px; accent-color: var(--accent, #00bcf2); cursor: pointer; }
-
   .avatar-picker { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
   .avatar-opcion {
     font-size: 1.7rem; padding: 10px 0; border-radius: 10px; cursor: pointer;
@@ -103,9 +100,6 @@
 <header class="navbar">
   <div class="inner">
     <div class="brand"><img src="logo_circular_transparente2.png" alt="Logo" style="height:40px;"> <span>Evaluación</span>Digital</div>
-    <div class="volumen-control" title="Volumen de la música">
-      🔊 <input type="range" id="volumenMusica" min="0" max="100" value="55" oninput="cambiarVolumen(this.value)">
-    </div>
   </div>
 </header>
 
@@ -197,21 +191,10 @@
   let musicaUrls = { pregunta: '', podio: '' };
   let musicaAudio = null;
   let tipoMusicaActual = null;
-  let volumenMusica = 0.55;
-
-  // NOTA: se intentó enrutar el audio por la Web Audio API (GainNode) para
-  // que el control de volumen funcionara también en iOS (que ignora
-  // audio.volume por código). En la práctica, en celulares reales eso hacía
-  // que la música se cortara a los pocos segundos. Se volvió al audio.volume
-  // simple —igual que en la pantalla del profesor, donde sí funciona bien—
-  // priorizando que la música suene siempre por sobre poder regular el
-  // volumen desde la página en iOS (ahí queda regulable con los botones
-  // físicos del celular).
-
-  function cambiarVolumen(valor) {
-    volumenMusica = Math.max(0, Math.min(100, valor)) / 100;
-    if (musicaAudio) musicaAudio.volume = volumenMusica;
-  }
+  // Volumen fijo: en el celular se quitó el control (en iOS no se puede
+  // regular por código de todas formas — ahí el volumen se ajusta con los
+  // botones físicos). Queda a un nivel medio, audible sin ser invasivo.
+  const volumenMusica = 0.55;
   let estadoAnterior = null;
   const AVATARES = ['🐱', '🐶', '🦊', '🐼', '🐸', '🦁', '🐯', '🐨', '🐷', '🐰', '🐵', '🦄'];
 
