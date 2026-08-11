@@ -151,9 +151,12 @@
   <!-- Resultado de la pregunta -->
   <div class="caja hidden" id="secResultado">
     <h2 id="resultadoTitulo"></h2>
-    <div class="puntos-grandes" id="resultadoPuntos"></div>
-    <p class="muted">Puntaje total: <strong id="resultadoTotal">0</strong></p>
-    <p class="muted">Vas en el puesto <strong id="resultadoPuesto">-</strong></p>
+    <div id="resultadoCifras">
+      <div class="puntos-grandes" id="resultadoPuntos"></div>
+      <p class="muted">Puntaje total: <strong id="resultadoTotal">0</strong></p>
+      <p class="muted">Vas en el puesto <strong id="resultadoPuesto">-</strong></p>
+    </div>
+    <p class="muted" id="resultadoOculto" style="margin-top:16px; display:none;">🥁 Puntajes ocultos — el ganador se revela al final</p>
     <p class="muted" style="margin-top:16px;">Esperando la siguiente pregunta...</p>
   </div>
 
@@ -193,8 +196,8 @@
   let tipoMusicaActual = null;
   // Volumen fijo: en el celular se quitó el control (en iOS no se puede
   // regular por código de todas formas — ahí el volumen se ajusta con los
-  // botones físicos). Queda a un nivel medio, audible sin ser invasivo.
-  const volumenMusica = 0.55;
+  // botones físicos). Queda a un nivel medio-bajo, audible sin ser invasivo.
+  const volumenMusica = 0.4;
   let estadoAnterior = null;
   const AVATARES = ['🐱', '🐶', '🦊', '🐼', '🐸', '🦁', '🐯', '🐨', '🐷', '🐰', '🐵', '🦄'];
 
@@ -501,6 +504,13 @@
       titulo.className = 'feedback-mal';
       puntosEl.textContent = '+0';
     }
+    // En las últimas 2 preguntas se ocultan puntos y puesto para que nadie
+    // sepa quién va ganando hasta que se revele el podio final.
+    const totalPreguntas = partidaData.totalPreguntas || 0;
+    const esOculto = totalPreguntas > 0 && idx >= totalPreguntas - 2;
+    document.getElementById('resultadoCifras').style.display = esOculto ? 'none' : '';
+    document.getElementById('resultadoOculto').style.display = esOculto ? '' : 'none';
+
     document.getElementById('resultadoTotal').textContent = (yo && yo.puntos) || 0;
     document.getElementById('resultadoPuesto').textContent = miPuesto();
   }

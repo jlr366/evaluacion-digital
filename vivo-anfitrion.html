@@ -552,8 +552,18 @@
       </div>
     `;
 
-    const top5 = [...jugadoresCache].sort((a, b) => (b.puntos || 0) - (a.puntos || 0)).slice(0, 5);
-    document.getElementById('miniLeaderboard').innerHTML = top5.map((j, i) => `<li>${i + 1}. ${j.avatar || '🐱'} ${escapeHtml(j.nombre)} — ${j.puntos || 0} pts</li>`).join('');
+    // En las últimas 2 preguntas se oculta el ranking para que nadie sepa
+    // quién va ganando hasta que se revele el podio final.
+    const totalPreguntas = partidaData.totalPreguntas || examenActual.preguntas.length;
+    const esOculto = totalPreguntas > 0 && idx >= totalPreguntas - 2;
+
+    const miniLb = document.getElementById('miniLeaderboard');
+    if (esOculto) {
+      miniLb.innerHTML = '<li class="muted" style="background:none;border:none;">🥁 Puntajes ocultos — el ganador se revela al final</li>';
+    } else {
+      const top5 = [...jugadoresCache].sort((a, b) => (b.puntos || 0) - (a.puntos || 0)).slice(0, 5);
+      miniLb.innerHTML = top5.map((j, i) => `<li>${i + 1}. ${j.avatar || '🐱'} ${escapeHtml(j.nombre)} — ${j.puntos || 0} pts</li>`).join('');
+    }
 
     const esUltima = idx >= examenActual.preguntas.length - 1;
     document.getElementById('btnSiguientePregunta').textContent = esUltima ? '🏆 Ver podio final' : '➡️ Siguiente pregunta';

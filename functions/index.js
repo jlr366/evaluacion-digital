@@ -375,6 +375,7 @@ exports.crearPartidaVivo = onCall(async (request) => {
 
   const data = {
     examenId,
+    totalPreguntas: preguntas.length,
     createdBy: auth.uid,
     estado: 'esperando',
     preguntaActual: -1,
@@ -454,6 +455,7 @@ exports.iniciarPregunta = onCall(async (request) => {
 
   await partidaRef.update({
     estado: 'pregunta',
+    totalPreguntas,
     preguntaActual: index,
     preguntaIniciadaEn: FieldValue.serverTimestamp(),
     opcionesActuales: opcionesTexto,

@@ -993,7 +993,7 @@
       try {
         const audio = new Audio(examenData.audioExamen);
         audio.loop = true;
-        audio.volume = 0.3;
+        audio.volume = 0.2;
         audio.play().catch(() => {});
         window._audioExamen = audio;
       } catch(e) {}
@@ -1618,7 +1618,7 @@
     if (audioUrl) {
       try {
         const audio = new Audio(audioUrl);
-        audio.volume = 0.6;
+        audio.volume = 0.45;
         audio.play().catch(() => {});
         window._audioResultado = audio;
       } catch(e) {}
