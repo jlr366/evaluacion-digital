@@ -126,6 +126,10 @@
     image-rendering: pixelated; image-rendering: crisp-edges;
     animation: mascotaBrinca 0.6s ease-in-out infinite;
   }
+  .personaje-azul { filter: hue-rotate(0deg) saturate(1.05); }
+  .personaje-violeta { filter: hue-rotate(35deg) saturate(1.2); }
+  .personaje-verde { filter: hue-rotate(105deg) saturate(1.1); }
+  .personaje-dorado { filter: hue-rotate(175deg) saturate(1.2) brightness(1.08); }
   @keyframes mascotaBrinca {
     0%, 100% { transform: translateY(0); }
     50% { transform: translateY(-8px); }
@@ -149,8 +153,7 @@
     <div id="unirseMsg"></div>
     <input type="text" id="inputPin" placeholder="PIN" inputmode="numeric" maxlength="6">
     <input type="text" id="inputNombre" placeholder="Tu nombre" maxlength="40">
-    <p class="muted" style="margin:14px 0 8px;font-size:0.8rem;">Elige tu figurita</p>
-    <div id="avatarPicker" class="avatar-picker"></div>
+    <p class="muted" style="margin:14px 0 8px;font-size:0.8rem;">Tu personaje pixel art será asignado al azar</p>
     <button class="btn btn-primary" style="width:100%;margin-top:14px;" onclick="unirse()">Unirme</button>
   </div>
 
@@ -240,24 +243,18 @@
   // botones físicos). Queda a un nivel medio-bajo, audible sin ser invasivo.
   const volumenMusica = 0.4;
   let estadoAnterior = null;
-  const AVATARES = ['🧭', '⚔️', '🔮', '🌿'];
-  const PERSONAJES = [
-    { id: 'explorador', nombre: 'Explorador', avatar: '🧭', piel: '#d99a6c', pelo: '#273449', ropa: '#2f80ed', acento: '#f2c94c' },
-    { id: 'guerrero', nombre: 'Guerrero', avatar: '⚔️', piel: '#b86f4b', pelo: '#171717', ropa: '#c0392b', acento: '#f2994a' },
-    { id: 'maga', nombre: 'Maga', avatar: '🔮', piel: '#f0b49b', pelo: '#7b3f98', ropa: '#9b51e0', acento: '#56ccf2' },
-    { id: 'inventora', nombre: 'Inventora', avatar: '🌿', piel: '#8d5a3b', pelo: '#e67e22', ropa: '#27ae60', acento: '#f1c40f' }
-  ];
-  function spritePixelArt(personaje) {
-    const p = personaje || PERSONAJES[0];
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" shape-rendering="crispEdges"><rect x="5" y="1" width="6" height="1" fill="${p.pelo}"/><rect x="4" y="2" width="8" height="4" fill="${p.pelo}"/><rect x="5" y="3" width="6" height="4" fill="${p.piel}"/><rect x="6" y="4" width="1" height="1" fill="#40251c"/><rect x="9" y="4" width="1" height="1" fill="#40251c"/><rect x="6" y="6" width="4" height="1" fill="#9e4b4b"/><rect x="3" y="7" width="10" height="5" fill="${p.ropa}"/><rect x="2" y="8" width="2" height="3" fill="${p.piel}"/><rect x="12" y="8" width="2" height="3" fill="${p.piel}"/><rect x="5" y="12" width="2" height="3" fill="#263238"/><rect x="9" y="12" width="2" height="3" fill="#263238"/><rect x="6" y="8" width="4" height="2" fill="${p.acento}"/><rect x="1" y="7" width="1" height="1" fill="${p.acento}"/><rect x="14" y="7" width="1" height="1" fill="${p.acento}"/></svg>`;
-    return 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg);
-  }
-  let personajeElegido = PERSONAJES[0].id;
-  let MASCOTA_FRAMES = [spritePixelArt(PERSONAJES[0])];
-  function personajeActual() { return PERSONAJES.find(p => p.id === personajeElegido) || PERSONAJES[0]; }
+  const AVATARES = ['🐱', '🐶', '🦊', '🐼', '🐸', '🦁', '🐯', '🐨', '🐷', '🐰', '🐵', '🦄'];
+  const PERSONAJES = ['azul', 'violeta', 'verde', 'dorado'];
+  let personajeElegido = PERSONAJES[Math.floor(Math.random() * PERSONAJES.length)];
+  let MASCOTA_FRAMES = [0, 1, 2, 3].map(i =>
+    `https://firebasestorage.googleapis.com/v0/b/examen-aws.firebasestorage.app/o/examenes%2Fmedia%2Fvivo-mascota-${i}.png?alt=media`
+  );
   function actualizarSpritePersonaje() {
-    MASCOTA_FRAMES = [spritePixelArt(personajeActual())];
-    document.querySelectorAll('.mascota-sprite').forEach(img => { img.src = MASCOTA_FRAMES[0]; });
+    document.querySelectorAll('.mascota-sprite').forEach(img => {
+      img.src = MASCOTA_FRAMES[0];
+      img.classList.remove('personaje-azul', 'personaje-violeta', 'personaje-verde', 'personaje-dorado');
+      img.classList.add('personaje-' + personajeElegido);
+    });
   }
   (function iniciarMascota() {
     let frame = 0;
@@ -270,26 +267,8 @@
       });
     }, 180);
   })();
+  actualizarSpritePersonaje();
   let avatarElegido = AVATARES[0];
-
-  (function pintarAvatarPicker() {
-    document.getElementById('avatarPicker').innerHTML = PERSONAJES.map((p, i) => `
-      <button type="button" class="avatar-opcion${i === 0 ? ' seleccionado' : ''}" data-personaje="${p.id}" onclick="elegirPersonaje('${p.id}', this)"><img src="${spritePixelArt(p)}" alt="${p.nombre}"><span>${p.nombre}</span></button>
-    `).join('');
-  })();
-
-  function elegirPersonaje(id, btn) {
-    personajeElegido = PERSONAJES.some(p => p.id === id) ? id : PERSONAJES[0].id;
-    actualizarSpritePersonaje();
-    document.querySelectorAll('.avatar-opcion').forEach(b => b.classList.remove('seleccionado'));
-    btn.classList.add('seleccionado');
-  }
-
-  function elegirAvatar(avatar, btn) {
-    avatarElegido = avatar;
-    document.querySelectorAll('.avatar-opcion').forEach(b => b.classList.remove('seleccionado'));
-    btn.classList.add('seleccionado');
-  }
 
   function escapeHtml(v) { const d = document.createElement('div'); d.textContent = v || ''; return d.innerHTML; }
   function mostrarCaja(id) {
@@ -311,7 +290,7 @@
           const sesion = JSON.parse(guardada);
           partidaId = sesion.partidaId;
           jugadorId = sesion.jugadorId;
-          personajeElegido = sesion.personaje || PERSONAJES[0].id;
+          personajeElegido = PERSONAJES.includes(sesion.personaje) ? sesion.personaje : personajeElegido;
           actualizarSpritePersonaje();
           document.getElementById('miNombre').textContent = sesion.nombre;
           document.getElementById('miAvatar').textContent = sesion.avatar || AVATARES[0];
@@ -345,7 +324,7 @@
     }
     msgEl.innerHTML = '<div class="msg" style="background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3);color:#60a5fa;padding:10px;border-radius:8px;margin-bottom:10px;">⏳ Uniendo...</div>';
 
-    const res = await unirsePartidaVivo(pin, nombre, avatarElegido, personajeElegido);
+    const res = await unirsePartidaVivo(pin, nombre, avatarElegido);
     if (!res.success) {
       msgEl.innerHTML = '<div class="msg msg-err" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#f87171;padding:10px;border-radius:8px;">❌ ' + res.error + '</div>';
       return;
@@ -353,6 +332,8 @@
 
     partidaId = res.partidaId;
     jugadorId = res.jugadorId;
+    personajeElegido = PERSONAJES.includes(res.personaje) ? res.personaje : personajeElegido;
+    actualizarSpritePersonaje();
     localStorage.setItem('vivo_' + pin, JSON.stringify({ partidaId, jugadorId, nombre, avatar: avatarElegido, personaje: personajeElegido }));
     document.getElementById('miNombre').textContent = nombre;
     document.getElementById('miAvatar').textContent = avatarElegido;
@@ -582,7 +563,7 @@
     const estadoPersonaje = document.getElementById('estadoPersonaje');
     const estadoLabel = document.getElementById('estadoPersonajeLabel');
     mascota.src = MASCOTA_FRAMES[0];
-    mascota.className = 'resultado-mascota mascota-sprite';
+    mascota.className = 'resultado-mascota mascota-sprite personaje-' + personajeElegido;
     estadoPersonaje.className = 'estado-personaje';
     reproducirAnimacionResultado(idx, respuesta);
     if (!respuesta) {
@@ -651,7 +632,7 @@
     document.getElementById('finalPuntos').textContent = (yo && yo.puntos) || 0;
     document.getElementById('finalPuesto').textContent = puesto ? (puesto + ' de ' + ranking.length) : '-';
     const finalSticker = document.getElementById('finalSticker');
-    finalSticker.className = puesto === 1 ? 'mascota-victoria' : '';
+    finalSticker.className = (puesto === 1 ? 'mascota-victoria ' : '') + 'personaje-' + personajeElegido;
     finalSticker.src = MASCOTA_FRAMES[0];
 
     if (!confettiFinalDisparado && puesto && puesto <= 3) {
