@@ -126,10 +126,7 @@
     image-rendering: pixelated; image-rendering: crisp-edges;
     animation: mascotaBrinca 0.6s ease-in-out infinite;
   }
-  .personaje-azul { filter: hue-rotate(0deg) saturate(1.05); }
-  .personaje-violeta { filter: hue-rotate(35deg) saturate(1.2); }
-  .personaje-verde { filter: hue-rotate(105deg) saturate(1.1); }
-  .personaje-dorado { filter: hue-rotate(175deg) saturate(1.2) brightness(1.08); }
+  .personaje-aventurero, .personaje-guerrero, .personaje-maga, .personaje-inventora { filter: none; }
   @keyframes mascotaBrinca {
     0%, 100% { transform: translateY(0); }
     50% { transform: translateY(-8px); }
@@ -244,15 +241,20 @@
   const volumenMusica = 0.4;
   let estadoAnterior = null;
   const AVATARES = ['🐱', '🐶', '🦊', '🐼', '🐸', '🦁', '🐯', '🐨', '🐷', '🐰', '🐵', '🦄'];
-  const PERSONAJES = ['azul', 'violeta', 'verde', 'dorado'];
+  const PERSONAJES = ['aventurero', 'guerrero', 'maga', 'inventora'];
+  const PERSONAJE_ASSETS = {
+    aventurero: 'pixel-characters/aventurero.png',
+    guerrero: 'pixel-characters/guerrero.png',
+    maga: 'pixel-characters/maga.png',
+    inventora: 'pixel-characters/inventora.png'
+  };
   let personajeElegido = PERSONAJES[Math.floor(Math.random() * PERSONAJES.length)];
-  let MASCOTA_FRAMES = [0, 1, 2, 3].map(i =>
-    `https://firebasestorage.googleapis.com/v0/b/examen-aws.firebasestorage.app/o/examenes%2Fmedia%2Fvivo-mascota-${i}.png?alt=media`
-  );
+  let MASCOTA_FRAMES = [PERSONAJE_ASSETS[personajeElegido]];
   function actualizarSpritePersonaje() {
+    MASCOTA_FRAMES = [PERSONAJE_ASSETS[personajeElegido] || PERSONAJE_ASSETS.aventurero];
     document.querySelectorAll('.mascota-sprite').forEach(img => {
       img.src = MASCOTA_FRAMES[0];
-      img.classList.remove('personaje-azul', 'personaje-violeta', 'personaje-verde', 'personaje-dorado');
+      img.classList.remove('personaje-aventurero', 'personaje-guerrero', 'personaje-maga', 'personaje-inventora');
       img.classList.add('personaje-' + personajeElegido);
     });
   }
