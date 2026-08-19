@@ -402,6 +402,10 @@
 
     partidaId = res.partidaId;
     examenActual = await getExamen(examenId);
+    examenActual.preguntas = (examenActual.preguntas || []).map(p => ({
+      ...p,
+      correcta: p.correcta !== undefined ? p.correcta : p.respuesta
+    }));
     document.getElementById('lobbyExamenTitulo').textContent = examenActual.titulo;
     document.getElementById('pinGrande').textContent = res.pin;
     generarQR(res.pin);

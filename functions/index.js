@@ -343,6 +343,10 @@ function generarPin() {
   return String(Math.floor(100000 + Math.random() * 900000));
 }
 
+function correctaDePregunta(pregunta) {
+  return pregunta && pregunta.correcta !== undefined ? pregunta.correcta : pregunta && pregunta.respuesta;
+}
+
 // Música por defecto si el profesor no elige ni sube la suya.
 const MUSICA_PREGUNTA_DEFAULT = 'https://firebasestorage.googleapis.com/v0/b/examen-aws.firebasestorage.app/o/examenes%2Fmedia%2Fvivo_musicaPregunta_1785029795763.mp3?alt=media';
 const MUSICA_PODIO_DEFAULT = 'https://firebasestorage.googleapis.com/v0/b/examen-aws.firebasestorage.app/o/examenes%2Fmedia%2Fvivo_musicaPodio_1785017327407.mp3?alt=media';
@@ -362,7 +366,8 @@ exports.crearPartidaVivo = onCall(async (request) => {
   const incompatible = preguntas.some(p => {
     const tipo = p.tipo || 'opcion';
     if (tipo !== 'opcion') return true;
-    if (Array.isArray(p.correcta) && p.correcta.length === 0) return true;
+    const correcta = correctaDePregunta(p);
+    if (Array.isArray(correcta) && correcta.length === 0) return true;
     if (!Array.isArray(p.opciones) || p.opciones.length > 4 || p.opciones.length < 2) return true;
     return false;
   });
@@ -451,7 +456,7 @@ exports.iniciarPregunta = onCall(async (request) => {
   // Se publican los textos de las opciones (no cuál es la correcta) para
   // que el celular del jugador pueda mostrarlas junto a las fichas de color.
   const opcionesTexto = (preguntas[index].opciones || []).map(o => String(o || ''));
-  const esMultiple = Array.isArray(preguntas[index].correcta);
+  const esMultiple = Array.isArray(correctaDePregunta(preguntas[index]));
 
   await partidaRef.update({
     estado: 'pregunta',
@@ -508,7 +513,8 @@ exports.enviarRespuestaVivo = onCall(async (request) => {
 
     // Selección múltiple exige coincidencia exacta con el set de correctas
     // (ni de más ni de menos) para otorgar puntos — sin crédito parcial.
-    const esperado = Array.isArray(pregunta.correcta) ? pregunta.correcta : [pregunta.correcta];
+    const correcta = correctaDePregunta(pregunta);
+    const esperado = Array.isArray(correcta) ? correcta : [correcta];
     const seleccionOrdenada = [...seleccion].sort((a, b) => a - b);
     const esperadoOrdenado = [...esperado].sort((a, b) => a - b);
     const esCorrecta = seleccionOrdenada.length === esperadoOrdenado.length
@@ -561,7 +567,8 @@ exports.usarComodinCincuenta = onCall(async (request) => {
     const examenSnap = await t.get(db().collection('examenes').doc(partida.examenId));
     const pregunta = (examenSnap.data().preguntas || [])[index];
     if (!pregunta) throw new HttpsError('not-found', 'Pregunta no encontrada.');
-    if (Array.isArray(pregunta.correcta)) {
+    const correcta = correctaDePregunta(pregunta);
+    if (Array.isArray(correcta)) {
       throw new HttpsError('failed-precondition', 'El comodín 50/50 no aplica a preguntas de varias respuestas.');
     }
 
@@ -569,7 +576,7 @@ exports.usarComodinCincuenta = onCall(async (request) => {
     // "eliminar" — nunca se le revela al celular cuál es la correcta.
     const incorrectas = (pregunta.opciones || [])
       .map((_, i) => i)
-      .filter(i => i !== pregunta.correcta);
+      .filter(i => i !== correcta);
     for (let i = incorrectas.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [incorrectas[i], incorrectas[j]] = [incorrectas[j], incorrectas[i]];

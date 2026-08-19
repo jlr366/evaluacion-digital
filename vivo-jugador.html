@@ -75,6 +75,41 @@
   }
   .puntos-grandes { font-size: 2.4rem; font-weight: 800; margin: 10px 0; }
 
+  .resultado-mascota {
+    display: block; margin: 16px auto 0; width: 150px; height: 150px;
+    image-rendering: pixelated; image-rendering: crisp-edges;
+  }
+  .resultado-mascota.mascota-estado-correcta { animation: mascotaCelebra 0.85s steps(2, end) infinite; }
+  .resultado-mascota.mascota-estado-incorrecta { animation: mascotaMuere 0.9s ease-out forwards; }
+  @keyframes mascotaCelebra {
+    0%, 100% { transform: translateY(0) scale(1); filter: drop-shadow(0 0 0 rgba(250,204,21,0)); }
+    35% { transform: translateY(-18px) scale(1.08); filter: drop-shadow(0 0 12px rgba(250,204,21,0.9)); }
+    70% { transform: translateY(2px) scale(0.96); filter: drop-shadow(0 0 6px rgba(34,197,94,0.8)); }
+  }
+  @keyframes mascotaMuere {
+    0% { transform: translateY(0) rotate(0) scale(1); filter: grayscale(0); opacity: 1; }
+    45% { transform: translateY(8px) rotate(12deg) scale(0.92); filter: grayscale(0.65); opacity: 1; }
+    100% { transform: translateY(24px) rotate(90deg) scale(0.72); filter: grayscale(1) brightness(0.65); opacity: 0.55; }
+  }
+  .mascota-victoria {
+    animation: mascotaPoder 1.1s steps(2, end) infinite;
+    filter: drop-shadow(0 0 10px rgba(250,204,21,0.9));
+  }
+  @keyframes mascotaPoder {
+    0%, 100% { transform: scale(1) rotate(-3deg); }
+    25% { transform: scale(1.12) rotate(3deg); filter: drop-shadow(0 0 24px rgba(34,211,238,1)); }
+    50% { transform: scale(1.03) rotate(-3deg); }
+    75% { transform: scale(1.16) rotate(3deg); filter: drop-shadow(0 0 28px rgba(250,204,21,1)); }
+  }
+  .estado-personaje {
+    min-height: 190px; margin-top: 14px; padding: 10px 18px 14px;
+    border: 1px solid rgba(148,163,184,0.22); border-radius: 14px;
+    background: rgba(15,23,42,0.58); text-align: center;
+  }
+  .estado-personaje-label { font-size: 0.85rem; font-weight: 800; letter-spacing: 0.04em; }
+  .estado-personaje.correcto { border-color: rgba(34,197,94,0.55); background: rgba(34,197,94,0.1); }
+  .estado-personaje.incorrecto { border-color: rgba(239,68,68,0.55); background: rgba(239,68,68,0.1); }
+
   .podio-mini { font-size: 3rem; margin-bottom: 10px; }
 
   .avatar-picker { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
@@ -151,6 +186,10 @@
   <!-- Resultado de la pregunta -->
   <div class="caja hidden" id="secResultado">
     <h2 id="resultadoTitulo"></h2>
+    <div id="estadoPersonaje" class="estado-personaje">
+      <div id="estadoPersonajeLabel" class="estado-personaje-label">Preparando personaje...</div>
+      <img id="resultadoMascota" class="resultado-mascota mascota-sprite" src="" alt="Estado del personaje">
+    </div>
     <div id="resultadoCifras">
       <div class="puntos-grandes" id="resultadoPuntos"></div>
       <p class="muted">Puntaje total: <strong id="resultadoTotal">0</strong></p>
@@ -210,7 +249,9 @@
     imgs.forEach(img => { img.src = MASCOTA_FRAMES[0]; });
     setInterval(() => {
       frame = (frame + 1) % MASCOTA_FRAMES.length;
-      document.querySelectorAll('.mascota-sprite').forEach(img => { img.src = MASCOTA_FRAMES[frame]; });
+      document.querySelectorAll('.mascota-sprite').forEach(img => {
+        if (img.id !== 'resultadoMascota') img.src = MASCOTA_FRAMES[frame];
+      });
     }, 180);
   })();
   let avatarElegido = AVATARES[0];
@@ -473,10 +514,35 @@
 
   let confettiPreguntaMostrado = -1;
   let confettiFinalDisparado = false;
+  let animacionResultadoClave = '';
+  let animacionResultadoTimer = null;
 
   function lanzarConfettiJugador() {
     if (typeof confetti !== 'function') return;
     confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
+  }
+
+  function reproducirAnimacionResultado(idx, respuesta) {
+    const mascota = document.getElementById('resultadoMascota');
+    const clave = idx + ':' + (respuesta && respuesta.correcta ? 'correcta' : 'incorrecta');
+    if (animacionResultadoClave === clave) return;
+    animacionResultadoClave = clave;
+    if (animacionResultadoTimer) clearInterval(animacionResultadoTimer);
+
+    const frames = respuesta && respuesta.correcta
+      ? [0, 1, 2, 3, 2, 1]
+      : [0, 1, 2, 3, 3, 3];
+    let frame = 0;
+    mascota.src = MASCOTA_FRAMES[frames[frame]];
+    animacionResultadoTimer = setInterval(() => {
+      frame += 1;
+      if (frame >= frames.length) {
+        clearInterval(animacionResultadoTimer);
+        animacionResultadoTimer = null;
+        return;
+      }
+      mascota.src = MASCOTA_FRAMES[frames[frame]];
+    }, respuesta && respuesta.correcta ? 130 : 180);
   }
 
   function pintarResultado() {
@@ -487,10 +553,20 @@
     mostrarCaja('secResultado');
     const titulo = document.getElementById('resultadoTitulo');
     const puntosEl = document.getElementById('resultadoPuntos');
+    const mascota = document.getElementById('resultadoMascota');
+    const estadoPersonaje = document.getElementById('estadoPersonaje');
+    const estadoLabel = document.getElementById('estadoPersonajeLabel');
+    mascota.src = MASCOTA_FRAMES[0];
+    mascota.className = 'resultado-mascota mascota-sprite';
+    estadoPersonaje.className = 'estado-personaje';
+    reproducirAnimacionResultado(idx, respuesta);
     if (!respuesta) {
       titulo.textContent = '⏱️ No respondiste a tiempo';
       titulo.className = 'feedback-mal';
       puntosEl.textContent = '+0';
+      estadoPersonaje.classList.add('incorrecto');
+      estadoLabel.textContent = '💀 El personaje ha muerto';
+      mascota.classList.add('mascota-estado-incorrecta');
     } else if (respuesta.correcta) {
       titulo.textContent = respuesta.comodinDoble ? '🎉 ¡Correcto! (x2 🔥)' : '🎉 ¡Correcto!';
       titulo.className = 'feedback-ok';
@@ -499,10 +575,16 @@
         confettiPreguntaMostrado = idx;
         lanzarConfettiJugador();
       }
+      mascota.classList.add('mascota-estado-correcta');
+      estadoPersonaje.classList.add('correcto');
+      estadoLabel.textContent = '🎉 ¡El personaje celebra!';
     } else {
       titulo.textContent = '❌ Incorrecto';
       titulo.className = 'feedback-mal';
       puntosEl.textContent = '+0';
+      estadoPersonaje.classList.add('incorrecto');
+      estadoLabel.textContent = '💥 ¡Respuesta incorrecta!';
+      mascota.classList.add('mascota-estado-incorrecta');
     }
     // En las últimas 2 preguntas se ocultan puntos y puesto para que nadie
     // sepa quién va ganando hasta que se revele el podio final.
@@ -543,7 +625,9 @@
     document.getElementById('finalTitulo').textContent = puesto === 1 ? '¡Ganaste!' : '¡Partida terminada!';
     document.getElementById('finalPuntos').textContent = (yo && yo.puntos) || 0;
     document.getElementById('finalPuesto').textContent = puesto ? (puesto + ' de ' + ranking.length) : '-';
-    document.getElementById('finalSticker').src = puesto === 1 ? STICKER_GANADOR : STICKER_NO_GANADOR;
+    const finalSticker = document.getElementById('finalSticker');
+    finalSticker.className = puesto === 1 ? 'mascota-victoria' : '';
+    finalSticker.src = puesto === 1 ? STICKER_GANADOR : STICKER_NO_GANADOR;
 
     if (!confettiFinalDisparado && puesto && puesto <= 3) {
       confettiFinalDisparado = true;
