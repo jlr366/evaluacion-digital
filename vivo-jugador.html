@@ -267,12 +267,17 @@
   const volumenMusica = 0.12;
   let estadoAnterior = null;
   const AVATARES = ['🐱', '🐶', '🦊', '🐼', '🐸', '🦁', '🐯', '🐨', '🐷', '🐰', '🐵', '🦄'];
-  const PERSONAJES = ['aventurero', 'guerrero', 'maga', 'inventora'];
+  const PERSONAJES = ['aventurero', 'guerrero', 'maga', 'inventora', 'robot', 'ninja', 'pirata', 'hada', 'alienigena'];
   const PERSONAJE_ASSETS = {
     aventurero: 'pixel-characters/aventurero.png',
     guerrero: 'pixel-characters/guerrero.png',
     maga: 'pixel-characters/maga.png',
-    inventora: 'pixel-characters/inventora.png'
+    inventora: 'pixel-characters/inventora.png',
+    robot: 'pixel-characters/robot.png',
+    ninja: 'pixel-characters/ninja.png',
+    pirata: 'pixel-characters/pirata.png',
+    hada: 'pixel-characters/hada.png',
+    alienigena: 'pixel-characters/alienigena.png'
   };
   let personajeElegido = PERSONAJES[Math.floor(Math.random() * PERSONAJES.length)];
   let MASCOTA_FRAMES = [PERSONAJE_ASSETS[personajeElegido]];
@@ -280,7 +285,7 @@
     MASCOTA_FRAMES = [PERSONAJE_ASSETS[personajeElegido] || PERSONAJE_ASSETS.aventurero];
     document.querySelectorAll('.mascota-sprite').forEach(img => {
       img.src = MASCOTA_FRAMES[0];
-      img.classList.remove('personaje-aventurero', 'personaje-guerrero', 'personaje-maga', 'personaje-inventora');
+      img.classList.remove(...PERSONAJES.map(id => 'personaje-' + id));
       img.classList.add('personaje-' + personajeElegido);
     });
   }
