@@ -134,7 +134,7 @@
     <div class="brand"><img src="logo_circular_transparente2.png" alt="Logo" style="height:44px;"> <span>Evaluación</span>Digital — Modo en vivo</div>
     <nav style="display:flex;align-items:center;gap:16px;">
       <div class="volumen-control" title="Volumen de la música">
-        🔊 <input type="range" id="volumenMusica" min="0" max="100" value="55" oninput="cambiarVolumen(this.value)">
+        🔊 <input type="range" id="volumenMusica" min="0" max="100" value="12" oninput="cambiarVolumen(this.value)">
       </div>
       <a href="admin.html">← Volver al panel</a>
     </nav>
@@ -293,7 +293,7 @@
   let audioActual = null;
   let tipoAudioActual = null;
   const musicaUrls = { pregunta: '', podio: '' };
-  let volumenMusica = 0.55;
+  let volumenMusica = 0.12;
 
   const MASCOTA_FRAMES = [0, 1, 2, 3].map(i =>
     `https://firebasestorage.googleapis.com/v0/b/examen-aws.firebasestorage.app/o/examenes%2Fmedia%2Fvivo-mascota-${i}.png?alt=media`

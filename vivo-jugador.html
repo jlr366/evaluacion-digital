@@ -238,7 +238,7 @@
   // Volumen fijo: en el celular se quitó el control (en iOS no se puede
   // regular por código de todas formas — ahí el volumen se ajusta con los
   // botones físicos). Queda a un nivel medio-bajo, audible sin ser invasivo.
-  const volumenMusica = 0.4;
+  const volumenMusica = 0.12;
   let estadoAnterior = null;
   const AVATARES = ['🐱', '🐶', '🦊', '🐼', '🐸', '🦁', '🐯', '🐨', '🐷', '🐰', '🐵', '🦄'];
   const PERSONAJES = ['aventurero', 'guerrero', 'maga', 'inventora'];
@@ -461,7 +461,9 @@
     btnDoble.disabled = !!comodines.doble;
     const btnCincuenta = document.getElementById('btnComodinCincuenta');
     btnCincuenta.disabled = !!comodines.cincuenta;
-    btnCincuenta.style.display = esMultiple ? 'none' : '';
+    btnCincuenta.style.display = '';
+    btnCincuenta.title = esMultiple ? 'No disponible en preguntas de varias respuestas' : 'Eliminar dos opciones incorrectas';
+    btnCincuenta.disabled = !!comodines.cincuenta || esMultiple;
   }
 
   function toggleComodinDoble() {
