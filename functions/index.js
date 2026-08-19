@@ -412,12 +412,14 @@ const AVATARES_VIVO = ['🧭', '⚔️', '🔮', '🌿'];
 const PERSONAJES_VIVO = ['aventurero', 'guerrero', 'maga', 'inventora', 'robot', 'ninja', 'pirata', 'hada', 'alienigena', 'samurai', 'vaquera', 'vampiro', 'sirena', 'dragon', 'hechicero', 'cientifica', 'arquero', 'chef', 'guardian-cosmico'];
 
 exports.unirsePartidaVivo = onCall(async (request) => {
-  const { pin, nombre, avatar } = request.data || {};
+  const { pin, nombre, avatar, personaje } = request.data || {};
   if (!pin || !nombre) throw new HttpsError('invalid-argument', 'Falta el PIN o el nombre.');
   const nombreTrim = String(nombre).trim().slice(0, 40);
   if (!nombreTrim) throw new HttpsError('invalid-argument', 'El nombre no puede estar vacío.');
   const avatarFinal = AVATARES_VIVO.includes(avatar) ? avatar : AVATARES_VIVO[0];
-  const personajeFinal = PERSONAJES_VIVO[Math.floor(Math.random() * PERSONAJES_VIVO.length)];
+  const personajeFinal = PERSONAJES_VIVO.includes(personaje)
+    ? personaje
+    : PERSONAJES_VIVO[Math.floor(Math.random() * PERSONAJES_VIVO.length)];
 
   const partidaRef = db().collection('partidas_vivo').doc(String(pin).trim());
   const partidaDoc = await partidaRef.get();

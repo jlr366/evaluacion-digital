@@ -281,6 +281,12 @@
     { clave: 'amarillo', icono: '●' },
     { clave: 'verde', icono: '■' }
   ];
+  const PERSONAJE_ASSETS = {
+    aventurero: 'pixel-characters/aventurero.png', guerrero: 'pixel-characters/guerrero.png', maga: 'pixel-characters/maga.png', inventora: 'pixel-characters/inventora.png',
+    robot: 'pixel-characters/robot.png', ninja: 'pixel-characters/ninja.png', pirata: 'pixel-characters/pirata.png', hada: 'pixel-characters/hada.png', alienigena: 'pixel-characters/alienigena.png',
+    samurai: 'pixel-characters/samurai.png', vaquera: 'pixel-characters/vaquera.png', vampiro: 'pixel-characters/vampiro.png', sirena: 'pixel-characters/sirena.png', dragon: 'pixel-characters/dragon.png',
+    hechicero: 'pixel-characters/hechicero.png', cientifica: 'pixel-characters/cientifica.png', arquero: 'pixel-characters/arquero.png', chef: 'pixel-characters/chef.png', 'guardian-cosmico': 'pixel-characters/guardian-cosmico.png'
+  };
 
   let examenActual = null;
   let partidaId = null;
@@ -478,7 +484,7 @@
   function renderJugadoresLobby() {
     document.getElementById('numJugadoresLobby').textContent = jugadoresCache.length;
     const ul = document.getElementById('listaJugadoresLobby');
-    ul.innerHTML = jugadoresCache.map(j => `<li>${j.avatar || '🐱'} ${escapeHtml(j.nombre)}</li>`).join('') || '<li class="muted" style="background:none;border:none;">Esperando jugadores...</li>';
+    ul.innerHTML = jugadoresCache.map(j => `<li><img src="${PERSONAJE_ASSETS[j.personaje] || PERSONAJE_ASSETS.aventurero}" alt="" style="width:28px;height:28px;object-fit:cover;object-position:center 18%;transform:scale(1.35);image-rendering:pixelated;vertical-align:middle;margin-right:4px;">${escapeHtml(j.nombre)}</li>`).join('') || '<li class="muted" style="background:none;border:none;">Esperando jugadores...</li>';
   }
 
   async function iniciarJuego() {
@@ -612,7 +618,7 @@
     const revelarPuesto = (n, jugador) => {
       if (!jugador) return;
       const el = document.getElementById('puesto' + n);
-      el.querySelector('.podio-avatar').textContent = jugador.avatar || '🐱';
+      el.querySelector('.podio-avatar').innerHTML = `<img src="${PERSONAJE_ASSETS[jugador.personaje] || PERSONAJE_ASSETS.aventurero}" alt="${escapeHtml(jugador.nombre)}" style="width:64px;height:64px;object-fit:contain;image-rendering:pixelated;">`;
       el.querySelector('.podio-nombre').textContent = jugador.nombre;
       el.querySelector('.podio-puntos').textContent = (jugador.puntos || 0) + ' pts';
       el.classList.add('revelado');

@@ -131,13 +131,14 @@
 
   .podio-mini { font-size: 3rem; margin-bottom: 10px; }
 
-  .avatar-picker { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .avatar-picker { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; margin-top: 8px; }
   .avatar-opcion {
-    min-height: 92px; padding: 6px 2px; border-radius: 10px; cursor: pointer;
+    width: 100%; aspect-ratio: 1; padding: 0; overflow: hidden; border-radius: 9px; cursor: pointer;
     background: #0f172a; border: 2px solid #334155;
   }
-  .avatar-opcion img { display: block; width: 52px; height: 52px; margin: 0 auto 3px; image-rendering: pixelated; }
-  .avatar-opcion span { display: block; color: #cbd5e1; font-size: 0.68rem; font-weight: 700; }
+  .avatar-opcion img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center 18%; transform: scale(1.65); image-rendering: pixelated; }
+  .avatar-opcion.seleccionado { border-color: #fbbf24; box-shadow: 0 0 0 2px rgba(251,191,36,0.3), 0 0 12px rgba(251,191,36,0.35); }
+  @media (max-width: 380px) { .avatar-picker { grid-template-columns: repeat(5, 1fr); } }
   .avatar-opcion.seleccionado { border-color: var(--primary, #6c5ce7); background: rgba(108,92,231,0.15); }
 
   .mascota-sprite {
@@ -175,7 +176,8 @@
     <div id="unirseMsg"></div>
     <input type="text" id="inputPin" placeholder="PIN" inputmode="numeric" maxlength="6">
     <input type="text" id="inputNombre" placeholder="Tu nombre" maxlength="40">
-    <p class="muted" style="margin:14px 0 8px;font-size:0.8rem;">Tu personaje pixel art será asignado al azar</p>
+    <p class="muted" style="margin:14px 0 8px;font-size:0.8rem;">Elige tu personaje</p>
+    <div id="avatarPicker" class="avatar-picker" aria-label="Elegir personaje"></div>
     <button class="btn btn-primary" style="width:100%;margin-top:14px;" onclick="unirse()">Unirme</button>
   </div>
 
@@ -313,6 +315,23 @@
   actualizarSpritePersonaje();
   let avatarElegido = AVATARES[0];
 
+  (function pintarSelectorPersonajes() {
+    const picker = document.getElementById('avatarPicker');
+    if (!picker) return;
+    picker.innerHTML = PERSONAJES.map(id => `
+      <button type="button" class="avatar-opcion${id === personajeElegido ? ' seleccionado' : ''}" data-personaje="${id}" title="${id}" onclick="elegirPersonaje('${id}', this)">
+        <img src="${PERSONAJE_ASSETS[id]}" alt="${id}">
+      </button>
+    `).join('');
+  })();
+
+  function elegirPersonaje(id, btn) {
+    if (!PERSONAJES.includes(id)) return;
+    personajeElegido = id;
+    document.querySelectorAll('.avatar-opcion').forEach(opcion => opcion.classList.remove('seleccionado'));
+    btn.classList.add('seleccionado');
+  }
+
   function escapeHtml(v) { const d = document.createElement('div'); d.textContent = v || ''; return d.innerHTML; }
   function mostrarCaja(id) {
     ['secUnirse', 'secEsperando', 'secPregunta', 'secEnviado', 'secResultado', 'secFinalEsperando', 'secFinal'].forEach(s => {
@@ -335,6 +354,7 @@
           jugadorId = sesion.jugadorId;
           personajeElegido = PERSONAJES.includes(sesion.personaje) ? sesion.personaje : personajeElegido;
           actualizarSpritePersonaje();
+          document.querySelectorAll('.avatar-opcion').forEach(opcion => opcion.classList.toggle('seleccionado', opcion.dataset.personaje === personajeElegido));
           document.getElementById('miNombre').textContent = sesion.nombre;
           document.getElementById('miAvatar').textContent = sesion.avatar || AVATARES[0];
           mostrarCaja('secEsperando');
@@ -367,7 +387,7 @@
     }
     msgEl.innerHTML = '<div class="msg" style="background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3);color:#60a5fa;padding:10px;border-radius:8px;margin-bottom:10px;">⏳ Uniendo...</div>';
 
-    const res = await unirsePartidaVivo(pin, nombre, avatarElegido);
+    const res = await unirsePartidaVivo(pin, nombre, avatarElegido, personajeElegido);
     if (!res.success) {
       msgEl.innerHTML = '<div class="msg msg-err" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#f87171;padding:10px;border-radius:8px;">❌ ' + res.error + '</div>';
       return;
