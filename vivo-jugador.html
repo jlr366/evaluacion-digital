@@ -106,7 +106,7 @@
     border: 1px solid rgba(148,163,184,0.22); border-radius: 14px;
     background: rgba(15,23,42,0.58); text-align: center;
   }
-  .estado-personaje-label { font-size: 0.85rem; font-weight: 800; letter-spacing: 0.04em; }
+  .estado-personaje-label { display: none; }
   .estado-personaje.correcto { border-color: rgba(34,197,94,0.55); background: rgba(34,197,94,0.1); }
   .estado-personaje.incorrecto { border-color: rgba(239,68,68,0.55); background: rgba(239,68,68,0.1); }
 
@@ -114,9 +114,11 @@
 
   .avatar-picker { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
   .avatar-opcion {
-    font-size: 1.7rem; padding: 10px 0; border-radius: 10px; cursor: pointer;
+    min-height: 92px; padding: 6px 2px; border-radius: 10px; cursor: pointer;
     background: #0f172a; border: 2px solid #334155;
   }
+  .avatar-opcion img { display: block; width: 52px; height: 52px; margin: 0 auto 3px; image-rendering: pixelated; }
+  .avatar-opcion span { display: block; color: #cbd5e1; font-size: 0.68rem; font-weight: 700; }
   .avatar-opcion.seleccionado { border-color: var(--primary, #6c5ce7); background: rgba(108,92,231,0.15); }
 
   .mascota-sprite {
@@ -187,7 +189,7 @@
   <div class="caja hidden" id="secResultado">
     <h2 id="resultadoTitulo"></h2>
     <div id="estadoPersonaje" class="estado-personaje">
-      <div id="estadoPersonajeLabel" class="estado-personaje-label">Preparando personaje...</div>
+      <div id="estadoPersonajeLabel" class="estado-personaje-label" aria-hidden="true"></div>
       <img id="resultadoMascota" class="resultado-mascota mascota-sprite" src="" alt="Estado del personaje">
     </div>
     <div id="resultadoCifras">
@@ -238,11 +240,25 @@
   // botones físicos). Queda a un nivel medio-bajo, audible sin ser invasivo.
   const volumenMusica = 0.4;
   let estadoAnterior = null;
-  const AVATARES = ['🐱', '🐶', '🦊', '🐼', '🐸', '🦁', '🐯', '🐨', '🐷', '🐰', '🐵', '🦄'];
-
-  const MASCOTA_FRAMES = [0, 1, 2, 3].map(i =>
-    `https://firebasestorage.googleapis.com/v0/b/examen-aws.firebasestorage.app/o/examenes%2Fmedia%2Fvivo-mascota-${i}.png?alt=media`
-  );
+  const AVATARES = ['🧭', '⚔️', '🔮', '🌿'];
+  const PERSONAJES = [
+    { id: 'explorador', nombre: 'Explorador', avatar: '🧭', piel: '#d99a6c', pelo: '#273449', ropa: '#2f80ed', acento: '#f2c94c' },
+    { id: 'guerrero', nombre: 'Guerrero', avatar: '⚔️', piel: '#b86f4b', pelo: '#171717', ropa: '#c0392b', acento: '#f2994a' },
+    { id: 'maga', nombre: 'Maga', avatar: '🔮', piel: '#f0b49b', pelo: '#7b3f98', ropa: '#9b51e0', acento: '#56ccf2' },
+    { id: 'inventora', nombre: 'Inventora', avatar: '🌿', piel: '#8d5a3b', pelo: '#e67e22', ropa: '#27ae60', acento: '#f1c40f' }
+  ];
+  function spritePixelArt(personaje) {
+    const p = personaje || PERSONAJES[0];
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" shape-rendering="crispEdges"><rect x="5" y="1" width="6" height="1" fill="${p.pelo}"/><rect x="4" y="2" width="8" height="4" fill="${p.pelo}"/><rect x="5" y="3" width="6" height="4" fill="${p.piel}"/><rect x="6" y="4" width="1" height="1" fill="#40251c"/><rect x="9" y="4" width="1" height="1" fill="#40251c"/><rect x="6" y="6" width="4" height="1" fill="#9e4b4b"/><rect x="3" y="7" width="10" height="5" fill="${p.ropa}"/><rect x="2" y="8" width="2" height="3" fill="${p.piel}"/><rect x="12" y="8" width="2" height="3" fill="${p.piel}"/><rect x="5" y="12" width="2" height="3" fill="#263238"/><rect x="9" y="12" width="2" height="3" fill="#263238"/><rect x="6" y="8" width="4" height="2" fill="${p.acento}"/><rect x="1" y="7" width="1" height="1" fill="${p.acento}"/><rect x="14" y="7" width="1" height="1" fill="${p.acento}"/></svg>`;
+    return 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg);
+  }
+  let personajeElegido = PERSONAJES[0].id;
+  let MASCOTA_FRAMES = [spritePixelArt(PERSONAJES[0])];
+  function personajeActual() { return PERSONAJES.find(p => p.id === personajeElegido) || PERSONAJES[0]; }
+  function actualizarSpritePersonaje() {
+    MASCOTA_FRAMES = [spritePixelArt(personajeActual())];
+    document.querySelectorAll('.mascota-sprite').forEach(img => { img.src = MASCOTA_FRAMES[0]; });
+  }
   (function iniciarMascota() {
     let frame = 0;
     const imgs = document.querySelectorAll('.mascota-sprite');
@@ -257,10 +273,17 @@
   let avatarElegido = AVATARES[0];
 
   (function pintarAvatarPicker() {
-    document.getElementById('avatarPicker').innerHTML = AVATARES.map((a, i) => `
-      <button type="button" class="avatar-opcion${i === 0 ? ' seleccionado' : ''}" data-avatar="${a}" onclick="elegirAvatar('${a}', this)">${a}</button>
+    document.getElementById('avatarPicker').innerHTML = PERSONAJES.map((p, i) => `
+      <button type="button" class="avatar-opcion${i === 0 ? ' seleccionado' : ''}" data-personaje="${p.id}" onclick="elegirPersonaje('${p.id}', this)"><img src="${spritePixelArt(p)}" alt="${p.nombre}"><span>${p.nombre}</span></button>
     `).join('');
   })();
+
+  function elegirPersonaje(id, btn) {
+    personajeElegido = PERSONAJES.some(p => p.id === id) ? id : PERSONAJES[0].id;
+    actualizarSpritePersonaje();
+    document.querySelectorAll('.avatar-opcion').forEach(b => b.classList.remove('seleccionado'));
+    btn.classList.add('seleccionado');
+  }
 
   function elegirAvatar(avatar, btn) {
     avatarElegido = avatar;
@@ -288,6 +311,8 @@
           const sesion = JSON.parse(guardada);
           partidaId = sesion.partidaId;
           jugadorId = sesion.jugadorId;
+          personajeElegido = sesion.personaje || PERSONAJES[0].id;
+          actualizarSpritePersonaje();
           document.getElementById('miNombre').textContent = sesion.nombre;
           document.getElementById('miAvatar').textContent = sesion.avatar || AVATARES[0];
           mostrarCaja('secEsperando');
@@ -320,7 +345,7 @@
     }
     msgEl.innerHTML = '<div class="msg" style="background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3);color:#60a5fa;padding:10px;border-radius:8px;margin-bottom:10px;">⏳ Uniendo...</div>';
 
-    const res = await unirsePartidaVivo(pin, nombre, avatarElegido);
+    const res = await unirsePartidaVivo(pin, nombre, avatarElegido, personajeElegido);
     if (!res.success) {
       msgEl.innerHTML = '<div class="msg msg-err" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#f87171;padding:10px;border-radius:8px;">❌ ' + res.error + '</div>';
       return;
@@ -328,7 +353,7 @@
 
     partidaId = res.partidaId;
     jugadorId = res.jugadorId;
-    localStorage.setItem('vivo_' + pin, JSON.stringify({ partidaId, jugadorId, nombre, avatar: avatarElegido }));
+    localStorage.setItem('vivo_' + pin, JSON.stringify({ partidaId, jugadorId, nombre, avatar: avatarElegido, personaje: personajeElegido }));
     document.getElementById('miNombre').textContent = nombre;
     document.getElementById('miAvatar').textContent = avatarElegido;
     mostrarCaja('secEsperando');
@@ -533,7 +558,7 @@
       ? [0, 1, 2, 3, 2, 1]
       : [0, 1, 2, 3, 3, 3];
     let frame = 0;
-    mascota.src = MASCOTA_FRAMES[frames[frame]];
+    mascota.src = MASCOTA_FRAMES[0];
     animacionResultadoTimer = setInterval(() => {
       frame += 1;
       if (frame >= frames.length) {
@@ -541,7 +566,7 @@
         animacionResultadoTimer = null;
         return;
       }
-      mascota.src = MASCOTA_FRAMES[frames[frame]];
+      mascota.src = MASCOTA_FRAMES[0];
     }, respuesta && respuesta.correcta ? 130 : 180);
   }
 
@@ -627,7 +652,7 @@
     document.getElementById('finalPuesto').textContent = puesto ? (puesto + ' de ' + ranking.length) : '-';
     const finalSticker = document.getElementById('finalSticker');
     finalSticker.className = puesto === 1 ? 'mascota-victoria' : '';
-    finalSticker.src = puesto === 1 ? STICKER_GANADOR : STICKER_NO_GANADOR;
+    finalSticker.src = MASCOTA_FRAMES[0];
 
     if (!confettiFinalDisparado && puesto && puesto <= 3) {
       confettiFinalDisparado = true;
