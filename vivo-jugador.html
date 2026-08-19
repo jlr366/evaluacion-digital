@@ -101,6 +101,25 @@
     50% { transform: scale(1.03) rotate(-3deg); }
     75% { transform: scale(1.16) rotate(3deg); filter: drop-shadow(0 0 28px rgba(250,204,21,1)); }
   }
+  .personaje-final {
+    display: block; width: 170px; height: 170px; margin: 12px auto 4px;
+    image-rendering: pixelated; image-rendering: crisp-edges;
+  }
+  .mascota-victoria { animation: mascotaPoder 1.1s steps(2, end) infinite, victoriaFlota 1.8s ease-in-out infinite; }
+  @keyframes victoriaFlota {
+    0%, 100% { margin-top: 12px; }
+    50% { margin-top: 2px; }
+  }
+  .logo-aprobado-final {
+    display: block; max-width: 230px; width: 100%; margin: 12px auto 0;
+    border-radius: 12px; animation: logoAprobado 0.7s ease-out both;
+  }
+  .hidden-final { display: none !important; }
+  @keyframes logoAprobado {
+    from { opacity: 0; transform: scale(0.72) rotate(-4deg); }
+    70% { opacity: 1; transform: scale(1.06) rotate(2deg); }
+    to { transform: scale(1) rotate(0); }
+  }
   .estado-personaje {
     min-height: 190px; margin-top: 14px; padding: 10px 18px 14px;
     border: 1px solid rgba(148,163,184,0.22); border-radius: 14px;
@@ -124,12 +143,18 @@
   .mascota-sprite {
     display: block; margin: 18px auto 0; width: 120px; height: 120px;
     image-rendering: pixelated; image-rendering: crisp-edges;
-    animation: mascotaBrinca 0.6s ease-in-out infinite;
+    animation: mascotaCamina 0.72s steps(2, end) infinite;
   }
   .personaje-aventurero, .personaje-guerrero, .personaje-maga, .personaje-inventora { filter: none; }
   @keyframes mascotaBrinca {
     0%, 100% { transform: translateY(0); }
     50% { transform: translateY(-8px); }
+  }
+  @keyframes mascotaCamina {
+    0%, 100% { transform: translateY(0) translateX(-2px) scaleX(1); }
+    25% { transform: translateY(-4px) translateX(1px) scaleX(0.97); }
+    50% { transform: translateY(0) translateX(3px) scaleX(1); }
+    75% { transform: translateY(-3px) translateX(0) scaleX(0.97); }
   }
 </style>
 </head>
@@ -214,7 +239,8 @@
     <h2 id="finalTitulo"></h2>
     <p class="muted">Puntaje final: <strong id="finalPuntos">0</strong></p>
     <p class="muted">Puesto final: <strong id="finalPuesto">-</strong></p>
-    <img id="finalSticker" src="" alt="" style="max-width:260px;width:100%;margin-top:16px;border-radius:12px;">
+    <img id="finalMascota" class="personaje-final" src="" alt="Personaje final">
+    <img id="finalSticker" class="logo-aprobado-final hidden-final" src="" alt="Aprobado">
   </div>
 
 </div>
@@ -635,9 +661,12 @@
     document.getElementById('finalTitulo').textContent = puesto === 1 ? '¡Ganaste!' : '¡Partida terminada!';
     document.getElementById('finalPuntos').textContent = (yo && yo.puntos) || 0;
     document.getElementById('finalPuesto').textContent = puesto ? (puesto + ' de ' + ranking.length) : '-';
+    const finalMascota = document.getElementById('finalMascota');
     const finalSticker = document.getElementById('finalSticker');
-    finalSticker.className = (puesto === 1 ? 'mascota-victoria ' : '') + 'personaje-' + personajeElegido;
-    finalSticker.src = MASCOTA_FRAMES[0];
+    finalMascota.className = 'personaje-final personaje-' + personajeElegido + (puesto === 1 ? ' mascota-victoria' : '');
+    finalMascota.src = MASCOTA_FRAMES[0];
+    finalSticker.className = puesto === 1 ? 'logo-aprobado-final' : 'logo-aprobado-final hidden-final';
+    finalSticker.src = puesto === 1 ? STICKER_GANADOR : '';
 
     if (!confettiFinalDisparado && puesto && puesto <= 3) {
       confettiFinalDisparado = true;
