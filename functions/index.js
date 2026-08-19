@@ -409,7 +409,7 @@ exports.crearPartidaVivo = onCall(async (request) => {
 });
 
 const AVATARES_VIVO = ['🧭', '⚔️', '🔮', '🌿'];
-const PERSONAJES_VIVO = ['aventurero', 'guerrero', 'maga', 'inventora', 'robot', 'ninja', 'pirata', 'hada', 'alienigena'];
+const PERSONAJES_VIVO = ['aventurero', 'guerrero', 'maga', 'inventora', 'robot', 'ninja', 'pirata', 'hada', 'alienigena', 'samurai', 'vaquera', 'vampiro', 'sirena', 'dragon', 'hechicero', 'cientifica', 'arquero', 'chef', 'guardian-cosmico'];
 
 exports.unirsePartidaVivo = onCall(async (request) => {
   const { pin, nombre, avatar } = request.data || {};

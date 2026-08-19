@@ -267,7 +267,7 @@
   const volumenMusica = 0.12;
   let estadoAnterior = null;
   const AVATARES = ['🐱', '🐶', '🦊', '🐼', '🐸', '🦁', '🐯', '🐨', '🐷', '🐰', '🐵', '🦄'];
-  const PERSONAJES = ['aventurero', 'guerrero', 'maga', 'inventora', 'robot', 'ninja', 'pirata', 'hada', 'alienigena'];
+  const PERSONAJES = ['aventurero', 'guerrero', 'maga', 'inventora', 'robot', 'ninja', 'pirata', 'hada', 'alienigena', 'samurai', 'vaquera', 'vampiro', 'sirena', 'dragon', 'hechicero', 'cientifica', 'arquero', 'chef', 'guardian-cosmico'];
   const PERSONAJE_ASSETS = {
     aventurero: 'pixel-characters/aventurero.png',
     guerrero: 'pixel-characters/guerrero.png',
@@ -277,7 +277,17 @@
     ninja: 'pixel-characters/ninja.png',
     pirata: 'pixel-characters/pirata.png',
     hada: 'pixel-characters/hada.png',
-    alienigena: 'pixel-characters/alienigena.png'
+    alienigena: 'pixel-characters/alienigena.png',
+    samurai: 'pixel-characters/samurai.png',
+    vaquera: 'pixel-characters/vaquera.png',
+    vampiro: 'pixel-characters/vampiro.png',
+    sirena: 'pixel-characters/sirena.png',
+    dragon: 'pixel-characters/dragon.png',
+    hechicero: 'pixel-characters/hechicero.png',
+    cientifica: 'pixel-characters/cientifica.png',
+    arquero: 'pixel-characters/arquero.png',
+    chef: 'pixel-characters/chef.png',
+    'guardian-cosmico': 'pixel-characters/guardian-cosmico.png'
   };
   let personajeElegido = PERSONAJES[Math.floor(Math.random() * PERSONAJES.length)];
   let MASCOTA_FRAMES = [PERSONAJE_ASSETS[personajeElegido]];
